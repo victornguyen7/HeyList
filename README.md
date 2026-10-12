@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HeyList
 
-## Getting Started
+**Simple checklists with money built in.**
 
-First, run the development server:
+A simple checklist website for everyday life, built mobile-first so it works in a phone browser with nothing to install. Anyone can use it, including people with little tech experience. Create lists by typing, speaking, or taking a photo, whichever is easiest at that moment.
+
+The first use case is packing before a holiday; the app stays general-purpose so it fits groceries, errands, routines, and any other daily list.
+
+Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
+
+> **Status:** project scaffold only. The features below are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## Why
+
+Existing checklist apps assume users are comfortable tapping through menus, folders, and settings. People with little tech experience often give up on them and fall back to paper or memory.
+
+- Starting a list means facing a blank page.
+- Voice input exists but is buried, and usually dumps everything into one line.
+- There is no easy way to prove a task was done ("did I turn off the stove?").
+- Sharing a list with family usually requires everyone to have an account.
+
+## Features
+
+- **Type** — add items the familiar way.
+- **Voice** — speak naturally; the app splits speech into clean items and shows them to confirm.
+- **Photo as proof** — take a photo when checking an item; it is saved with the item.
+- **Photo recognition** — snap a scene; the app suggests which items it sees for you to confirm.
+- **Smart starting lists** — describe the situation and get a suggested list to edit.
+- **Reuse** — repeating lists reset with one tap.
+- **Easy sharing** — send a list by link; no account needed to view or check items.
+- **Simple interface** — large text, few screens, one big talk button; advanced options hidden.
+
+## How it works
+
+1. Create a list by voice or typing ("move-in list for 3 roommates, $300 budget"). AI builds a smart starting list within the budget; you confirm or edit it.
+2. Share by link if others are involved. People claim items they'll buy.
+3. Check items off with proof: scan a receipt and AI matches its lines to list items with prices attached, or buy in the app with PayPal Checkout, where the order is the proof.
+4. Receipt lines that match nothing are flagged as extras. Unchecked items stay open, so you see what you forgot.
+5. On shared lists, the app works out who owes whom and settles up with PayPal invoices.
+6. The finished list joins your history.
+
+## Pages
+
+Progress · Items · Money · Receipts · History · Settle-up — see [docs/SPEC.md](docs/SPEC.md#pages).
+
+## Stack
+
+- **App:** Next.js website, mobile-first (native app later)
+- **Data:** Supabase — lists, receipts storage, realtime
+- **Payments:** PayPal sandbox — Checkout JS SDK + Orders API, Invoicing API
+- **AI:** one LLM with vision for lists and receipts (Ollama API); Web Speech API for voice
+- **Hosting:** Render
+- **Sponsor tools:** APIMatic Context Plugin, Postman, Render; Channel3 for the stretch
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Other scripts: `npm run build`, `npm run start`, `npm run lint`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Docs
 
-## Learn More
+- [Spec](docs/SPEC.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Decisions](docs/DECISIONS.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Changelog](docs/CHANGELOG.md)
+- [Issues](docs/ISSUES.md)
 
-To learn more about Next.js, take a look at the following resources:
+## Links
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/)
+- [PayPal developer dashboard](https://developer.paypal.com/dashboard/accounts)
+- Sponsors: [APIMatic](https://paypalaihackathon.devpost.com/details/apimatic) · [Postman](https://paypalaihackathon.devpost.com/details/postman) · [Render](https://paypalaihackathon.devpost.com/details/render) · [Channel3](https://paypalaihackathon.devpost.com/details/channel3)
