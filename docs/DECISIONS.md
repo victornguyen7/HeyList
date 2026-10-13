@@ -17,9 +17,10 @@ Decisions recorded in the project notes. A reason is listed only where the notes
 | 11 | Use one LLM with vision for both lists and receipts | — |
 | 12 | Use the Ollama API for the LLM | — |
 | 13 | Use the Web Speech API for voice | — |
-| 14 | Use Next.js for the app | — |
+| 14 | Use Next.js for the app (narrowed to the frontend by 20) | — |
 | 15 | Use Supabase for lists, receipts storage, and realtime | — |
 | 16 | Deploy on Render | Hackathon sponsor; $50 credit received |
 | 17 | Use the PayPal sandbox: Checkout JS SDK + Orders API, Invoicing API | — |
 | 18 | Use sponsor tools APIMatic Context Plugin, Postman, and Render; Channel3 only as a stretch | — |
 | 19 | History is the retention hook: buy again from a past list, plus price memory | — |
+| 20 | Next.js is the frontend only; all server-side logic runs in a FastAPI (Python) service, which the browser reaches through a Next.js rewrite of `/api/*` | — |

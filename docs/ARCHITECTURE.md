@@ -1,20 +1,21 @@
 # HeyList — Architecture
 
-Planned architecture. The repository is currently an unmodified Next.js scaffold; nothing below is implemented yet (see [CHANGELOG.md](CHANGELOG.md)).
+Planned architecture. Only the PayPal order endpoints are implemented, in `backend/` (see [CHANGELOG.md](CHANGELOG.md)); everything else below is still planned.
 
 ## Stack
 
 | Layer | Choice |
 |---|---|
-| App | Next.js website, mobile-first so it works in phone browsers (native app later) |
+| Frontend | Next.js website, mobile-first so it works in phone browsers (native app later) |
+| Backend | FastAPI (Python) — all server-side logic. The browser calls same-origin `/api/*`, which Next.js rewrites to it |
 | Data | Supabase — lists, receipts storage, realtime |
 | Payments | PayPal sandbox — Checkout JS SDK + Orders API, Invoicing API |
 | AI | One LLM with vision for lists and receipts, served through the Ollama API |
 | Voice | Web Speech API |
-| Hosting | Render |
+| Hosting | Render — two web services, one for Next.js and one for FastAPI |
 | Sponsor tools | APIMatic Context Plugin, Postman, Render; Channel3 for the stretch |
 
-Currently installed (from `package.json`): Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5.
+Currently installed: Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5 (from `package.json`); FastAPI 0.143.0, uvicorn 0.54.0, httpx 0.28.1 on Python 3.13 (from `backend/requirements.txt`).
 
 ## Overview
 
@@ -23,7 +24,10 @@ Currently installed (from `package.json`): Next.js 16.4.0, React 19.3.0, Tailwin
    type / voice (Web Speech API) / photo        PayPal Checkout JS SDK
                       |                                   |
                       v                                   v
-                         Next.js app on Render
+              Next.js frontend on Render (pages; proxies /api/*)
+                                |
+                                v
+                  FastAPI backend on Render (Python)
           |                     |                        |
           v                     v                        v
    LLM with vision          Supabase                PayPal sandbox

@@ -12,7 +12,7 @@ Lists and Supabase do not exist yet, so this is a standalone slice on a hardcode
 
 ## Approach
 
-PayPal JS SDK v6 loaded by script tag, and plain `fetch` to the Orders API v2 on the server. No new dependencies. Sandbox only.
+PayPal JS SDK v6 loaded by script tag in the Next.js frontend. The FastAPI backend calls the Orders API v2 with `httpx` (see the [FastAPI backend design](2026-10-13-fastapi-backend-design.md)). No new frontend dependencies. Sandbox only.
 
 Rejected: `@paypal/react-paypal-js` + `@paypal/paypal-server-sdk` (two dependencies for three REST calls); the v5 SDK (legacy).
 
@@ -20,11 +20,10 @@ Rejected: `@paypal/react-paypal-js` + `@paypal/paypal-server-sdk` (two dependenc
 
 | File | Job |
 |---|---|
-| `lib/sample-list.ts` | Hardcoded packing list: three items, each with `id`, `name`, `priceCents`. Exports `totalCents(itemIds)`, which throws on an unknown or empty selection. |
-| `lib/paypal.ts` | Server-only. Cached OAuth token (refreshed from `expires_in`), `createOrder(itemIds)`, `captureOrder(orderId)`. |
-| `app/api/orders/route.ts` | `POST {itemIds: string[]}` → `{orderId}` |
-| `app/api/orders/[id]/capture/route.ts` | `POST` → `{status, orderId}` |
-| `app/checkout/page.tsx` | Server component. Reads `PAYPAL_CLIENT_ID` and passes it to the client component as a prop. |
+| `backend/sample_list.py` | Hardcoded packing list: three items, each with `id`, `name`, `priceCents`. Defines `total_cents(item_ids)`, which raises on an unknown or empty selection. |
+| `backend/paypal.py` | Cached OAuth token (refreshed from `expires_in`), `create_order(item_ids)`, `capture_order(order_id)`. |
+| `backend/main.py` | `GET /api/items` → the list; `POST /api/orders {itemIds: string[]}` → `{orderId}`; `POST /api/orders/{id}/capture` → `{status, orderId}` |
+| `app/checkout/page.tsx` | Server component. Reads `PAYPAL_CLIENT_ID`, fetches the items from `GET /api/items`, and passes both to the client component as props. |
 | `app/checkout/checkout-list.tsx` | Client component: the list, the total, the PayPal button, and the paid state. |
 | `.env.example` | `PAYPAL_CLIENT_ID=` and `PAYPAL_CLIENT_SECRET=`, empty. |
 
@@ -41,9 +40,9 @@ The browser never sends an amount, so the total cannot be tampered with.
 
 ## Credentials
 
-`PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` live in `.env.local` (gitignored). The secret is only read in `lib/paypal.ts`. The client ID reaches the browser as a prop from the server page; no `NEXT_PUBLIC_` variable.
+`PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` live in `.env.local` (gitignored). The secret is only read in `backend/paypal.py`. The client ID reaches the browser as a prop from the server page; no `NEXT_PUBLIC_` variable.
 
-If either variable is missing, `/checkout` shows a plain "PayPal is not configured" message instead of the button.
+If `PAYPAL_CLIENT_ID` is missing, `/checkout` shows a plain "PayPal is not configured" message instead of the button.
 
 ## Errors
 
@@ -59,7 +58,7 @@ Every POST to PayPal carries a `PayPal-Request-Id`. Capture uses the order ID as
 
 ## Testing
 
-- One test for `totalCents`: correct sum, and throws on empty and unknown IDs. Run with Node's built-in test runner.
+- Backend tests in `backend/`, run with `python -m unittest`: `total_cents`, the PayPal client against a fake PayPal, and the routes' error contract.
 - A sandbox run: create an order through `/api/orders`, approve as a sandbox personal account, capture, and confirm the order is `COMPLETED` with the PayPal MCP `get_order` tool.
 
 ## Out of scope

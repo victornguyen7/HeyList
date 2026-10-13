@@ -45,7 +45,8 @@ Progress · Items · Money · Receipts · History · Settle-up — see [docs/SPE
 
 ## Stack
 
-- **App:** Next.js website, mobile-first (native app later)
+- **Frontend:** Next.js website, mobile-first (native app later)
+- **Backend:** FastAPI (Python) in `backend/`; Next.js proxies `/api/*` to it
 - **Data:** Supabase — lists, receipts storage, realtime
 - **Payments:** PayPal sandbox — Checkout JS SDK + Orders API, Invoicing API
 - **AI:** one LLM with vision for lists and receipts (Ollama API); Web Speech API for voice
@@ -54,14 +55,29 @@ Progress · Items · Money · Receipts · History · Settle-up — see [docs/SPE
 
 ## Getting started
 
+Copy `.env.example` to `.env.local` and fill in the PayPal sandbox credentials. Both servers read that file.
+
+Set up once:
+
 ```bash
 npm install
+python3 -m venv backend/.venv
+backend/.venv/bin/pip install -r backend/requirements.txt
+```
+
+Then run the two servers, each in its own terminal:
+
+```bash
+cd backend && .venv/bin/uvicorn main:app --reload --env-file ../.env.local
+```
+
+```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Other scripts: `npm run build`, `npm run start`, `npm run lint`.
+Backend tests: `cd backend && .venv/bin/python -m unittest`. Other scripts: `npm run build`, `npm run start`, `npm run lint`.
 
 ## Docs
 

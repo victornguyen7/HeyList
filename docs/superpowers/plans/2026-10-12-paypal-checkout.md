@@ -10,12 +10,14 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-12-paypal-checkout-design.md`
 
+> **Updated 2026-10-13:** Tasks 1 and 2 were completed in TypeScript and then ported to Python by the [FastAPI backend plan](2026-10-13-fastapi-backend.md). Their text below is kept as a record; do not run them. Task 3 is updated for the FastAPI backend and is the only task left.
+
 ## Global Constraints
 
-- No new dependencies. `package.json` gains only a `test` script.
+- No new frontend dependencies.
 - Sandbox only: API base `https://api-m.sandbox.paypal.com`, SDK script `https://www.sandbox.paypal.com/web-sdk/v6/core`.
 - The SDK is initialised with `clientId`, not `clientToken` (PayPal's setup guide reserves client tokens for Fastlane).
-- Credentials are `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in `.env.local`. No `NEXT_PUBLIC_` variable. The secret is read only in `lib/paypal.ts`.
+- Credentials are `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in `.env.local`. No `NEXT_PUBLIC_` variable. The secret is read only in `backend/paypal.py`.
 - The browser never sends an amount. Totals are computed on the server from item IDs.
 - Currency is USD. Order intent is `CAPTURE`.
 - Every POST to PayPal carries a `PayPal-Request-Id`.
@@ -416,7 +418,7 @@ git commit -m "feat: add PayPal order create and capture routes"
 - Modify: `docs/CHANGELOG.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`
 
 **Interfaces:**
-- Consumes: `ITEMS`, `totalCents` from `lib/sample-list.ts`; `POST /api/orders` and `POST /api/orders/{id}/capture` as defined in Task 2.
+- Consumes: `GET /api/items` → `[{id, name, priceCents}]`, `POST /api/orders` and `POST /api/orders/{id}/capture`, all served by the FastAPI backend in `backend/main.py`. The browser reaches them at same-origin `/api/*`; the server page reaches the backend directly at `BACKEND_URL` (default `http://127.0.0.1:8000`).
 - Produces: the `/checkout` page.
 
 - [ ] **Step 1: Declare the SDK types**
@@ -476,7 +478,7 @@ Create `app/checkout/checkout-list.tsx`:
 
 import Script from "next/script";
 import { useRef, useState } from "react";
-import { ITEMS, totalCents } from "@/lib/sample-list";
+export type Item = { id: string; name: string; priceCents: number };
 import type { PayPalSession } from "./paypal";
 
 const dollars = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -491,7 +493,7 @@ async function createOrder(itemIds: string[]): Promise<{ orderId: string }> {
   return response.json();
 }
 
-export default function CheckoutList({ clientId }: { clientId: string }) {
+export default function CheckoutList({ clientId, items }: { clientId: string; items: Item[] }) {
   const [selected, setSelected] = useState<string[]>([]);
   // Item ID -> the PayPal order that paid for it. The order is the proof.
   const [paid, setPaid] = useState<Record<string, string>>({});
@@ -559,6 +561,11 @@ export default function CheckoutList({ clientId }: { clientId: string }) {
     }
   }
 
+  // For display only. The backend computes the amount that is charged.
+  const total = items
+    .filter((item) => selected.includes(item.id))
+    .reduce((sum, item) => sum + item.priceCents, 0);
+
   function toggle(id: string) {
     setSelected((current) =>
       current.includes(id) ? current.filter((other) => other !== id) : [...current, id],
@@ -570,7 +577,7 @@ export default function CheckoutList({ clientId }: { clientId: string }) {
       <Script src="https://www.sandbox.paypal.com/web-sdk/v6/core" onReady={initPayPal} />
 
       <ul className="flex flex-col gap-3">
-        {ITEMS.map((item) => {
+        {items.map((item) => {
           const orderId = paid[item.id];
           return (
             <li key={item.id}>
@@ -599,7 +606,7 @@ export default function CheckoutList({ clientId }: { clientId: string }) {
 
       <p className="text-xl font-semibold" aria-live="polite">
         {selected.length > 0
-          ? `Total: ${dollars(totalCents(selected))}`
+          ? `Total: ${dollars(total)}`
           : "Tick the items you want to buy."}
       </p>
 
@@ -626,19 +633,37 @@ Create `app/checkout/page.tsx`:
 
 ```tsx
 import type { Metadata } from "next";
-import CheckoutList from "./checkout-list";
+import { Suspense } from "react";
+import CheckoutList, { type Item } from "./checkout-list";
 
 export const metadata: Metadata = { title: "Holiday packing — HeyList" };
 
+const BACKEND_URL = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
+
+// Fetches on every request, so it has to render inside <Suspense> (cacheComponents is on).
+async function Checkout({ clientId }: { clientId: string }) {
+  let items: Item[];
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/items`);
+    if (!response.ok) throw new Error(`Items request failed: ${response.status}`);
+    items = await response.json();
+  } catch (error) {
+    console.error(error);
+    return <p className="text-xl">The list could not be loaded. Please refresh the page.</p>;
+  }
+  return <CheckoutList clientId={clientId} items={items} />;
+}
+
 export default function CheckoutPage() {
   const clientId = process.env.PAYPAL_CLIENT_ID;
-  const configured = clientId && process.env.PAYPAL_CLIENT_SECRET;
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 p-6">
       <h1 className="text-3xl font-semibold">Holiday packing</h1>
-      {configured ? (
-        <CheckoutList clientId={clientId} />
+      {clientId ? (
+        <Suspense fallback={<p className="text-xl">Loading the list…</p>}>
+          <Checkout clientId={clientId} />
+        </Suspense>
       ) : (
         <p className="text-xl">PayPal is not configured.</p>
       )}
@@ -649,12 +674,12 @@ export default function CheckoutPage() {
 
 - [ ] **Step 4: Lint, test and build**
 
-Run: `npm run lint && npm test && npm run build`
-Expected: lint clean, 2 tests pass, build succeeds and lists `/checkout`, `/api/orders` and `/api/orders/[id]/capture`.
+Run: `npm run lint && npm run build && (cd backend && .venv/bin/python -m unittest)`
+Expected: lint clean, build succeeds and lists `/checkout` with no `/api` routes, 17 backend tests pass. If the build reports uncached data accessed outside `<Suspense>`, read `node_modules/next/dist/docs/01-app/01-getting-started/08-caching.md` before changing `page.tsx`.
 
 - [ ] **Step 5: Check the page renders**
 
-With the dev server running and `.env.local` filled in:
+With both servers running (`cd backend && .venv/bin/uvicorn main:app --reload --env-file ../.env.local`, and `npm run dev`) and `.env.local` filled in:
 
 ```bash
 curl -s localhost:3000/checkout | grep -o "Holiday packing\|paypal-button\|Travel adapter" | sort -u
