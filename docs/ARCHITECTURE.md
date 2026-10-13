@@ -53,7 +53,7 @@ Installed: Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5 (`package.
 | `app/l/[id]/pages.tsx` | Items, Money, Receipts, and Settle up pages |
 | `app/history/page.tsx` | History page and "Use this list again" |
 | `app/lib.ts`, `app/ui.tsx` | Types, the `api` helper, `localStorage` helpers; shared buttons, `TalkButton`, `DraftEditor` |
-| `app/checkout/paypal.d.ts` | Types for the PayPal JS SDK v6 |
+| `app/paypal.d.ts` | Types for the PayPal JS SDK v6 |
 
 ## Routes
 

@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 import { useRef, useState } from "react";
-import type { PayPalSession } from "../../checkout/paypal";
+import type { PayPalSession } from "../../paypal";
 import { type Draft, type Extra, type ListState, api, dollars, shrink } from "../../lib";
 import { Bar, DraftEditor, Notice, PriceInput, TalkButton, card, input, primary, secondary, small } from "../../ui";
 

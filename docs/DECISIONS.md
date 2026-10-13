@@ -1,6 +1,6 @@
 # HeyList — Decisions
 
-Decisions 1–20 come from the project notes; 21 onward come from the design specs in [superpowers/specs/](superpowers/specs/) and the code. A reason is listed only where the source gives one.
+Decisions 1–20 come from the project notes; 21–47 come from the design specs in [superpowers/specs/](superpowers/specs/) and the code; 48 onward were made during the end-to-end build ([BUILD_PROMPT.md](BUILD_PROMPT.md)). A note in *italics* says where a later decision changed an earlier one. A reason is listed only where the source gives one.
 
 ## Product and stack
 
@@ -35,7 +35,7 @@ Decisions 1–20 come from the project notes; 21 onward come from the design spe
 | 22 | The frontend will load the PayPal JS SDK v6 by script tag (not built yet) | No new frontend dependency; the v5 SDK is legacy |
 | 23 | The browser sends only item IDs; the server looks up prices and computes the total | The browser never sends an amount, so the total cannot be tampered with |
 | 24 | Money is held as integer cents and formatted to two decimals only when sent to PayPal | — |
-| 25 | Prices are defined in one place, the backend; the frontend fetches them from `GET /api/items` | The list lives in Python, so the page fetches it instead of importing it |
+| 25 | Prices are defined in one place, the backend; the frontend fetches them from `GET /api/items`. *Since phase 2 that place is the `items` table, fetched with `GET /api/lists/{id}`* | The list lives in Python, so the page fetches it instead of importing it |
 | 26 | Every error body is `{"error": "<CODE>"}`. So `POST /api/orders` reads its body by hand (no Pydantic model) and routes return `JSONResponse` (no `HTTPException`) | FastAPI's defaults would answer with `422` and a `detail` array, or wrap the body as `{"detail": ...}` |
 | 27 | PayPal failures reach the browser as a generic `502 PAYPAL_ERROR`; PayPal's `debug_id` is logged on the server. Only `INSTRUMENT_DECLINED` is passed through, as `422` | — |
 | 28 | Every POST to PayPal carries a `PayPal-Request-Id`; capture uses the order ID as its key | A repeated capture returns the first result instead of charging again |
@@ -48,16 +48,21 @@ Decisions 1–20 come from the project notes; 21 onward come from the design spe
 | 35 | Both servers read one `.env.local` at the repo root; the backend loads it with uvicorn's `--env-file` | One file to fill in |
 | 36 | The PayPal client ID will reach the browser as a prop from a server page; no `NEXT_PUBLIC_` variable. The secret is read only in `backend/paypal.py` | — |
 | 37 | The backend is a flat `backend/` folder, with no `routers/`, `services/`, or `schemas/` layers | Too much structure for three endpoints; split a file when it gets big |
-| 38 | Backend tests use the standard library `unittest`; PayPal is faked with `httpx.MockTransport` | No test dependency |
+| 38 | Backend tests use the standard library `unittest`; PayPal is faked with `httpx.MockTransport`. *Amended by 48: orders are faked with a `requests` adapter under the SDK; `httpx.MockTransport` now fakes only invoicing* | No test dependency |
 | 39 | Python dependencies are pinned to exact versions in `backend/requirements.txt` | — |
-| 40 | Checkout is built first as a standalone slice on a hardcoded sample list | Lists and Supabase do not exist yet; real lists plug into the same endpoints later |
+| 40 | Checkout is built first as a standalone slice on a hardcoded sample list. *Done; the sample list was removed once real lists existed (71)* | Lists and Supabase do not exist yet; real lists plug into the same endpoints later |
 | 41 | Sandbox only for now: the PayPal API base URL is hardcoded to the sandbox | — |
 | 42 | No PayPal webhooks, and no Venmo, Pay Later, or card fields, for now | Webhooks: capture is synchronous and there is no database to reconcile |
 | 43 | No Docker and no single command that starts both servers | Two terminals are enough for now |
 | 44 | When a capture fails or cannot be confirmed, the page says to check the PayPal account; it never says "you have not been charged" | A capture that fails on the way back may still have completed at PayPal |
-| 45 | The checkout page renders at request time (`connection()`), not at build time | The item list and the PayPal client ID come from the running servers, not the build machine |
-| 46 | `/` redirects to `/checkout` from `next.config.ts`; there is no home page file | The sample checkout is the only page so far |
+| 45 | The checkout page renders at request time (`connection()`), not at build time. *Now the list page, `app/l/[id]/page.tsx`* | The item list and the PayPal client ID come from the running servers, not the build machine |
+| 46 | ~~`/` redirects to `/checkout` from `next.config.ts`; there is no home page file~~ **Replaced by 67** | The sample checkout is the only page so far |
 | 47 | The Python virtual environment lives at `../.venv`, in the folder above the repo, not in `backend/` | — |
+
+## End-to-end build
+
+| # | Decision | Reason |
+|---|---|---|
 | 48 | Reverses 21: `backend/paypal.py` calls PayPal through the PayPal Server SDK for Python (`paypal-server-sdk` 2.4.0), with the APIMatic Context Plugin skills (`paypal:python-*`) and the installed SDK source as the reference for names, auth, models, and errors. The behaviour of 23, 24, 27–31 is kept: the SDK caches the OAuth token (`o_auth_clock_skew=120` is the two-minute early refresh), `PayPal-Request-Id` goes in as `paypal_request_id`, the one `429` retry stays in our code so the wait is capped at 5s (the SDK's own retries are off), and `ApiException` is mapped to `PayPalError`. The SDK is synchronous, so calls run in a thread. Tests fake PayPal with a `requests` adapter instead of `httpx.MockTransport` (amends 38). The SDK has no Invoicing controller (Orders, Payments, Vault, Transaction Search, Subscriptions only), so invoicing uses `httpx` | The hackathon build uses the sponsor's SDK; typed models and errors replace hand-written JSON |
 | 49 | A list's UUID is its share link; there is no separate share token. Anyone holding it can view, check, and claim (decision 6) | One unguessable ID is enough without accounts |
 | 50 | People on a list are `members`: a name, plus an email only for settle-up. Joining twice with one name is one member | No accounts (decision 6), but split math and invoices need to know who paid |
@@ -77,7 +82,8 @@ Decisions 1–20 come from the project notes; 21 onward come from the design spe
 | 64 | Settle-up splits what members paid for list items equally between all members. Receipt extras are not split, and cents that do not divide go to the first members. Payments are matched greedily, largest debtor to largest creditor | Extras were not on the shared list; the shares must add up to the total exactly |
 | 65 | Unclaimed items are assigned one at a time to whoever has the lowest estimated total to buy | Balances cost, not item count |
 | 66 | Reusing a list copies its items unchecked, each at the price last paid (or its old estimate) | The price paid last time is the best estimate |
-| 67 | Replaces 46: `/` is the home page, and `/checkout` redirects to it | The sample checkout is replaced by real lists |
+| 67 | Replaces 46: `/` is the home page (`app/page.tsx`). There is no `/checkout` route and no redirect | The sample checkout is replaced by real lists |
 | 68 | Invoicing calls the REST API with `httpx` (`/v2/invoicing/invoices`: create, send, get), authorised with a token fetched through the SDK's `oauth_2` auth manager. Everything else PayPal goes through the SDK | The SDK does not expose Invoicing (decision 48); one token source instead of two |
 | 69 | A settle-up invoice is issued by HeyList's sandbox business account to the debtor's email, with who they owe in the note. One live invoice per debt: the row is stored as `DRAFT` before sending, so a failed send is retried rather than duplicated | PayPal invoices go from a merchant to a payer; there is no person-to-person invoice. See issue 9 |
 | 70 | Invoice status is read from PayPal on demand ("Check if invoices are paid"), not by webhook. A `PAID` invoice is counted in the split as money moved from debtor to creditor | No webhooks (decision 42) |
+| 71 | The sample checkout is deleted: `app/checkout/page.tsx`, `app/checkout/checkout-list.tsx`, `backend/sample_list.py` and its test. The PayPal JS SDK types moved to `app/paypal.d.ts` | Nothing used them after phase 4; dead code misleads readers and judges |

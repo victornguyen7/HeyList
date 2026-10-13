@@ -15,10 +15,6 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   partialPrefetching: true,
-  // The sample checkout page is replaced by real lists; old links land on the home page.
-  async redirects() {
-    return [{ source: "/checkout", destination: "/", permanent: false }];
-  },
   // All server-side logic lives in the FastAPI service in backend/.
   async rewrites() {
     return [

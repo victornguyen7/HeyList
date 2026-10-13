@@ -6,6 +6,10 @@ HeyList is a mobile-first checklist website. You say or type one sentence ("move
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/). Everything runs on the **PayPal sandbox**: no real money moves and no payment details are stored.
 
+## Status
+
+Built end to end on the PayPal sandbox, Supabase, and a hosted vision model; not deployed yet. The backend has 62 unit tests, and every call the pages make has been run against the real services. Three things have only been checked at the API level and still need a run by hand in a browser: clicking through the pages (voice included), approving a PayPal payment on a real list, and paying a settle-up invoice. Demo steps 5, 8 and 10 below are those runs. Open items are in [docs/ISSUES.md](docs/ISSUES.md).
+
 ## What it does
 
 1. **Start a list from one sentence**, typed or spoken. The AI suggests items with price estimates inside your budget. You edit and confirm before anything is saved.
@@ -74,7 +78,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Voice needs Chrome, Edge, or Safari.
 
-**Checks:** `cd backend && ../../.venv/bin/python -m unittest` (64 tests; PayPal, Supabase and the LLM are faked), `npm run lint`, `npm run build`.
+**Checks:** `cd backend && ../../.venv/bin/python -m unittest` (62 tests; PayPal, Supabase and the LLM are faked), `npm run lint`, `npm run build`.
 
 ## PayPal sandbox setup
 
