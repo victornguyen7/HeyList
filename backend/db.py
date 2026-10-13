@@ -12,3 +12,31 @@ def client() -> Client:
     if not url or not key:
         raise RuntimeError("SUPABASE_URL and SUPABASE_SECRET_KEY must be set")
     return create_client(url, key)
+
+
+def _where(query, filters: dict):
+    for column, value in filters.items():
+        query = query.in_(column, value) if isinstance(value, list) else query.eq(column, value)
+    return query
+
+
+# The four calls the routes use. The tests replace these with an in-memory fake.
+
+
+def select(table: str, order: str = "created_at", **filters) -> list[dict]:
+    """Rows where every filter matches; a list value means "is one of"."""
+    if any(value == [] for value in filters.values()):
+        return []
+    return _where(client().table(table).select("*"), filters).order(order).execute().data
+
+
+def insert(table: str, rows: list[dict]) -> list[dict]:
+    return client().table(table).insert(rows).execute().data if rows else []
+
+
+def update(table: str, values: dict, **filters) -> list[dict]:
+    return _where(client().table(table).update(values), filters).execute().data
+
+
+def delete(table: str, **filters) -> None:
+    _where(client().table(table).delete(), filters).execute()

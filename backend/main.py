@@ -1,52 +1,324 @@
 import logging
 import re
+import uuid
+from datetime import datetime, timezone
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import JSONResponse, Response
 
+import db
 import paypal
-from sample_list import ITEMS, total_cents
 
 log = logging.getLogger(__name__)
 app = FastAPI()
+
+KINDS = ("groceries", "trip", "home", "party", "other")
+BAD_INPUT = (ValueError, KeyError, TypeError)
 
 
 def error(code: str, status: int) -> JSONResponse:
     return JSONResponse({"error": code}, status_code=status)
 
 
-@app.get("/api/items")
-def list_items():
-    return ITEMS
-
-
-@app.post("/api/orders")
-async def create_order(request: Request):
-    # The body is read by hand: a Pydantic model would answer bad input with 422, not 400 INVALID_ITEMS.
+async def json_body(request: Request) -> dict | None:
+    """The JSON object in the body, or None. Read by hand so bad input is our 400, not FastAPI's 422."""
     try:
-        item_ids = (await request.json())["itemIds"]
-        total_cents(item_ids)
-    except (ValueError, KeyError, TypeError):
+        body = await request.json()
+    except ValueError:
+        return None
+    return body if isinstance(body, dict) else None
+
+
+def camel(row: dict) -> dict:
+    return {re.sub(r"_(\w)", lambda match: match[1].upper(), key): value for key, value in row.items()}
+
+
+def now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+# Input checks. Each returns the clean value or raises ValueError.
+
+
+def text(value, limit: int = 120) -> str:
+    if not isinstance(value, str) or not value.strip() or len(value) > limit:
+        raise ValueError("bad text")
+    return value.strip()
+
+
+def cents(value) -> int | None:
+    if value is None:
+        return None
+    # bool is an int in Python, and JSON true must not become 1 cent.
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 10_000_000:
+        raise ValueError("bad amount")
+    return value
+
+
+def an_id(value) -> str:
+    if not isinstance(value, str):
+        raise ValueError("bad id")
+    return str(uuid.UUID(value))
+
+
+def email(value) -> str:
+    if not isinstance(value, str) or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value) or len(value) > 254:
+        raise ValueError("bad email")
+    return value
+
+
+def find(table: str, row_id: str) -> dict | None:
+    """The row with this ID, or None when the ID is malformed or unknown."""
+    try:
+        rows = db.select(table, id=an_id(row_id))
+    except ValueError:
+        return None
+    return rows[0] if rows else None
+
+
+def member_of(list_id: str, member_id) -> str | None:
+    """The member ID if it belongs to this list. Raises ValueError otherwise; None stays None."""
+    if member_id is None:
+        return None
+    if not db.select("members", id=an_id(member_id), list_id=list_id):
+        raise ValueError("not a member of this list")
+    return member_id
+
+
+def new_items(list_id: str, items, start: int = 0) -> list[dict]:
+    if not isinstance(items, list) or len(items) > 100:
+        raise ValueError("bad items")
+    return [
+        {
+            "list_id": list_id,
+            "name": text(item["name"]),
+            "est_price_cents": cents(item.get("estPriceCents")),
+            "position": start + index,
+        }
+        for index, item in enumerate(items)
+    ]
+
+
+def list_state(list_id: str) -> dict:
+    """Everything a list page shows, in one response."""
+
+    def rows(table: str, order: str = "created_at", **filters) -> list[dict]:
+        return [camel(row) for row in db.select(table, order, list_id=list_id, **filters)]
+
+    return {
+        **camel(db.select("lists", id=list_id)[0]),
+        "members": rows("members"),
+        "items": rows("items", "position"),
+        "receipts": rows("receipts"),
+        # Only captured orders are proof; an order the buyer walked away from is not shown.
+        "orders": rows("orders", status="COMPLETED"),
+        "invoices": rows("invoices"),
+    }
+
+
+# Lists
+
+
+@app.post("/api/lists")
+def create_list(body=Depends(json_body)):
+    try:
+        row = {
+            "title": text(body["title"]),
+            "kind": body.get("kind", "other"),
+            "budget_cents": cents(body.get("budgetCents")),
+        }
+        if row["kind"] not in KINDS:
+            raise ValueError("bad kind")
+        # Checked before the list is inserted, so bad items leave nothing behind.
+        new_items("", body.get("items", []))
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+
+    list_id = db.insert("lists", [row])[0]["id"]
+    db.insert("items", new_items(list_id, body.get("items", [])))
+    return list_state(list_id)
+
+
+@app.get("/api/lists/{list_id}")
+def get_list(list_id: str):
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    return list_state(list_id)
+
+
+@app.patch("/api/lists/{list_id}")
+def update_list(list_id: str, body=Depends(json_body)):
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        values = {}
+        if "title" in body:
+            values["title"] = text(body["title"])
+        if "budgetCents" in body:
+            values["budget_cents"] = cents(body["budgetCents"])
+        if "finished" in body:
+            values["finished_at"] = now() if body["finished"] is True else None
+        if not values:
+            raise ValueError("nothing to change")
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+
+    db.update("lists", values, id=list_id)
+    return list_state(list_id)
+
+
+@app.post("/api/lists/{list_id}/members")
+def join_list(list_id: str, body=Depends(json_body)):
+    """Adds a person by name, or returns the one already there. An email given here is saved either way."""
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        name = text(body["name"], 40)
+        values = {"email": email(body["email"])} if body.get("email") else {}
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+
+    existing = db.select("members", list_id=list_id, name=name)
+    if not existing:
+        return camel(db.insert("members", [{"list_id": list_id, "name": name, **values}])[0])
+    if values:
+        return camel(db.update("members", values, id=existing[0]["id"])[0])
+    return camel(existing[0])
+
+
+# Items
+
+
+@app.post("/api/lists/{list_id}/items")
+def add_items(list_id: str, body=Depends(json_body)):
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        rows = new_items(list_id, body["items"], start=len(db.select("items", list_id=list_id)))
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+    return [camel(row) for row in db.insert("items", rows)]
+
+
+@app.patch("/api/items/{item_id}")
+def update_item(item_id: str, body=Depends(json_body)):
+    item = find("items", item_id)
+    if not item:
+        return error("ITEM_NOT_FOUND", 404)
+    try:
+        values = {}
+        if "name" in body:
+            values["name"] = text(body["name"])
+        if "estPriceCents" in body:
+            values["est_price_cents"] = cents(body["estPriceCents"])
+        if "claimedBy" in body:
+            values["claimed_by"] = member_of(item["list_id"], body["claimedBy"])
+        if body.get("checked") is True:
+            values |= {
+                "checked_at": now(),
+                "bought_by": member_of(item["list_id"], body.get("memberId")),
+                # What the person says they paid, when they check off without a receipt.
+                "price_cents": cents(body.get("priceCents")),
+            }
+        elif body.get("checked") is False:
+            values |= {"checked_at": None, "bought_by": None, "price_cents": None, "receipt_id": None}
+        if not values:
+            raise ValueError("nothing to change")
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+
+    # A captured PayPal order is proof of purchase; it cannot be unticked or re-priced.
+    if item["order_id"] and ("checked" in body or "estPriceCents" in body):
+        return error("ITEM_PAID", 409)
+    return camel(db.update("items", values, id=item["id"])[0])
+
+
+@app.delete("/api/items/{item_id}")
+def delete_item(item_id: str):
+    item = find("items", item_id)
+    if not item:
+        return error("ITEM_NOT_FOUND", 404)
+    if item["order_id"]:
+        return error("ITEM_PAID", 409)
+    db.delete("items", id=item["id"])
+    return Response(status_code=204)
+
+
+# PayPal Checkout
+
+
+@app.post("/api/lists/{list_id}/orders")
+def create_order(list_id: str, body=Depends(json_body)):
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        item_ids = body["itemIds"]
+        if not isinstance(item_ids, list) or not item_ids or len(set(item_ids)) != len(item_ids):
+            raise ValueError("select at least one item, each once")
+        items = db.select("items", "position", list_id=list_id, id=[an_id(item_id) for item_id in item_ids])
+        # The prices come from the database, never the browser (decision 23). Every item must be
+        # on this list, still open, and have a price.
+        if len(items) != len(item_ids) or any(item["checked_at"] or not item["est_price_cents"] for item in items):
+            raise ValueError("an item cannot be bought")
+        member_id = member_of(list_id, body.get("memberId"))
+    except BAD_INPUT:
         return error("INVALID_ITEMS", 400)
 
     try:
-        return {"orderId": await paypal.create_order(item_ids)}
+        order_id = paypal.create_order(
+            [{"name": item["name"], "priceCents": item["est_price_cents"]} for item in items]
+        )
     except Exception as exc:
         if not isinstance(exc, paypal.PayPalError):
             log.exception("Create order failed")
         return error("PAYPAL_ERROR", 502)
 
+    # Stored now so the capture knows which items this order paid for.
+    db.insert(
+        "orders",
+        [
+            {
+                "id": order_id,
+                "list_id": list_id,
+                "member_id": member_id,
+                "item_ids": [item["id"] for item in items],
+                "total_cents": sum(item["est_price_cents"] for item in items),
+            }
+        ],
+    )
+    return {"orderId": order_id}
+
 
 @app.post("/api/orders/{order_id}/capture")
-async def capture_order(order_id: str):
+def capture_order(order_id: str):
     if not re.fullmatch(r"[A-Z0-9]{1,36}", order_id):
         return error("INVALID_ORDER_ID", 400)
+    orders = db.select("orders", id=order_id)
+    if not orders:
+        return error("ORDER_NOT_FOUND", 404)
 
     try:
-        return await paypal.capture_order(order_id)
+        result = paypal.capture_order(order_id)
     except Exception as exc:
         if isinstance(exc, paypal.PayPalError) and exc.issue == "INSTRUMENT_DECLINED":
             return error("INSTRUMENT_DECLINED", 422)
         if not isinstance(exc, paypal.PayPalError):
             log.exception("Capture order failed")
         return error("PAYPAL_ERROR", 502)
+
+    if result["status"] == "COMPLETED":
+        # The captured order is the proof: its items are checked off, priced, and tied to it.
+        captured_at = now()
+        db.update("orders", {"status": "COMPLETED", "captured_at": captured_at}, id=order_id)
+        for item in db.select("items", id=orders[0]["item_ids"]):
+            db.update(
+                "items",
+                {
+                    "checked_at": captured_at,
+                    "bought_by": orders[0]["member_id"],
+                    "price_cents": item["est_price_cents"],
+                    "order_id": order_id,
+                },
+                id=item["id"],
+            )
+    return result

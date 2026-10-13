@@ -1,6 +1,6 @@
-import asyncio
 import logging
 import os
+import time
 import uuid
 from functools import cache
 
@@ -15,8 +15,6 @@ from paypalserversdk.models.money import Money
 from paypalserversdk.models.order_request import OrderRequest
 from paypalserversdk.models.purchase_unit_request import PurchaseUnitRequest
 from paypalserversdk.paypal_serversdk_client import PaypalServersdkClient
-
-from sample_list import ITEMS, total_cents
 
 log = logging.getLogger(__name__)
 
@@ -67,19 +65,19 @@ def _to_error(exc: ApiException) -> PayPalError:
     return PayPalError(exc.response_code, issue)
 
 
-async def _call(operation: str, options: dict):
-    """Runs one Orders operation off the event loop (the SDK is synchronous) and returns its body."""
+def _call(operation: str, options: dict):
+    """Runs one Orders operation and returns its body. The SDK is synchronous, so the routes are too."""
     method = getattr(_client().orders, operation)
     for retried in (False, True):
         try:
-            return (await asyncio.to_thread(method, options)).body
+            return method(options).body
         except ApiException as exc:
             if exc.response_code == 429 and not retried:
                 try:
                     seconds = int(exc.response.headers.get("retry-after", ""))
                 except ValueError:
                     seconds = 1
-                await asyncio.sleep(min(seconds or 1, 5))
+                time.sleep(min(seconds or 1, 5))
                 continue
             raise _to_error(exc) from None
 
@@ -88,9 +86,9 @@ def _usd(cents: int) -> Money:
     return Money(currency_code="USD", value=f"{cents // 100}.{cents % 100:02d}")
 
 
-async def create_order(item_ids: list[str]) -> str:
-    total = total_cents(item_ids)
-    items = [item for item in ITEMS if item["id"] in item_ids]
+def create_order(items: list[dict]) -> str:
+    """Creates an order for [{"name", "priceCents"}, ...]. The caller looked the prices up; none came from the browser."""
+    total = sum(item["priceCents"] for item in items)
 
     body = OrderRequest(
         intent=CheckoutPaymentIntent.CAPTURE,
@@ -102,17 +100,18 @@ async def create_order(item_ids: list[str]) -> str:
                     breakdown=AmountBreakdown(item_total=_usd(total)),
                 ),
                 items=[
-                    ItemRequest(name=item["name"], quantity="1", unit_amount=_usd(item["priceCents"]))
+                    # PayPal allows 127 characters for an item name.
+                    ItemRequest(name=item["name"][:127], quantity="1", unit_amount=_usd(item["priceCents"]))
                     for item in items
                 ],
             )
         ],
     )
-    order = await _call("create_order", {"body": body, "paypal_request_id": str(uuid.uuid4())})
+    order = _call("create_order", {"body": body, "paypal_request_id": str(uuid.uuid4())})
     return order.id
 
 
-async def capture_order(order_id: str) -> dict:
+def capture_order(order_id: str) -> dict:
     # The order ID is the idempotency key, so a repeated capture returns the first result.
-    order = await _call("capture_order", {"id": order_id, "paypal_request_id": order_id})
+    order = _call("capture_order", {"id": order_id, "paypal_request_id": order_id})
     return {"orderId": order.id, "status": order.status}

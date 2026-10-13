@@ -6,9 +6,8 @@ Last reviewed 2026-10-13.
 
 | # | Issue | Notes |
 |---|---|---|
-| 2 | Most of the planned stack is not installed | PayPal Checkout is in (Orders client on the backend, JS SDK on the page). The Supabase client is in (`backend/db.py`) but there is no schema and nothing uses it. Still missing: the LLM client and PayPal Invoicing |
+| 2 | Most of the planned stack is not installed | PayPal Checkout is in (Orders client on the backend, JS SDK on the page). Supabase holds lists, items and orders. Still missing: the LLM client and PayPal Invoicing |
 | 3 | The LLM API key was written in plain text in the project notes | It now lives in `.env.local` (gitignored) and is not in the repo or its git history. Rotate the key if the notes were shared |
-| 5 | A captured order is not stored | The proof lives in page state and is lost on refresh, so "the PayPal order is the proof" (decision 8) does not hold yet. After a refresh the same items can be ticked and paid for again. Needs Supabase |
 | 6 | The order endpoints have no authentication or rate limiting | Anyone who can reach the backend can create sandbox orders. On Render, make the FastAPI service private so only Next.js reaches it |
 | 7 | The PayPal API base URL is hardcoded to the sandbox | `backend/paypal.py`. Move it to an environment variable before any live use (decision 41) |
 | 8 | `.env.example` does not list `OLLAMA_API_KEY` | `.env.local` has it; a fresh checkout would not know it is needed |
@@ -26,3 +25,4 @@ Last reviewed 2026-10-13.
 | 4 | Nothing calls the backend | 2026-10-13 | `/checkout` lists the items and runs the PayPal button against both order endpoints |
 | 10 | The buyer approval step has not been run | 2026-10-13 | Run by hand in a browser: a sandbox buyer approved the payment and the items were marked paid |
 | 11 | Both design specs still say "Status: awaiting review" | 2026-10-13 | Both are implemented and their status lines now say so |
+| 5 | A captured order is not stored | 2026-10-13 | Orders are stored in Supabase when created; a completed capture checks its items off with the order ID as proof, and a paid item cannot be paid for again (decisions 53, 54) |
