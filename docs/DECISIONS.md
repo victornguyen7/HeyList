@@ -1,6 +1,8 @@
 # HeyList — Decisions
 
-Decisions recorded in the project notes. A reason is listed only where the notes give one.
+Decisions 1–20 come from the project notes; 21 onward come from the design specs in [superpowers/specs/](superpowers/specs/) and the code. A reason is listed only where the source gives one.
+
+## Product and stack
 
 | # | Decision | Reason |
 |---|---|---|
@@ -24,3 +26,35 @@ Decisions recorded in the project notes. A reason is listed only where the notes
 | 18 | Use sponsor tools APIMatic Context Plugin, Postman, and Render; Channel3 only as a stretch | — |
 | 19 | History is the retention hook: buy again from a past list, plus price memory | — |
 | 20 | Next.js is the frontend only; all server-side logic runs in a FastAPI (Python) service, which the browser reaches through a Next.js rewrite of `/api/*` | — |
+
+## Backend and payments
+
+| # | Decision | Reason |
+|---|---|---|
+| 21 | Call the PayPal REST API directly with `httpx`; no PayPal server SDK and no `@paypal/react-paypal-js` | A dependency is not worth it for three REST calls |
+| 22 | The frontend will load the PayPal JS SDK v6 by script tag (not built yet) | No new frontend dependency; the v5 SDK is legacy |
+| 23 | The browser sends only item IDs; the server looks up prices and computes the total | The browser never sends an amount, so the total cannot be tampered with |
+| 24 | Money is held as integer cents and formatted to two decimals only when sent to PayPal | — |
+| 25 | Prices are defined in one place, the backend; the frontend fetches them from `GET /api/items` | The list lives in Python, so the page fetches it instead of importing it |
+| 26 | Every error body is `{"error": "<CODE>"}`. So `POST /api/orders` reads its body by hand (no Pydantic model) and routes return `JSONResponse` (no `HTTPException`) | FastAPI's defaults would answer with `422` and a `detail` array, or wrap the body as `{"detail": ...}` |
+| 27 | PayPal failures reach the browser as a generic `502 PAYPAL_ERROR`; PayPal's `debug_id` is logged on the server. Only `INSTRUMENT_DECLINED` is passed through, as `422` | — |
+| 28 | Every POST to PayPal carries a `PayPal-Request-Id`; capture uses the order ID as its key | A repeated capture returns the first result instead of charging again |
+| 29 | A `429` from PayPal is retried once, waiting `Retry-After` seconds capped at 5. A declined payment is never retried automatically | — |
+| 30 | Order IDs are checked against `^[A-Z0-9]{1,36}$` before PayPal is called | — |
+| 31 | The OAuth token is cached in the backend process and refreshed two minutes early | A token never expires mid-request |
+| 32 | The browser reaches the backend through the Next.js `/api/*` rewrite, not by calling FastAPI directly | Direct calls need CORS middleware and a public API URL in the frontend; the proxy needs neither |
+| 33 | The rewrite's default target is `127.0.0.1:8000`, not `localhost` | uvicorn listens on IPv4 only, and `localhost` can resolve to IPv6 and reach a different process on the same port |
+| 34 | The rewrite proxy timeout is raised from 30s to 100s | The backend can take up to 95s (token, order call, one `429` retry), and a capture cut off at the proxy may still complete |
+| 35 | Both servers read one `.env.local` at the repo root; the backend loads it with uvicorn's `--env-file` | One file to fill in |
+| 36 | The PayPal client ID will reach the browser as a prop from a server page; no `NEXT_PUBLIC_` variable. The secret is read only in `backend/paypal.py` | — |
+| 37 | The backend is a flat `backend/` folder, with no `routers/`, `services/`, or `schemas/` layers | Too much structure for three endpoints; split a file when it gets big |
+| 38 | Backend tests use the standard library `unittest`; PayPal is faked with `httpx.MockTransport` | No test dependency |
+| 39 | Python dependencies are pinned to exact versions in `backend/requirements.txt` | — |
+| 40 | Checkout is built first as a standalone slice on a hardcoded sample list | Lists and Supabase do not exist yet; real lists plug into the same endpoints later |
+| 41 | Sandbox only for now: the PayPal API base URL is hardcoded to the sandbox | — |
+| 42 | No PayPal webhooks, and no Venmo, Pay Later, or card fields, for now | Webhooks: capture is synchronous and there is no database to reconcile |
+| 43 | No Docker and no single command that starts both servers | Two terminals are enough for now |
+| 44 | When a capture fails or cannot be confirmed, the page says to check the PayPal account; it never says "you have not been charged" | A capture that fails on the way back may still have completed at PayPal |
+| 45 | The checkout page renders at request time (`connection()`), not at build time | The item list and the PayPal client ID come from the running servers, not the build machine |
+| 46 | `/` redirects to `/checkout` from `next.config.ts`; there is no home page file | The sample checkout is the only page so far |
+| 47 | The Python virtual environment lives at `../.venv`, in the folder above the repo, not in `backend/` | — |

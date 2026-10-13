@@ -1,6 +1,6 @@
 # PayPal Checkout — Design
 
-Date: 2026-10-12. Status: awaiting review.
+Date: 2026-10-12. Status: implemented 2026-10-13.
 
 ## Purpose
 

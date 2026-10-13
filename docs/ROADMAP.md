@@ -4,7 +4,7 @@ The project notes do not set dates or phases beyond "first", "stretch", and "lat
 
 ## Status
 
-Next.js scaffold only. No features built yet.
+PayPal Checkout is built on a hardcoded sample list at `/checkout` (sandbox). It has been run by hand, buyer approval included. Lists, Supabase and the other features are not built.
 
 ## First: hackathon build
 
@@ -15,7 +15,7 @@ Flow, end to end:
 - [ ] Create a list by voice or typing; AI builds a smart starting list within the budget; user confirms or edits
 - [ ] Share by link; people claim items they'll buy
 - [ ] Check off by receipt scan: AI matches lines to items, with prices attached
-- [ ] Check off by PayPal Checkout: the order is the proof
+- [ ] Check off by PayPal Checkout: the order is the proof (built on a sample list at `/checkout`; needs real lists and persistence)
 - [ ] Flag receipt lines that match nothing as extras; keep unchecked items open
 - [ ] Settle up on shared lists with PayPal invoices
 - [ ] Finished list joins history
@@ -43,7 +43,10 @@ Pages:
 Infrastructure:
 
 - [ ] Supabase (lists, receipts storage, realtime)
-- [ ] PayPal sandbox (Checkout JS SDK + Orders API, Invoicing API)
+- [x] FastAPI backend, reached through the Next.js `/api/*` rewrite
+- [x] PayPal sandbox: Orders API (create and capture)
+- [x] PayPal sandbox: Checkout JS SDK on a `/checkout` page
+- [ ] PayPal sandbox: Invoicing API
 - [ ] LLM with vision via the Ollama API
 - [ ] Deploy on Render
 - [ ] Sponsor tools: APIMatic Context Plugin, Postman

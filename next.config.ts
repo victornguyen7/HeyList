@@ -4,9 +4,16 @@ const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
     agentFeedback: true,
+    // The rewrite proxy gives up after 30s by default. The backend can take up to 95s
+    // (token, order call, one 429 retry), and a capture cut off here may still complete.
+    proxyTimeout: 100_000,
   },
   cacheComponents: true,
   partialPrefetching: true,
+  // The sample checkout is the only page so far.
+  async redirects() {
+    return [{ source: "/", destination: "/checkout", permanent: false }];
+  },
   // All server-side logic lives in the FastAPI service in backend/.
   async rewrites() {
     return [

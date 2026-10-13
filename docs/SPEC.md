@@ -86,3 +86,7 @@ Three ways to work with a list (type, voice, photo) are the heart of the app; ev
 | Code | Split math, budget totals, assignment of unclaimed items |
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the stack.
+
+
+Backend: ../../.venv/bin/uvicorn main:app --reload --env-file ../.env.local
+Frontend: npm run dev

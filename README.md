@@ -8,7 +8,7 @@ The first use case is packing before a holiday; the app stays general-purpose so
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
-> **Status:** project scaffold only. The features below are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status:** early. PayPal Checkout works on a sample list at `/checkout` (sandbox, nothing stored). The features below are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ISSUES.md](docs/ISSUES.md).
 
 ## Why
 
@@ -61,14 +61,14 @@ Set up once:
 
 ```bash
 npm install
-python3 -m venv backend/.venv
-backend/.venv/bin/pip install -r backend/requirements.txt
+python3 -m venv ../.venv
+../.venv/bin/pip install -r backend/requirements.txt
 ```
 
 Then run the two servers, each in its own terminal:
 
 ```bash
-cd backend && .venv/bin/uvicorn main:app --reload --env-file ../.env.local
+cd backend && ../../.venv/bin/uvicorn main:app --reload --env-file ../.env.local
 ```
 
 ```bash
@@ -77,7 +77,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Backend tests: `cd backend && .venv/bin/python -m unittest`. Other scripts: `npm run build`, `npm run start`, `npm run lint`.
+Backend tests: `cd backend && ../../.venv/bin/python -m unittest`. Other scripts: `npm run build`, `npm run start`, `npm run lint`.
 
 ## Docs
 
