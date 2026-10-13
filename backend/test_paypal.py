@@ -3,6 +3,7 @@ import os
 import unittest
 from unittest import mock
 
+import httpx
 import requests
 from requests.adapters import HTTPAdapter
 
@@ -135,3 +136,68 @@ class PayPalTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "must be set"):
                 paypal.create_order(ONE_ITEM)
         self.assertEqual(self.requests, [])
+
+
+class InvoicingTest(unittest.TestCase):
+    def fake_paypal(self, *responses):
+        self.requests = []
+        replies = iter(responses)
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            self.requests.append(request)
+            return next(replies)
+
+        for patch in (
+            mock.patch.object(paypal, "http", httpx.Client(transport=httpx.MockTransport(handler))),
+            mock.patch.object(paypal, "_access_token", return_value="token-1"),
+        ):
+            patch.start()
+            self.addCleanup(patch.stop)
+
+    def test_create_sends_the_amount_in_dollars_and_reads_the_id_from_the_link(self):
+        href = "https://api-m.sandbox.paypal.com/v2/invoicing/invoices/INV2-AAAA-BBBB"
+        self.fake_paypal(httpx.Response(201, json={"rel": "self", "href": href, "method": "GET"}))
+
+        invoice_id = paypal.create_invoice("ben@example.com", 1005, "Your share of Move-in", "Ben owes Ana.")
+
+        self.assertEqual(invoice_id, "INV2-AAAA-BBBB")
+        request = self.requests[0]
+        self.assertEqual((request.method, str(request.url)), ("POST", paypal.INVOICING_URL))
+        self.assertTrue(str(request.url).startswith("https://api-m.sandbox.paypal.com/"))
+        self.assertEqual(request.headers["authorization"], "Bearer token-1")
+        body = json.loads(request.content)
+        self.assertEqual(body["primary_recipients"][0]["billing_info"]["email_address"], "ben@example.com")
+        self.assertEqual(body["items"][0]["unit_amount"], {"currency_code": "USD", "value": "10.05"})
+        self.assertEqual(body["detail"]["note"], "Ben owes Ana.")
+
+    def test_send_then_get_status_and_pay_link(self):
+        self.fake_paypal(
+            httpx.Response(202, json={}),
+            httpx.Response(
+                200,
+                json={"status": "SENT", "detail": {"metadata": {"recipient_view_url": "https://pay.example/i"}}},
+            ),
+        )
+        paypal.send_invoice("INV2-AAAA")
+        self.assertEqual(paypal.get_invoice("INV2-AAAA"), {"status": "SENT", "payUrl": "https://pay.example/i"})
+        self.assertEqual(
+            [(request.method, request.url.path) for request in self.requests],
+            [("POST", "/v2/invoicing/invoices/INV2-AAAA/send"), ("GET", "/v2/invoicing/invoices/INV2-AAAA")],
+        )
+        self.assertEqual(json.loads(self.requests[0].content), {"send_to_recipient": True})
+
+    def test_a_failure_carries_the_issue_and_logs_the_debug_id(self):
+        self.fake_paypal(
+            httpx.Response(
+                422,
+                json={"name": "UNPROCESSABLE_ENTITY", "details": [{"issue": "INVALID_EMAIL"}], "debug_id": "d1"},
+            ),
+            httpx.Response(503, text="<html>down</html>"),
+        )
+        with self.assertLogs(paypal.log, "ERROR") as logs, self.assertRaises(paypal.PayPalError) as raised:
+            paypal.send_invoice("INV2-AAAA")
+        self.assertEqual(raised.exception.issue, "INVALID_EMAIL")
+        self.assertIn("d1", logs.output[0])
+        with self.assertLogs(paypal.log, "ERROR"), self.assertRaises(paypal.PayPalError) as raised:
+            paypal.get_invoice("INV2-AAAA")
+        self.assertEqual((raised.exception.status, raised.exception.issue), (503, None))

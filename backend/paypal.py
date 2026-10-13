@@ -4,6 +4,7 @@ import time
 import uuid
 from functools import cache
 
+import httpx
 from paypalserversdk.configuration import Environment
 from paypalserversdk.exceptions.api_exception import ApiException
 from paypalserversdk.http.auth.o_auth_2 import ClientCredentialsAuthCredentials
@@ -115,3 +116,75 @@ def capture_order(order_id: str) -> dict:
     # The order ID is the idempotency key, so a repeated capture returns the first result.
     order = _call("capture_order", {"id": order_id, "paypal_request_id": order_id})
     return {"orderId": order.id, "status": order.status}
+
+
+# Invoicing. The PayPal Server SDK has no Invoicing controller (decision 48), so these three calls go
+# to the REST API with httpx, authorised by a token fetched through the SDK's own auth manager.
+
+INVOICING_URL = "https://api-m.sandbox.paypal.com/v2/invoicing/invoices"
+PAID = ("PAID", "MARKED_AS_PAID")
+
+http = httpx.Client(timeout=30)
+_token = None
+
+
+def _access_token() -> str:
+    global _token
+    auth = _client().oauth_2
+    if _token is None or auth.is_token_expired(_token):
+        _token = auth.fetch_token()
+    return _token.access_token
+
+
+def _invoicing(method: str, url: str, body: dict | None = None) -> dict:
+    response = http.request(method, url, json=body, headers={"Authorization": f"Bearer {_access_token()}"})
+    try:
+        data = response.json() if response.content else {}
+    except ValueError:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    if not response.is_success:
+        details = data.get("details") or [{}]
+        issue = details[0].get("issue") or data.get("name")
+        log.error(
+            "PayPal error status=%s issue=%s debug_id=%s",
+            response.status_code,
+            issue,
+            data.get("debug_id") or response.headers.get("paypal-debug-id"),
+        )
+        raise PayPalError(response.status_code, issue)
+    return data
+
+
+def create_invoice(email: str, amount_cents: int, item_name: str, note: str) -> str:
+    """Creates a draft invoice to this email and returns its ID. The amount was computed by our code."""
+    amount = _usd(amount_cents)
+    created = _invoicing(
+        "POST",
+        INVOICING_URL,
+        {
+            "detail": {"currency_code": amount.currency_code, "note": note[:4000]},
+            "primary_recipients": [{"billing_info": {"email_address": email}}],
+            "items": [
+                {
+                    "name": item_name[:200],
+                    "quantity": "1",
+                    "unit_amount": {"currency_code": amount.currency_code, "value": amount.value},
+                }
+            ],
+        },
+    )
+    # The reply is a link to the new invoice, not the invoice itself.
+    return created["href"].rstrip("/").rsplit("/", 1)[-1]
+
+
+def send_invoice(invoice_id: str) -> None:
+    _invoicing("POST", f"{INVOICING_URL}/{invoice_id}/send", {"send_to_recipient": True})
+
+
+def get_invoice(invoice_id: str) -> dict:
+    """The invoice's current PayPal status and the page where the recipient pays."""
+    invoice = _invoicing("GET", f"{INVOICING_URL}/{invoice_id}")
+    metadata = (invoice.get("detail") or {}).get("metadata") or {}
+    return {"status": invoice.get("status", "DRAFT"), "payUrl": metadata.get("recipient_view_url")}

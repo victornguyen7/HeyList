@@ -52,6 +52,7 @@ class FakeDb:
             },
             "orders": {"status": "CREATED", "captured_at": None},
             "receipts": {"extras": [], "total_cents": None},
+            "invoices": {"pay_url": None},
         }.get(table, {})
         added = []
         for row in rows:
@@ -549,6 +550,97 @@ class ReceiptsTest(ApiTest):
 
     def test_unknown_receipt_image_is_404(self):
         self.assert_error(client.get(f"/api/receipts/{uuid.uuid4()}/image"), 404, "RECEIPT_NOT_FOUND")
+
+
+class InvoicesTest(ApiTest):
+    def setUp(self):
+        super().setUp()
+        self.list = self.make_list()
+        self.ana = self.join(self.list["id"], "Ana")
+        self.ben = self.join(self.list["id"], "Ben", email="ben@example.com")
+        client.patch(
+            f"/api/items/{self.list['items'][0]['id']}",
+            json={"checked": True, "memberId": self.ana["id"], "priceCents": 2000},
+        )
+        self.url = f"/api/lists/{self.list['id']}/invoices"
+        self.debt = {"from": self.ben["id"], "to": self.ana["id"]}
+
+    def fake_paypal(self, status="SENT", **overrides):
+        """Fakes the three invoicing calls; returns the mocks so calls can be checked."""
+        fakes = {
+            "create_invoice": mock.Mock(return_value="INV2-AAAA"),
+            "send_invoice": mock.Mock(),
+            "get_invoice": mock.Mock(return_value={"status": status, "payUrl": "https://pay.example/inv"}),
+            **overrides,
+        }
+        for name, fake in fakes.items():
+            patch = mock.patch.object(paypal, name, fake)
+            patch.start()
+            self.addCleanup(patch.stop)
+        return fakes
+
+    def test_the_amount_is_computed_by_code_and_the_sent_invoice_is_stored(self):
+        fakes = self.fake_paypal()
+        # An amount from the browser is ignored: Ben owes half of $20.
+        response = client.post(self.url, json={**self.debt, "amountCents": 1})
+        self.assertEqual(response.status_code, 200)
+        email, amount, item_name, note = fakes["create_invoice"].call_args.args
+        self.assertEqual((email, amount), ("ben@example.com", 1000))
+        self.assertIn("Move-in", item_name)
+        self.assertIn("Ben owes Ana", note)
+        fakes["send_invoice"].assert_called_once_with("INV2-AAAA")
+        invoice = response.json()["invoices"][0]
+        self.assertEqual(
+            (invoice["id"], invoice["status"], invoice["amountCents"], invoice["payUrl"]),
+            ("INV2-AAAA", "SENT", 1000, "https://pay.example/inv"),
+        )
+        self.assertEqual((invoice["debtorId"], invoice["creditorId"]), (self.ben["id"], self.ana["id"]))
+
+        # The same debt is not invoiced twice.
+        self.assert_error(client.post(self.url, json=self.debt), 409, "ALREADY_INVOICED")
+        fakes["create_invoice"].assert_called_once()
+
+    def test_bad_requests_never_reach_paypal(self):
+        fakes = self.fake_paypal()
+        reverse = {"from": self.ana["id"], "to": self.ben["id"]}
+        for body in ({}, reverse, {"from": "nope", "to": self.ana["id"]}, None):
+            with self.subTest(body=body):
+                self.assert_error(client.post(self.url, json=body), 400, "NOTHING_OWED")
+        self.assert_error(client.post(f"/api/lists/{uuid.uuid4()}/invoices", json=self.debt), 404, "LIST_NOT_FOUND")
+        self.db.update("members", {"email": None}, id=self.ben["id"])
+        self.assert_error(client.post(self.url, json=self.debt), 400, "EMAIL_NEEDED")
+        fakes["create_invoice"].assert_not_called()
+
+    def test_a_failed_send_keeps_the_draft_and_the_retry_sends_it_without_a_second_invoice(self):
+        failing = self.fake_paypal(send_invoice=mock.Mock(side_effect=paypal.PayPalError(500, "INTERNAL")))
+        self.assert_error(client.post(self.url, json=self.debt), 502, "PAYPAL_ERROR")
+        self.assertEqual(self.db.tables["invoices"][0]["status"], "DRAFT")
+
+        failing["send_invoice"].side_effect = None
+        response = client.post(self.url, json=self.debt)
+        self.assertEqual(response.json()["invoices"][0]["status"], "SENT")
+        failing["create_invoice"].assert_called_once()
+
+    def test_refresh_reads_the_status_from_paypal_and_a_paid_invoice_clears_the_debt(self):
+        fakes = self.fake_paypal()
+        client.post(self.url, json=self.debt)
+        fakes["get_invoice"].return_value = {"status": "PAID", "payUrl": "https://pay.example/inv"}
+        state = client.post(f"{self.url}/refresh").json()
+        self.assertEqual(state["invoices"][0]["status"], "PAID")
+        self.assertEqual(state["money"]["owes"], [])
+
+        # A settled invoice is not asked about again.
+        fakes["get_invoice"].reset_mock()
+        client.post(f"{self.url}/refresh")
+        fakes["get_invoice"].assert_not_called()
+        self.assert_error(client.post(f"/api/lists/{uuid.uuid4()}/invoices/refresh"), 404, "LIST_NOT_FOUND")
+
+    def test_a_paypal_failure_on_refresh_is_a_502(self):
+        fakes = self.fake_paypal()
+        client.post(self.url, json=self.debt)
+        fakes["get_invoice"].side_effect = RuntimeError("down")
+        with self.assertLogs("main", "ERROR"):
+            self.assert_error(client.post(f"{self.url}/refresh"), 502, "PAYPAL_ERROR")
 
 
 if __name__ == "__main__":

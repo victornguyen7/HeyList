@@ -35,6 +35,14 @@ class SummaryTest(unittest.TestCase):
         # $90 was paid by members, so $30 each. Extras and the anonymous $5 are not split.
         self.assertEqual(result["owes"], [{"from": "cy", "to": "ana", "amountCents": 3000}])
 
+    def test_a_paid_invoice_clears_the_debt_and_an_unpaid_one_does_not(self):
+        items = [item("1", 6000, "ana"), item("2", 3000, "ben")]
+        invoice = {"debtorId": "cy", "creditorId": "ana", "amountCents": 3000, "status": "SENT"}
+        self.assertEqual(len(money.summary(MEMBERS, items, [], [invoice])["owes"]), 1)
+        paid = money.summary(MEMBERS, items, [], [{**invoice, "status": "PAID"}])
+        self.assertEqual(paid["owes"], [])
+        self.assertEqual(paid["perPerson"][0]["spentCents"], 6000)
+
 
 class SettleTest(unittest.TestCase):
     def test_cents_that_do_not_divide_still_add_up(self):

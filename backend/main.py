@@ -126,6 +126,7 @@ def list_state(list_id: str) -> dict:
         return [camel(row) for row in db.select(table, order, list_id=list_id, **filters)]
 
     members, items, receipts = rows("members"), rows("items", "position"), rows("receipts")
+    invoices = rows("invoices")
     return {
         **camel(db.select("lists", id=list_id)[0]),
         "members": members,
@@ -133,8 +134,8 @@ def list_state(list_id: str) -> dict:
         "receipts": receipts,
         # Only captured orders are proof; an order the buyer walked away from is not shown.
         "orders": rows("orders", status="COMPLETED"),
-        "invoices": rows("invoices"),
-        "money": money.summary(members, items, receipts),
+        "invoices": invoices,
+        "money": money.summary(members, items, receipts, invoices),
     }
 
 
@@ -493,3 +494,88 @@ def receipt_image(receipt_id: str):
     extension = receipt["image_path"].rsplit(".", 1)[-1]
     media_type = next(kind for kind, known in IMAGE_TYPES.items() if known == extension)
     return Response(db.download(receipt["image_path"]), media_type=media_type)
+
+
+# Settle-up with PayPal Invoicing
+
+
+def paypal_failed(exc: Exception, what: str) -> JSONResponse:
+    if not isinstance(exc, paypal.PayPalError):
+        log.exception("%s failed", what)
+    return error("PAYPAL_ERROR", 502)
+
+
+@app.post("/api/lists/{list_id}/invoices")
+def send_invoice(list_id: str, body=Depends(json_body)):
+    """Invoices one debt from the settle-up. The browser names the two people; code works out the amount."""
+    found = find("lists", list_id)
+    if not found:
+        return error("LIST_NOT_FOUND", 404)
+    state = list_state(found["id"])
+    try:
+        owed = next(
+            owed for owed in state["money"]["owes"] if (owed["from"], owed["to"]) == (body["from"], body["to"])
+        )
+    except (StopIteration, *BAD_INPUT):
+        return error("NOTHING_OWED", 400)
+    people = {member["id"]: member for member in state["members"]}
+    debtor, creditor = people[owed["from"]], people[owed["to"]]
+    if not debtor["email"]:
+        return error("EMAIL_NEEDED", 400)
+
+    # One live invoice per debt. A draft left behind by a failed send is sent again, not duplicated.
+    live = [
+        invoice
+        for invoice in state["invoices"]
+        if (invoice["debtorId"], invoice["creditorId"]) == (debtor["id"], creditor["id"])
+        and invoice["status"] not in ("CANCELLED", *paypal.PAID)
+    ]
+    if live and live[0]["status"] != "DRAFT":
+        return error("ALREADY_INVOICED", 409)
+
+    try:
+        if live:
+            invoice_id = live[0]["id"]
+        else:
+            invoice_id = paypal.create_invoice(
+                debtor["email"],
+                owed["amountCents"],
+                f"Your share of {state['title']}",
+                f"HeyList settle-up for the list {state['title']}: {debtor['name']} owes {creditor['name']}.",
+            )
+            db.insert(
+                "invoices",
+                [
+                    {
+                        "id": invoice_id,
+                        "list_id": found["id"],
+                        "debtor_id": debtor["id"],
+                        "creditor_id": creditor["id"],
+                        "amount_cents": owed["amountCents"],
+                        "status": "DRAFT",
+                    }
+                ],
+            )
+        paypal.send_invoice(invoice_id)
+        current = paypal.get_invoice(invoice_id)
+    except Exception as exc:
+        return paypal_failed(exc, "Send invoice")
+
+    db.update("invoices", {"status": current["status"], "pay_url": current["payUrl"]}, id=invoice_id)
+    return list_state(found["id"])
+
+
+@app.post("/api/lists/{list_id}/invoices/refresh")
+def refresh_invoices(list_id: str):
+    """Asks PayPal for the status of every invoice that is not settled yet."""
+    found = find("lists", list_id)
+    if not found:
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        for invoice in db.select("invoices", list_id=found["id"]):
+            if invoice["status"] not in ("CANCELLED", *paypal.PAID):
+                current = paypal.get_invoice(invoice["id"])
+                db.update("invoices", {"status": current["status"], "pay_url": current["payUrl"]}, id=invoice["id"])
+    except Exception as exc:
+        return paypal_failed(exc, "Refresh invoices")
+    return list_state(found["id"])

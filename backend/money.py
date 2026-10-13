@@ -4,8 +4,8 @@ Everything is integer cents. The dicts are the camelCase rows the API returns.
 """
 
 
-def summary(members: list[dict], items: list[dict], receipts: list[dict]) -> dict:
-    """What was spent, by whom, and who owes whom."""
+def summary(members: list[dict], items: list[dict], receipts: list[dict], invoices: list[dict] = ()) -> dict:
+    """What was spent, by whom, and who still owes whom once paid invoices are counted."""
     spent = {member["id"]: 0 for member in members}
     extras = {member["id"]: 0 for member in members}
     spent_total = extras_total = 0
@@ -21,6 +21,13 @@ def summary(members: list[dict], items: list[dict], receipts: list[dict]) -> dic
         if receipt["memberId"] in extras:
             extras[receipt["memberId"]] += cost
 
+    # A paid settle-up invoice moved money from the debtor to the creditor.
+    settled = dict(spent)
+    for invoice in invoices:
+        if invoice["status"] in ("PAID", "MARKED_AS_PAID") and {invoice["debtorId"], invoice["creditorId"]} <= settled.keys():
+            settled[invoice["debtorId"]] += invoice["amountCents"]
+            settled[invoice["creditorId"]] -= invoice["amountCents"]
+
     return {
         "spentCents": spent_total,
         "extrasCents": extras_total,
@@ -28,7 +35,7 @@ def summary(members: list[dict], items: list[dict], receipts: list[dict]) -> dic
             {"memberId": member["id"], "spentCents": spent[member["id"]], "extrasCents": extras[member["id"]]}
             for member in members
         ],
-        "owes": settle([member["id"] for member in members], spent),
+        "owes": settle([member["id"] for member in members], settled),
     }
 
 

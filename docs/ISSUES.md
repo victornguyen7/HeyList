@@ -6,7 +6,6 @@ Last reviewed 2026-10-13.
 
 | # | Issue | Notes |
 |---|---|---|
-| 2 | Most of the planned stack is not installed | PayPal Checkout is in (Orders client on the backend, JS SDK on the page). Supabase holds lists, items, orders and receipts, and the LLM client is in (`backend/llm.py`). Still missing: PayPal Invoicing |
 | 3 | The LLM API key was written in plain text in the project notes | It now lives in `.env.local` (gitignored) and is not in the repo or its git history. Rotate the key if the notes were shared |
 | 6 | The order endpoints have no authentication or rate limiting | Anyone who can reach the backend can create sandbox orders. On Render, make the FastAPI service private so only Next.js reaches it |
 | 7 | The PayPal API base URL is hardcoded to the sandbox | `backend/paypal.py`. Move it to an environment variable before any live use (decision 41) |
@@ -26,3 +25,4 @@ Last reviewed 2026-10-13.
 | 10 | The buyer approval step has not been run | 2026-10-13 | Run by hand in a browser: a sandbox buyer approved the payment and the items were marked paid |
 | 11 | Both design specs still say "Status: awaiting review" | 2026-10-13 | Both are implemented and their status lines now say so |
 | 5 | A captured order is not stored | 2026-10-13 | Orders are stored in Supabase when created; a completed capture checks its items off with the order ID as proof, and a paid item cannot be paid for again (decisions 53, 54) |
+| 2 | Most of the planned stack is not installed | 2026-10-13 | Supabase, the LLM client, PayPal Checkout and Invoicing are all in and used |

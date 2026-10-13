@@ -78,3 +78,6 @@ Decisions 1–20 come from the project notes; 21 onward come from the design spe
 | 65 | Unclaimed items are assigned one at a time to whoever has the lowest estimated total to buy | Balances cost, not item count |
 | 66 | Reusing a list copies its items unchecked, each at the price last paid (or its old estimate) | The price paid last time is the best estimate |
 | 67 | Replaces 46: `/` is the home page, and `/checkout` redirects to it | The sample checkout is replaced by real lists |
+| 68 | Invoicing calls the REST API with `httpx` (`/v2/invoicing/invoices`: create, send, get), authorised with a token fetched through the SDK's `oauth_2` auth manager. Everything else PayPal goes through the SDK | The SDK does not expose Invoicing (decision 48); one token source instead of two |
+| 69 | A settle-up invoice is issued by HeyList's sandbox business account to the debtor's email, with who they owe in the note. One live invoice per debt: the row is stored as `DRAFT` before sending, so a failed send is retried rather than duplicated | PayPal invoices go from a merchant to a payer; there is no person-to-person invoice. See issue 9 |
+| 70 | Invoice status is read from PayPal on demand ("Check if invoices are paid"), not by webhook. A `PAID` invoice is counted in the split as money moved from debtor to creditor | No webhooks (decision 42) |

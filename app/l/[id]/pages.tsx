@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { type Item, type ListState, api, dollars } from "../../lib";
-import { Bar, Notice, PriceInput, card, input, secondary, small } from "../../ui";
+import { Bar, Notice, PriceInput, card, input, primary, secondary, small } from "../../ui";
 import type { PageProps } from "./progress";
 
 const nameOf = (list: ListState, id: string | null) =>
@@ -286,9 +286,41 @@ export function ReceiptsPage({ list }: PageProps) {
   );
 }
 
+const INVOICE_STATUS: Record<string, string> = {
+  DRAFT: "Invoice not sent yet",
+  SENT: "Invoice sent, waiting to be paid",
+  PAID: "Paid",
+  MARKED_AS_PAID: "Paid",
+  CANCELLED: "Invoice cancelled",
+};
+const SETTLED = ["PAID", "MARKED_AS_PAID", "CANCELLED"];
+
 export function SettlePage({ list, refresh }: PageProps) {
-  const { notice, change } = useChange(refresh);
+  const { notice, setNotice, change } = useChange(refresh);
+  const [busy, setBusy] = useState(false);
   const { owes } = list.money;
+  const waiting = list.invoices.filter((invoice) => !SETTLED.includes(invoice.status));
+  const paid = list.invoices.filter((invoice) => invoice.status === "PAID" || invoice.status === "MARKED_AS_PAID");
+
+  // Only the two people are sent. The backend works out the amount (decisions 10 and 23).
+  async function invoice(from: string, to: string) {
+    setBusy(true);
+    setNotice("");
+    try {
+      await api(`/lists/${list.id}/invoices`, { body: { from, to } });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "";
+      setNotice(
+        code === "EMAIL_NEEDED"
+          ? `Add an email for ${nameOf(list, from)} below first.`
+          : code === "ALREADY_INVOICED"
+            ? "An invoice for this was already sent."
+            : "PayPal could not send the invoice. Please try again.",
+      );
+    }
+    await refresh();
+    setBusy(false);
+  }
 
   return (
     <>
@@ -303,13 +335,63 @@ export function SettlePage({ list, refresh }: PageProps) {
         </p>
       )}
 
-      {owes.map((owed) => (
-        <section key={`${owed.from}-${owed.to}`} className={`${card} flex flex-col gap-2`}>
+      {owes.map((owed) => {
+        const sent = waiting.find((other) => other.debtorId === owed.from && other.creditorId === owed.to);
+        const debtor = list.members.find((member) => member.id === owed.from);
+        return (
+          <section key={`${owed.from}-${owed.to}`} className={`${card} flex flex-col gap-2`}>
+            <p className="text-xl font-semibold">
+              {nameOf(list, owed.from)} owes {nameOf(list, owed.to)} {dollars(owed.amountCents)}
+            </p>
+            {sent && sent.status !== "DRAFT" ? (
+              <>
+                <p className="text-lg">
+                  {INVOICE_STATUS[sent.status] ?? sent.status} · {dollars(sent.amountCents)}
+                </p>
+                {sent.payUrl && (
+                  <a className="text-lg underline" href={sent.payUrl} target="_blank" rel="noreferrer">
+                    Open the PayPal invoice
+                  </a>
+                )}
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={primary}
+                  disabled={busy || !debtor?.email}
+                  onClick={() => invoice(owed.from, owed.to)}
+                >
+                  {busy ? "Sending…" : "Send a PayPal invoice"}
+                </button>
+                {!debtor?.email && (
+                  <p className="text-base text-zinc-600">Add an email for {nameOf(list, owed.from)} below first.</p>
+                )}
+              </>
+            )}
+          </section>
+        );
+      })}
+
+      {paid.map((settled) => (
+        <section key={settled.id} className={`${card} flex flex-col gap-1`}>
           <p className="text-xl font-semibold">
-            {nameOf(list, owed.from)} owes {nameOf(list, owed.to)} {dollars(owed.amountCents)}
+            {nameOf(list, settled.debtorId)} paid {nameOf(list, settled.creditorId)} {dollars(settled.amountCents)}
           </p>
+          <p className="text-base text-zinc-600">PayPal invoice {settled.id} · Paid</p>
         </section>
       ))}
+
+      {waiting.length > 0 && (
+        <button
+          type="button"
+          className={secondary}
+          disabled={busy}
+          onClick={() => change(() => api(`/lists/${list.id}/invoices/refresh`, { method: "POST" }))}
+        >
+          Check if invoices are paid
+        </button>
+      )}
 
       {list.members.length > 0 && (
         <section className={`${card} flex flex-col gap-3`}>
