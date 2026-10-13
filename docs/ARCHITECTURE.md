@@ -15,7 +15,7 @@ Planned architecture. Only PayPal Checkout is implemented, on a hardcoded sample
 | Hosting | Render — two web services, one for Next.js and one for FastAPI |
 | Sponsor tools | APIMatic Context Plugin, Postman, Render; Channel3 for the stretch |
 
-Currently installed: Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5 (from `package.json`); FastAPI 0.143.0, uvicorn 0.54.0, httpx 0.28.1 on Python 3.13 (from `backend/requirements.txt`).
+Currently installed: Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5 (from `package.json`); FastAPI 0.143.0, uvicorn 0.54.0, httpx 0.28.1, paypal-server-sdk 2.4.0, supabase 2.32.0 on Python 3.13 (from `backend/requirements.txt`).
 
 ## Built so far
 
@@ -27,9 +27,9 @@ Three backend routes, in `backend/main.py`. Every error body is `{"error": "<COD
 | `POST /api/orders` with `{"itemIds": [...]}` | `{"orderId": "..."}` | `400 INVALID_ITEMS`, `502 PAYPAL_ERROR` |
 | `POST /api/orders/{id}/capture` | `{"orderId": "...", "status": "..."}` | `400 INVALID_ORDER_ID`, `422 INSTRUMENT_DECLINED`, `502 PAYPAL_ERROR` |
 
-`backend/paypal.py` is the PayPal client (OAuth token cache, idempotency keys, one `429` retry); `backend/sample_list.py` holds the items and the server-side total. One page uses them, `/checkout` (`app/checkout/`): a server page fetches the items and passes them, with the PayPal client ID, to a client component that holds the ticks, the PayPal button, and the paid state. Nothing is stored; a refresh loses the proof. The reasons behind this design are decisions 21–47 in [DECISIONS.md](DECISIONS.md).
+`backend/paypal.py` is the PayPal client, built on the PayPal Server SDK for Python (idempotency keys, one `429` retry; the SDK caches the OAuth token); `backend/sample_list.py` holds the items and the server-side total. One page uses them, `/checkout` (`app/checkout/`): a server page fetches the items and passes them, with the PayPal client ID, to a client component that holds the ticks, the PayPal button, and the paid state. Nothing is stored; a refresh loses the proof. The reasons behind this design are decisions 21–47 in [DECISIONS.md](DECISIONS.md).
 
-Environment, read from `.env.local`: `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` (backend), `BACKEND_URL` (Next.js, optional locally), `OLLAMA_API_KEY` (not used by any code yet).
+Environment, read from `.env.local`: `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` (backend), `SUPABASE_URL` and `SUPABASE_SECRET_KEY` (backend, read in `backend/db.py`; no route uses it yet), `BACKEND_URL` (Next.js, optional locally), `OLLAMA_API_KEY` (not used by any code yet).
 
 ## Overview
 

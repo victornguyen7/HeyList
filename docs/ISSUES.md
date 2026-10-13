@@ -6,7 +6,7 @@ Last reviewed 2026-10-13.
 
 | # | Issue | Notes |
 |---|---|---|
-| 2 | Most of the planned stack is not installed | PayPal Checkout is in (Orders client on the backend, JS SDK on the page). Still missing: Supabase, the LLM client, and PayPal Invoicing |
+| 2 | Most of the planned stack is not installed | PayPal Checkout is in (Orders client on the backend, JS SDK on the page). The Supabase client is in (`backend/db.py`) but there is no schema and nothing uses it. Still missing: the LLM client and PayPal Invoicing |
 | 3 | The LLM API key was written in plain text in the project notes | It now lives in `.env.local` (gitignored) and is not in the repo or its git history. Rotate the key if the notes were shared |
 | 5 | A captured order is not stored | The proof lives in page state and is lost on refresh, so "the PayPal order is the proof" (decision 8) does not hold yet. After a refresh the same items can be ticked and paid for again. Needs Supabase |
 | 6 | The order endpoints have no authentication or rate limiting | Anyone who can reach the backend can create sandbox orders. On Render, make the FastAPI service private so only Next.js reaches it |

@@ -2,6 +2,8 @@
 
 ## 2026-10-13
 
+- **Phase 1 — PayPal Server SDK.** `backend/paypal.py` rewritten on `paypal-server-sdk` 2.4.0 (decision 48, reversing 21), built from the APIMatic Context Plugin skills. Same routes, same error contract, same idempotency keys and single capped `429` retry. The 17 tests pass, with `test_paypal.py` now faking PayPal below the SDK through a `requests` adapter. Checked live against the sandbox: an order is created, and capturing it unapproved comes back as `422 ORDER_NOT_APPROVED`.
+- Added the Supabase client to the backend: `supabase` 2.32.0 and `backend/db.py`, which builds one client from `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. Connection checked by hand against the project. No tables and no route uses it yet.
 - Added the backend as a FastAPI (Python) service in `backend/`: PayPal order create and capture (Orders API v2, sandbox) and the sample item list at `GET /api/items`. Next.js proxies `/api/*` to it.
 - Removed the TypeScript route handlers and `lib/` that the Python service replaces.
 - Raised the Next.js rewrite proxy timeout to 100s so a slow capture is not cut off.

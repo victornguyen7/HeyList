@@ -31,7 +31,7 @@ Decisions 1–20 come from the project notes; 21 onward come from the design spe
 
 | # | Decision | Reason |
 |---|---|---|
-| 21 | Call the PayPal REST API directly with `httpx`; no PayPal server SDK and no `@paypal/react-paypal-js` | A dependency is not worth it for three REST calls |
+| 21 | ~~Call the PayPal REST API directly with `httpx`; no PayPal server SDK~~ and no `@paypal/react-paypal-js`. **Reversed by 48** for the server SDK; the frontend half still holds | A dependency is not worth it for three REST calls |
 | 22 | The frontend will load the PayPal JS SDK v6 by script tag (not built yet) | No new frontend dependency; the v5 SDK is legacy |
 | 23 | The browser sends only item IDs; the server looks up prices and computes the total | The browser never sends an amount, so the total cannot be tampered with |
 | 24 | Money is held as integer cents and formatted to two decimals only when sent to PayPal | — |
@@ -58,3 +58,4 @@ Decisions 1–20 come from the project notes; 21 onward come from the design spe
 | 45 | The checkout page renders at request time (`connection()`), not at build time | The item list and the PayPal client ID come from the running servers, not the build machine |
 | 46 | `/` redirects to `/checkout` from `next.config.ts`; there is no home page file | The sample checkout is the only page so far |
 | 47 | The Python virtual environment lives at `../.venv`, in the folder above the repo, not in `backend/` | — |
+| 48 | Reverses 21: `backend/paypal.py` calls PayPal through the PayPal Server SDK for Python (`paypal-server-sdk` 2.4.0), with the APIMatic Context Plugin skills (`paypal:python-*`) and the installed SDK source as the reference for names, auth, models, and errors. The behaviour of 23, 24, 27–31 is kept: the SDK caches the OAuth token (`o_auth_clock_skew=120` is the two-minute early refresh), `PayPal-Request-Id` goes in as `paypal_request_id`, the one `429` retry stays in our code so the wait is capped at 5s (the SDK's own retries are off), and `ApiException` is mapped to `PayPalError`. The SDK is synchronous, so calls run in a thread. Tests fake PayPal with a `requests` adapter instead of `httpx.MockTransport` (amends 38). The SDK has no Invoicing controller (Orders, Payments, Vault, Transaction Search, Subscriptions only), so invoicing uses `httpx` | The hackathon build uses the sponsor's SDK; typed models and errors replace hand-written JSON |

@@ -3,41 +3,57 @@ import os
 import unittest
 from unittest import mock
 
-import httpx
+import requests
+from requests.adapters import HTTPAdapter
 
 import paypal
 
 
+class FakePayPal(HTTPAdapter):
+    """Answers the token request itself and order POSTs with the given responses, in turn."""
+
+    def __init__(self, replies):
+        super().__init__()
+        self.requests = []
+        self.replies = iter(replies)
+
+    def send(self, request, **kwargs):
+        self.requests.append(request)
+        if request.path_url == "/v1/oauth2/token":
+            status, body, headers = 200, {"access_token": "token-1", "expires_in": 3600}, {}
+        else:
+            status, body, headers = next(self.replies)
+        response = requests.Response()
+        response.status_code = status
+        response.headers.update(headers)
+        response._content = body.encode() if isinstance(body, str) else json.dumps(body).encode()
+        response.request = request
+        return response
+
+
 class PayPalTest(unittest.IsolatedAsyncioTestCase):
     def fake_paypal(self, *order_responses):
-        """Points the client at a fake PayPal that answers order POSTs with the given responses, in turn."""
-        self.requests = []
-        replies = iter(order_responses)
-
-        def handler(request: httpx.Request) -> httpx.Response:
-            self.requests.append(request)
-            if request.url.path == "/v1/oauth2/token":
-                return httpx.Response(200, json={"access_token": "token-1", "expires_in": 3600})
-            return next(replies)
-
-        fake = httpx.AsyncClient(base_url=paypal.BASE_URL, transport=httpx.MockTransport(handler))
+        """Points the SDK at a fake PayPal. Each response is (status, body, headers)."""
+        fake = FakePayPal(order_responses)
+        self.requests = fake.requests
+        session = requests.Session()
+        session.mount("https://", fake)
         for patch in (
-            mock.patch.object(paypal, "client", fake),
-            mock.patch.object(paypal, "_token", None),
+            mock.patch.object(paypal, "session", session),
             mock.patch.dict(os.environ, {"PAYPAL_CLIENT_ID": "id", "PAYPAL_CLIENT_SECRET": "secret"}),
             mock.patch("asyncio.sleep", mock.AsyncMock()),
         ):
             patch.start()
             self.addCleanup(patch.stop)
+        # The client is cached, so each test builds its own around its fake.
+        paypal._client.cache_clear()
+        self.addCleanup(paypal._client.cache_clear)
 
     def paths(self):
-        return [request.url.path for request in self.requests]
+        return [request.path_url for request in self.requests]
 
     async def test_create_order_sends_the_server_side_total_and_reuses_the_token(self):
-        self.fake_paypal(
-            httpx.Response(201, json={"id": "ORDER1"}),
-            httpx.Response(201, json={"id": "ORDER2"}),
-        )
+        self.fake_paypal((201, {"id": "ORDER1"}, {}), (201, {"id": "ORDER2"}, {}))
 
         self.assertEqual(await paypal.create_order(["sunscreen", "adapter"]), "ORDER1")
         self.assertEqual(await paypal.create_order(["toothbrush"]), "ORDER2")
@@ -46,17 +62,20 @@ class PayPalTest(unittest.IsolatedAsyncioTestCase):
             self.paths(), ["/v1/oauth2/token", "/v2/checkout/orders", "/v2/checkout/orders"]
         )
         order = self.requests[1]
+        self.assertTrue(order.url.startswith("https://api-m.sandbox.paypal.com/"))
         self.assertEqual(order.headers["authorization"], "Bearer token-1")
         self.assertTrue(order.headers["paypal-request-id"])
-        unit = json.loads(order.content)["purchase_units"][0]
+        body = json.loads(order.body)
+        self.assertEqual(body["intent"], "CAPTURE")
+        unit = body["purchase_units"][0]
         self.assertEqual(unit["amount"]["value"], "23.98")
         self.assertEqual(unit["amount"]["breakdown"]["item_total"]["value"], "23.98")
         self.assertEqual([item["unit_amount"]["value"] for item in unit["items"]], ["8.99", "14.99"])
 
     async def test_capture_retries_once_on_429_with_the_same_request_id(self):
         self.fake_paypal(
-            httpx.Response(429, headers={"retry-after": "60"}),
-            httpx.Response(201, json={"id": "ORDER1", "status": "COMPLETED"}),
+            (429, "", {"retry-after": "60"}),
+            (201, {"id": "ORDER1", "status": "COMPLETED"}, {}),
         )
 
         self.assertEqual(
@@ -71,7 +90,7 @@ class PayPalTest(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_a_second_429_is_an_error_not_another_retry(self):
-        self.fake_paypal(httpx.Response(429), httpx.Response(429))
+        self.fake_paypal((429, "", {}), (429, "", {}))
 
         with self.assertLogs(paypal.log, "ERROR"), self.assertRaises(paypal.PayPalError) as raised:
             await paypal.capture_order("ORDER1")
@@ -81,13 +100,14 @@ class PayPalTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_a_paypal_failure_carries_the_issue_and_logs_the_debug_id(self):
         self.fake_paypal(
-            httpx.Response(
+            (
                 422,
-                json={
+                {
                     "name": "UNPROCESSABLE_ENTITY",
                     "details": [{"issue": "INSTRUMENT_DECLINED"}],
                     "debug_id": "abc123",
                 },
+                {},
             )
         )
 
@@ -98,7 +118,7 @@ class PayPalTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("abc123", logs.output[0])
 
     async def test_a_non_json_error_body_is_still_a_paypal_error(self):
-        self.fake_paypal(httpx.Response(503, text="<html>down</html>"))
+        self.fake_paypal((503, "<html>down</html>", {}))
 
         with self.assertLogs(paypal.log, "ERROR"), self.assertRaises(paypal.PayPalError) as raised:
             await paypal.capture_order("ORDER1")
