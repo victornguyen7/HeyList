@@ -4,7 +4,7 @@ The project notes do not set dates or phases beyond "first", "stretch", and "lat
 
 ## Status
 
-PayPal Checkout is built on a hardcoded sample list at `/checkout` (sandbox). It has been run by hand, buyer approval included. Lists, Supabase and the other features are not built.
+The hackathon flow is built end to end on the PayPal sandbox: AI starting lists, sharing by link, check-off by receipt scan or PayPal Checkout, the six pages, settle-up with PayPal invoices, and reuse from History. It is not deployed yet. Two spec features are not built: taking a photo as proof for a single item, and recognising items in a photo of a scene.
 
 ## First: hackathon build
 
@@ -12,44 +12,44 @@ Target: [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/). First use
 
 Flow, end to end:
 
-- [ ] Create a list by voice or typing; AI builds a smart starting list within the budget; user confirms or edits
-- [ ] Share by link; people claim items they'll buy
-- [ ] Check off by receipt scan: AI matches lines to items, with prices attached
-- [ ] Check off by PayPal Checkout: the order is the proof (built on a sample list at `/checkout`; needs real lists and persistence)
-- [ ] Flag receipt lines that match nothing as extras; keep unchecked items open
-- [ ] Settle up on shared lists with PayPal invoices
-- [ ] Finished list joins history
+- [x] Create a list by voice or typing; AI builds a smart starting list within the budget; user confirms or edits
+- [x] Share by link; people claim items they'll buy
+- [x] Check off by receipt scan: AI matches lines to items, with prices attached
+- [x] Check off by PayPal Checkout: the order is the proof
+- [x] Flag receipt lines that match nothing as extras; keep unchecked items open
+- [x] Settle up on shared lists with PayPal invoices
+- [x] Finished list joins history
 
 Core features:
 
-- [ ] Type
-- [ ] Voice
-- [ ] Photo as proof
+- [x] Type
+- [x] Voice
+- [ ] Photo as proof (a receipt photo is kept as proof; a photo per item is not built)
 - [ ] Photo recognition
-- [ ] Smart starting lists
-- [ ] Reuse (reset a repeating list with one tap)
-- [ ] Easy sharing (no account)
-- [ ] Simple interface
+- [x] Smart starting lists
+- [x] Reuse (reset a repeating list with one tap)
+- [x] Easy sharing (no account)
+- [x] Simple interface
 
 Pages:
 
-- [ ] Progress
-- [ ] Items
-- [ ] Money
-- [ ] Receipts
-- [ ] History
-- [ ] Settle-up
+- [x] Progress
+- [x] Items
+- [x] Money
+- [x] Receipts
+- [x] History
+- [x] Settle-up
 
 Infrastructure:
 
-- [ ] Supabase (lists, receipts storage, realtime)
+- [x] Supabase (lists, receipts storage; shared lists update by polling, not Realtime — decision 55)
 - [x] FastAPI backend, reached through the Next.js `/api/*` rewrite
 - [x] PayPal sandbox: Orders API (create and capture)
 - [x] PayPal sandbox: Checkout JS SDK on a `/checkout` page
-- [ ] PayPal sandbox: Invoicing API
-- [ ] LLM with vision via the Ollama API
-- [ ] Deploy on Render
-- [ ] Sponsor tools: APIMatic Context Plugin, Postman
+- [x] PayPal sandbox: Invoicing API
+- [x] LLM with vision via the Ollama API
+- [ ] Deploy on Render (`render.yaml` is ready; not deployed)
+- [x] Sponsor tools: APIMatic Context Plugin, Postman
 
 Validation:
 

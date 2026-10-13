@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// On Render the backend's address arrives as host:port (render.yaml); locally neither is set.
+const BACKEND_URL =
+  process.env.BACKEND_URL ??
+  (process.env.BACKEND_HOSTPORT ? `http://${process.env.BACKEND_HOSTPORT}` : "http://127.0.0.1:8000");
+
 const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
@@ -19,7 +24,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.BACKEND_URL ?? "http://127.0.0.1:8000"}/api/:path*`,
+        destination: `${BACKEND_URL}/api/:path*`,
       },
     ];
   },

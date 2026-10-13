@@ -1,0 +1,44 @@
+# Render Blueprint: two services (decision 16).
+#   heylist      public Next.js site; proxies /api/* to the backend over Render's private network
+#   heylist-api  private FastAPI backend; not reachable from the internet (issue 6)
+# Sandbox only: the PayPal credentials set here must be sandbox credentials.
+# Values marked "sync: false" are secrets you type into the Render dashboard; none are in this file.
+
+services:
+  - type: web
+    name: heylist
+    runtime: node
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    envVars:
+      # host:port of the private backend. next.config.ts turns it into the /api/* rewrite target.
+      - key: BACKEND_HOSTPORT
+        fromService:
+          type: pserv
+          name: heylist-api
+          property: hostport
+      # Public by design: the browser needs it to load the PayPal JS SDK.
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+
+  - type: pserv
+    name: heylist-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: OLLAMA_MODEL
+        sync: false

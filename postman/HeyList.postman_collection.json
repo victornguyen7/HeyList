@@ -1,0 +1,747 @@
+{
+  "info": {
+    "name": "HeyList API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Every route of the HeyList FastAPI backend (backend/main.py), in demo order. Start the backend (README > Run it locally) and run the requests top to bottom: the test scripts save listId, itemId, memberId, orderId, and receiptId for the later requests. Every error body is {\"error\": \"<CODE>\"}. PayPal calls go to the sandbox only."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "listId",
+      "value": ""
+    },
+    {
+      "key": "itemId",
+      "value": ""
+    },
+    {
+      "key": "secondItemId",
+      "value": ""
+    },
+    {
+      "key": "memberId",
+      "value": ""
+    },
+    {
+      "key": "secondMemberId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "imagePath",
+      "value": ""
+    },
+    {
+      "key": "receiptId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "AI (suggestions only; nothing is saved)",
+      "item": [
+        {
+          "name": "Suggest a starting list",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "list"
+              ]
+            },
+            "description": "The LLM proposes a title, type, budget and priced items. Code trims the items to fit the budget. 400 INVALID_BODY, 502 LLM_ERROR.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sentence\": \"move-in list for 3 roommates, $300 budget\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Split spoken text into items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "items"
+              ]
+            },
+            "description": "What the Web Speech API heard, split into items with price estimates. 400 INVALID_BODY, 502 LLM_ERROR.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"groceries: eggs, milk and a bag of rice\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lists",
+      "item": [
+        {
+          "name": "Create a list",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists"
+              ]
+            },
+            "description": "Saves a list the user confirmed. kind is one of groceries, trip, home, party, other. The returned id is the share link (/l/{id}). 400 INVALID_BODY.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Move-in\",\n  \"kind\": \"home\",\n  \"budgetCents\": 30000,\n  \"items\": [\n    {\n      \"name\": \"Kettle\",\n      \"estPriceCents\": 2500\n    },\n    {\n      \"name\": \"Mop\",\n      \"estPriceCents\": 1200\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('listId', body.id);",
+                  "pm.collectionVariables.set('itemId', body.items[0].id);",
+                  "pm.collectionVariables.set('secondItemId', body.items[1].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get a list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}"
+              ]
+            },
+            "description": "Everything the list pages show: members, items, receipts, captured orders, invoices, and the money summary (spent, extras, per person, who owes whom). 404 LIST_NOT_FOUND."
+          }
+        },
+        {
+          "name": "Update a list",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}"
+              ]
+            },
+            "description": "Any of title, budgetCents, finished (true puts it in History). 400 INVALID_BODY, 404 LIST_NOT_FOUND.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"budgetCents\": 35000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Join a list",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "members"
+              ]
+            },
+            "description": "Adds a person by name, or returns the one already there. No account. 400 INVALID_BODY.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ana\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('memberId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Join as a second person, with an email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "members"
+              ]
+            },
+            "description": "The email is where a settle-up invoice goes; use your sandbox personal account's email.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ben\",\n  \"email\": \"sb-buyer@personal.example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('secondMemberId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Share out unclaimed items",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "assign"
+              ]
+            },
+            "description": "Code (not the LLM) gives each open, unclaimed item to whoever has the least to buy. 404 LIST_NOT_FOUND."
+          }
+        },
+        {
+          "name": "Reuse a list",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/reuse",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "reuse"
+              ]
+            },
+            "description": "A fresh copy with nothing checked, each item at the price last paid. Returns the new list. 404 LIST_NOT_FOUND."
+          }
+        },
+        {
+          "name": "History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/history?ids={{listId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "ids",
+                  "value": "{{listId}}"
+                }
+              ]
+            },
+            "description": "Spending by type and month across the given lists, and the last price paid per item name. The browser keeps the IDs; there are no accounts."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "item": [
+        {
+          "name": "Add items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "items"
+              ]
+            },
+            "description": "400 INVALID_BODY, 404 LIST_NOT_FOUND.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"name\": \"Bin\",\n      \"estPriceCents\": 900\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Claim an item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/items/{{secondItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                "{{secondItemId}}"
+              ]
+            },
+            "description": "Any of name, estPriceCents, claimedBy (a member ID or null), checked. 400 INVALID_BODY, 404 ITEM_NOT_FOUND, 409 ITEM_PAID.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"claimedBy\": \"{{memberId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Check an item off",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/items/{{secondItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                "{{secondItemId}}"
+              ]
+            },
+            "description": "Checking off without a receipt or PayPal: memberId is who bought it, priceCents what they paid. {\"checked\": false} undoes it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checked\": true,\n  \"memberId\": \"{{memberId}}\",\n  \"priceCents\": 1150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete an item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/items/{{secondItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                "{{secondItemId}}"
+              ]
+            },
+            "description": "204. An item paid with PayPal cannot be deleted (409 ITEM_PAID). Run this last if you want to keep the item for the other requests."
+          }
+        }
+      ]
+    },
+    {
+      "name": "PayPal Checkout",
+      "item": [
+        {
+          "name": "Create an order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "orders"
+              ]
+            },
+            "description": "Only item IDs are sent: the server looks up the prices and computes the total (decision 23). Creates the PayPal order through the PayPal Server SDK and stores it. 400 INVALID_ITEMS, 404 LIST_NOT_FOUND, 502 PAYPAL_ERROR.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemIds\": [\n    \"{{itemId}}\"\n  ],\n  \"memberId\": \"{{memberId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('orderId', body.orderId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Capture an order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/capture",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}",
+                "capture"
+              ]
+            },
+            "description": "Captures after the buyer approves in the PayPal popup. From Postman, with no buyer approval, this answers 502 PAYPAL_ERROR (PayPal says ORDER_NOT_APPROVED); approve it in the app to see 200. On COMPLETED the items are checked off with the order as proof. 400 INVALID_ORDER_ID, 404 ORDER_NOT_FOUND, 422 INSTRUMENT_DECLINED, 502 PAYPAL_ERROR."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Receipts",
+      "item": [
+        {
+          "name": "Scan a receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "image/jpeg"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/receipts/scan",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "receipts",
+                "scan"
+              ]
+            },
+            "description": "Body > binary: choose a photo of a receipt (JPEG, PNG or WebP, at most 8 MB) and set Content-Type to match. The LLM reads it and proposes matches to open items and extras. Nothing is checked off yet. 400 INVALID_IMAGE, 404 LIST_NOT_FOUND, 502 LLM_ERROR.",
+            "body": {
+              "mode": "file",
+              "file": {
+                "src": ""
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('imagePath', body.imagePath);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save a confirmed receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/receipts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "receipts"
+              ]
+            },
+            "description": "What the user confirmed from the scan. Matched items are checked off with the receipt as proof. Returns the list. 400 INVALID_BODY, 404 LIST_NOT_FOUND.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagePath\": \"{{imagePath}}\",\n  \"memberId\": \"{{memberId}}\",\n  \"totalCents\": 2549,\n  \"matches\": [\n    {\n      \"itemId\": \"{{itemId}}\",\n      \"priceCents\": 2399\n    }\n  ],\n  \"extras\": [\n    {\n      \"name\": \"SPEARMINT GUM\",\n      \"priceCents\": 199\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('receiptId', body.receipts[body.receipts.length - 1].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Receipt photo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/receipts/{{receiptId}}/image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "receipts",
+                "{{receiptId}}",
+                "image"
+              ]
+            },
+            "description": "The photo, from the private Supabase bucket. 404 RECEIPT_NOT_FOUND."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settle up (PayPal Invoicing)",
+      "item": [
+        {
+          "name": "Send an invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "invoices"
+              ]
+            },
+            "description": "from owes to. Only the two people are sent; code computes the amount from the split. Creates and sends a PayPal sandbox invoice to the debtor's email. Needs a debt between them (see money.owes on Get a list). 400 NOTHING_OWED, 400 EMAIL_NEEDED, 409 ALREADY_INVOICED, 502 PAYPAL_ERROR.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"{{secondMemberId}}\",\n  \"to\": \"{{memberId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Refresh invoice status",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/lists/{{listId}}/invoices/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lists",
+                "{{listId}}",
+                "invoices",
+                "refresh"
+              ]
+            },
+            "description": "Reads each open invoice's status from PayPal. A PAID invoice clears the debt. 404 LIST_NOT_FOUND, 502 PAYPAL_ERROR."
+          }
+        }
+      ]
+    }
+  ]
+}

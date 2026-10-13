@@ -7,14 +7,19 @@ Last reviewed 2026-10-13.
 | # | Issue | Notes |
 |---|---|---|
 | 3 | The LLM API key was written in plain text in the project notes | It now lives in `.env.local` (gitignored) and is not in the repo or its git history. Rotate the key if the notes were shared |
-| 6 | The order endpoints have no authentication or rate limiting | Anyone who can reach the backend can create sandbox orders. On Render, make the FastAPI service private so only Next.js reaches it |
-| 7 | The PayPal API base URL is hardcoded to the sandbox | `backend/paypal.py`. Move it to an environment variable before any live use (decision 41) |
-| 8 | `.env.example` does not list `OLLAMA_API_KEY` | `.env.local` has it; a fresh checkout would not know it is needed |
-| 9 | No merchant story for "buy in the app" | Payments go to HeyList's own sandbox merchant account, but HeyList is not the seller of the items on a list. Fine for the demo; an open product question after it |
-| 12 | Nothing is deployed | Render needs two web services, with `BACKEND_URL` set on the Next.js one |
+| 9 | No merchant story for "buy in the app" or for settle-up | Payments and invoices go to HeyList's own sandbox merchant account. HeyList is not the seller of the items, and a settle-up invoice pays HeyList, not the person owed (decision 69). Fine for the demo; an open product question after it |
 | 13 | Template leftovers remain | The five SVGs in `public/` are not referenced anywhere. `app/globals.css` sets the body font to Arial, which overrides the Geist font that `app/layout.tsx` loads |
 | 14 | The old virtual-environment path is still referenced | The environment moved to `../.venv` (decision 47), but `.gitignore` still lists `backend/.venv/`. The dated plans under `superpowers/plans/` also use the old path; they are kept as records |
-| 15 | The PayPal button has no automated test | The page was checked by hand only (see closed issue 10). The backend has 17 unit tests; the frontend has none |
+| 6 | No route has authentication or rate limiting | Anyone who can reach the backend can create sandbox orders and invoices and call the LLM. `render.yaml` makes the FastAPI service private, but the Next.js proxy still forwards `/api/*` from anyone. A list is protected only by its unguessable ID |
+| 7 | The PayPal environment is fixed to the sandbox in code | `Environment.SANDBOX` and `INVOICING_URL` in `backend/paypal.py`, and the JS SDK script URL in `app/l/[id]/progress.tsx`. Deliberate for the hackathon (decision 41); all three must change together before any live use |
+| 12 | Nothing is deployed | `render.yaml` describes both services and has not been applied. The private service needs a paid Render plan. Set the six backend secrets and `PAYPAL_CLIENT_ID` in the dashboard |
+| 15 | The frontend has no automated test and was not clicked through during the build | The backend has 64 unit tests. Every call the pages make was run through the Next.js proxy against Supabase, the model and the sandbox, and lint and build pass. Still to do by hand in a browser: the pages themselves, voice, and the PayPal approval popup on a real list (the popup was hand-tested on the old sample page, closed issue 10) |
+| 16 | Paying a settle-up invoice has not been run | Create, send, duplicate refusal and status refresh were run in the sandbox. Paying one as a sandbox buyer and seeing it turn `PAID` has not |
+| 17 | The sample checkout files are dead code | `app/checkout/page.tsx`, `app/checkout/checkout-list.tsx`, `backend/sample_list.py` and `backend/test_sample_list.py` are no longer used (`/checkout` redirects to `/`). `app/checkout/paypal.d.ts` is still used and should move to `app/` when they are deleted |
+| 18 | A scan that is never confirmed leaves its photo in the bucket | `POST .../receipts/scan` stores the photo before the user confirms. Nothing sweeps the orphans |
+| 19 | A sent invoice does not follow later spending | If more is bought after an invoice is sent, the debt shown changes but the invoice keeps its amount; the difference shows as still owed once it is paid |
+| 20 | Two spec features are not built | "Photo as proof" for a single item and "photo recognition" of a scene (SPEC, core features). The build prompt's target state did not include them |
+| 21 | The local virtual environment is Python 3.14, not 3.13 | The tests pass on it. `render.yaml` pins 3.13.5 |
 
 ## Closed
 
@@ -26,3 +31,4 @@ Last reviewed 2026-10-13.
 | 11 | Both design specs still say "Status: awaiting review" | 2026-10-13 | Both are implemented and their status lines now say so |
 | 5 | A captured order is not stored | 2026-10-13 | Orders are stored in Supabase when created; a completed capture checks its items off with the order ID as proof, and a paid item cannot be paid for again (decisions 53, 54) |
 | 2 | Most of the planned stack is not installed | 2026-10-13 | Supabase, the LLM client, PayPal Checkout and Invoicing are all in and used |
+| 8 | `.env.example` does not list `OLLAMA_API_KEY` | 2026-10-13 | `.env.example` now lists every variable the code reads |

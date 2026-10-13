@@ -68,7 +68,7 @@ export default function CheckoutList({ clientId, items }: { clientId: string; it
       }
       session.current = sdk.createPayPalOneTimePaymentSession({
         onApprove,
-        onCancel: () => setNotice("Payment cancelled. Nothing was charged."),
+        onCancel: () => setNotice("The payment was cancelled. You can try again when you are ready."),
         onError: (error) => {
           console.error(error);
           setNotice("The payment did not go through. Please try again.");

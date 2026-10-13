@@ -1,86 +1,122 @@
 # HeyList — Architecture
 
-Planned architecture. Only PayPal Checkout is implemented, on a hardcoded sample list at `/checkout` (see [CHANGELOG.md](CHANGELOG.md)); everything else below is still planned.
+What is built. The reasons are in [DECISIONS.md](DECISIONS.md); what is still open is in [ISSUES.md](ISSUES.md).
 
 ## Stack
 
 | Layer | Choice |
 |---|---|
-| Frontend | Next.js website, mobile-first so it works in phone browsers (native app later) |
+| Frontend | Next.js website, mobile-first so it works in phone browsers. Pages only |
 | Backend | FastAPI (Python) — all server-side logic. The browser calls same-origin `/api/*`, which Next.js rewrites to it |
-| Data | Supabase — lists, receipts storage, realtime |
-| Payments | PayPal sandbox — Checkout JS SDK + Orders API, Invoicing API |
+| Data | Supabase — Postgres for lists, and a private storage bucket for receipt photos. Only the backend talks to it |
+| Payments | PayPal sandbox — Checkout JS SDK v6 in the browser; Orders through the PayPal Server SDK for Python; Invoicing through `httpx` |
 | AI | One LLM with vision for lists and receipts, served through the Ollama API |
 | Voice | Web Speech API |
-| Hosting | Render — two web services, one for Next.js and one for FastAPI |
-| Sponsor tools | APIMatic Context Plugin, Postman, Render; Channel3 for the stretch |
+| Hosting | Render — two web services, one public (Next.js) and one private (FastAPI); see `render.yaml` |
+| Sponsor tools | APIMatic (Context Plugin + PayPal Server SDK), Postman, Render |
 
-Currently installed: Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5 (from `package.json`); FastAPI 0.143.0, uvicorn 0.54.0, httpx 0.28.1, paypal-server-sdk 2.4.0, supabase 2.32.0, ollama 0.6.3 on Python 3.13 (from `backend/requirements.txt`).
-
-## Built so far
-
-Three backend routes, in `backend/main.py`. Every error body is `{"error": "<CODE>"}`.
-
-| Route | Success | Errors |
-|---|---|---|
-| `GET /api/items` | The hardcoded sample list: `[{"id", "name", "priceCents"}, ...]` | — |
-| `POST /api/orders` with `{"itemIds": [...]}` | `{"orderId": "..."}` | `400 INVALID_ITEMS`, `502 PAYPAL_ERROR` |
-| `POST /api/orders/{id}/capture` | `{"orderId": "...", "status": "..."}` | `400 INVALID_ORDER_ID`, `422 INSTRUMENT_DECLINED`, `502 PAYPAL_ERROR` |
-
-`backend/paypal.py` is the PayPal client, built on the PayPal Server SDK for Python (idempotency keys, one `429` retry; the SDK caches the OAuth token); `backend/sample_list.py` holds the items and the server-side total. One page uses them, `/checkout` (`app/checkout/`): a server page fetches the items and passes them, with the PayPal client ID, to a client component that holds the ticks, the PayPal button, and the paid state. Nothing is stored; a refresh loses the proof. The reasons behind this design are decisions 21–47 in [DECISIONS.md](DECISIONS.md).
-
-Environment, read from `.env.local`: `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` (backend), `SUPABASE_URL` and `SUPABASE_SECRET_KEY` (backend, read in `backend/db.py`; no route uses it yet), `BACKEND_URL` (Next.js, optional locally), `OLLAMA_API_KEY` and `OLLAMA_MODEL` (backend, read in `backend/llm.py`; the model must accept images, currently `gemma4:31b`; no route uses it yet).
+Installed: Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5 (`package.json`); FastAPI 0.143.0, uvicorn 0.54.0, httpx 0.28.1, paypal-server-sdk 2.4.0, ollama 0.6.3, supabase 2.32.0 (`backend/requirements.txt`).
 
 ## Overview
 
 ```
               Phone browser (Next.js, mobile-first)
-   type / voice (Web Speech API) / photo        PayPal Checkout JS SDK
+   type / voice (Web Speech API) / photo        PayPal Checkout JS SDK v6
                       |                                   |
                       v                                   v
               Next.js frontend on Render (pages; proxies /api/*)
                                 |
                                 v
-                  FastAPI backend on Render (Python)
+                  FastAPI backend on Render (private)
           |                     |                        |
           v                     v                        v
    LLM with vision          Supabase                PayPal sandbox
-   (Ollama API)             lists                   Orders API
-   starting lists           receipts storage        Invoicing API
-   receipt reading          realtime
-   extras, price estimates
+   (Ollama API)             Postgres                Orders (Server SDK)
+   starting lists           receipts bucket         Invoicing (httpx)
+   item splitting
+   receipt reading
 ```
+
+## Files
+
+| File | What it holds |
+|---|---|
+| `backend/main.py` | Every route, input checks, and the `{"error": "<CODE>"}` contract |
+| `backend/paypal.py` | PayPal: orders through the PayPal Server SDK, invoices through `httpx` |
+| `backend/llm.py` | The three LLM calls, and the code that cleans up what the model returns |
+| `backend/money.py` | Budget totals, split math, assignment of unclaimed items, history totals. No LLM |
+| `backend/db.py` | The Supabase client and the six calls the routes use (`select`, `insert`, `update`, `delete`, `upload`, `download`) |
+| `supabase/schema.sql` | Tables `lists`, `members`, `items`, `receipts`, `orders`, `invoices`; bucket `receipts` |
+| `app/page.tsx` | Home: start a list from a sentence, confirm the suggestion |
+| `app/l/[id]/page.tsx`, `list-view.tsx` | A list: header with spent-versus-budget, share, join, and the page tabs |
+| `app/l/[id]/progress.tsx` | Progress page: checklist, voice add, receipt scan and confirm, PayPal button |
+| `app/l/[id]/pages.tsx` | Items, Money, Receipts, and Settle up pages |
+| `app/history/page.tsx` | History page and "Use this list again" |
+| `app/lib.ts`, `app/ui.tsx` | Types, the `api` helper, `localStorage` helpers; shared buttons, `TalkButton`, `DraftEditor` |
+| `app/checkout/paypal.d.ts` | Types for the PayPal JS SDK v6 |
+
+## Routes
+
+All in `backend/main.py`. Every error body is `{"error": "<CODE>"}`. Any unplanned failure is `500 SERVER_ERROR`. The [Postman collection](../postman/HeyList.postman_collection.json) has an example of each.
+
+| Route | Does | Errors |
+|---|---|---|
+| `POST /api/ai/list` | Suggests a starting list from `{"sentence"}`. Saves nothing | `400 INVALID_BODY`, `502 LLM_ERROR` |
+| `POST /api/ai/items` | Splits `{"text"}` into items with price estimates. Saves nothing | `400 INVALID_BODY`, `502 LLM_ERROR` |
+| `POST /api/lists` | Creates a list with its items | `400 INVALID_BODY` |
+| `GET /api/lists/{id}` | The whole list state, including the money summary | `404 LIST_NOT_FOUND` |
+| `PATCH /api/lists/{id}` | Changes title, budget, or finished | `400 INVALID_BODY`, `404 LIST_NOT_FOUND` |
+| `POST /api/lists/{id}/members` | Joins by name (and saves an email if given) | `400 INVALID_BODY`, `404 LIST_NOT_FOUND` |
+| `POST /api/lists/{id}/assign` | Shares out unclaimed items between members | `404 LIST_NOT_FOUND` |
+| `POST /api/lists/{id}/reuse` | Copies the list, unchecked, at the prices last paid | `404 LIST_NOT_FOUND` |
+| `GET /api/history?ids=a,b` | Spending by type and month for those lists; last price paid per item | — |
+| `POST /api/lists/{id}/items` | Adds items | `400 INVALID_BODY`, `404 LIST_NOT_FOUND` |
+| `PATCH /api/items/{id}` | Renames, re-prices, claims, checks, or unchecks | `400 INVALID_BODY`, `404 ITEM_NOT_FOUND`, `409 ITEM_PAID` |
+| `DELETE /api/items/{id}` | Removes an item | `404 ITEM_NOT_FOUND`, `409 ITEM_PAID` |
+| `POST /api/lists/{id}/orders` | Creates a PayPal order for `{"itemIds"}` at the stored prices, and stores it | `400 INVALID_ITEMS`, `404 LIST_NOT_FOUND`, `502 PAYPAL_ERROR` |
+| `POST /api/orders/{id}/capture` | Captures; on `COMPLETED` checks the items off with the order as proof | `400 INVALID_ORDER_ID`, `404 ORDER_NOT_FOUND`, `422 INSTRUMENT_DECLINED`, `502 PAYPAL_ERROR` |
+| `POST /api/lists/{id}/receipts/scan` | Reads a receipt photo (raw image body); proposes matches and extras | `400 INVALID_IMAGE`, `404 LIST_NOT_FOUND`, `502 LLM_ERROR` |
+| `POST /api/lists/{id}/receipts` | Saves a confirmed scan and checks its items off | `400 INVALID_BODY`, `404 LIST_NOT_FOUND` |
+| `GET /api/receipts/{id}/image` | The receipt photo | `404 RECEIPT_NOT_FOUND` |
+| `POST /api/lists/{id}/invoices` | Sends a PayPal invoice for the debt between `{"from", "to"}` | `400 NOTHING_OWED`, `400 EMAIL_NEEDED`, `404 LIST_NOT_FOUND`, `409 ALREADY_INVOICED`, `502 PAYPAL_ERROR` |
+| `POST /api/lists/{id}/invoices/refresh` | Reads open invoices' status from PayPal | `404 LIST_NOT_FOUND`, `502 PAYPAL_ERROR` |
+
+## Environment
+
+Read from `.env.local` locally (see `.env.example`) and from the Render dashboard when deployed.
+
+| Variable | Read by | For |
+|---|---|---|
+| `PAYPAL_CLIENT_ID` | Backend, and the Next.js server page that passes it to the browser | PayPal sandbox app |
+| `PAYPAL_CLIENT_SECRET` | Backend only (`backend/paypal.py`) | PayPal sandbox app |
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | Backend only (`backend/db.py`) | Database and storage |
+| `OLLAMA_API_KEY`, `OLLAMA_MODEL`, `OLLAMA_HOST` (optional) | Backend only (`backend/llm.py`) | The LLM |
+| `BACKEND_URL` or `BACKEND_HOSTPORT` (both optional locally) | `next.config.ts` | Where `/api/*` is proxied |
 
 ## Responsibilities
 
 | Part | Owns |
 |---|---|
-| AI | Smart starting lists from one sentence; voice input; reading receipts and matching lines to items; spotting extras; price estimates for the budget |
-| PayPal | Checkout for buying from the list (order = proof); Invoicing for settle-up on shared lists; PayPal orders stored beside receipts in each list's money view |
-| Code | Split math, budget totals, assignment of unclaimed items |
-
-## Pages
-
-Six pages, described in [SPEC.md](SPEC.md#pages): Progress, Items, Money, Receipts, History, Settle-up.
-
-- **Receipts** links directly with **Items**: each item's proof (receipt scan or PayPal order) is reachable from the item.
-- **Money** draws on prices from receipts and PayPal orders, compared against the list budget.
-- **Settle-up** turns per-person totals into PayPal invoices and tracks their status.
+| AI | Smart starting lists from one sentence; splitting voice input into items; reading receipts and matching lines to items; spotting extras; price estimates |
+| PayPal | Checkout for buying from the list (order = proof); Invoicing for settle-up on shared lists |
+| Code | Split math, budget totals, assignment of unclaimed items; turning model output into safe data |
 
 ## Key flows
 
-**Create a list** — the user types or speaks a sentence; the LLM returns a starting list within the stated budget; the user confirms or edits it.
+**Create a list** — the browser sends the sentence to `POST /api/ai/list`. The LLM returns a title, type, budget and priced items; code converts dollars to cents and drops items until the estimates fit the budget. The page shows the result to edit, and `POST /api/lists` saves what the user confirms.
 
-**Check off by receipt** — the user scans a receipt; the LLM reads it and matches lines to list items, checking off several at once with prices attached. Lines that match nothing are flagged as extras.
+**Share** — the list's UUID is the link (`/l/{id}`). A visitor gives a name (`POST .../members`); the browser remembers the member ID. Every open page re-fetches the list every five seconds.
 
-**Check off by purchase** — the user buys through PayPal Checkout; the PayPal order is stored as the proof, with no scan needed.
+**Check off by purchase** — the user ticks items and taps the PayPal button. The browser sends item IDs to `POST .../orders`; the server looks up the prices, creates the order through the PayPal Server SDK, and stores it with its item IDs. After the buyer approves, `POST /api/orders/{id}/capture` captures it, and a `COMPLETED` result checks the items off with the order ID on each.
 
-**Share** — a list is shared by link; no account is needed to view or check items. People claim the items they will buy.
+**Check off by receipt** — the browser shrinks the photo and sends it to `.../receipts/scan`. The LLM sees the photo and the open items as a numbered list and returns each line with a price and an item number or null. Code maps numbers back to items; lines with no item are extras. The page shows the proposal, and `POST .../receipts` saves what the user confirms.
 
-**Settle up** — code works out who owes whom; PayPal Invoicing sends and tracks the invoices.
+**Settle up** — `backend/money.py` splits what members paid for list items equally and returns the payments that even it out. `POST .../invoices` takes the two people, recomputes the amount, creates and sends a PayPal invoice to the debtor's email, and stores it. A refresh reads the status; a paid invoice counts as money moved.
+
+**Reuse** — `POST .../reuse` copies a list with nothing checked, each item at the price last paid.
 
 ## Links
 
 - PayPal developer dashboard: https://developer.paypal.com/dashboard/accounts
-- Render workflows: https://render.com/docs/workflows
-- Channel3 developers: https://trychannel3.com/developers
+- PayPal Server SDK for Python: https://github.com/paypal/PayPal-Python-Server-SDK
+- Render Blueprints: https://render.com/docs/blueprint-spec
