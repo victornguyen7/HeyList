@@ -3,6 +3,7 @@ import os
 import time
 import uuid
 from functools import cache
+from typing import Any
 
 import httpx
 from paypalserversdk.configuration import Environment
@@ -66,7 +67,7 @@ def _to_error(exc: ApiException) -> PayPalError:
     return PayPalError(exc.response_code, issue)
 
 
-def _call(operation: str, options: dict):
+def _call(operation: str, options: dict) -> Any:
     """Runs one Orders operation and returns its body. The SDK is synchronous, so the routes are too."""
     method = getattr(_client().orders, operation)
     for retried in (False, True):
@@ -95,12 +96,14 @@ def create_order(items: list[dict]) -> str:
         intent=CheckoutPaymentIntent.CAPTURE,
         purchase_units=[
             PurchaseUnitRequest(
+                # The SDK has no type hints, so the checker reads each optional argument as a string
+                # (its default is a sentinel string); hence the ignores.
                 amount=AmountWithBreakdown(
                     currency_code="USD",
                     value=_usd(total).value,
-                    breakdown=AmountBreakdown(item_total=_usd(total)),
+                    breakdown=AmountBreakdown(item_total=_usd(total)),  # pyright: ignore[reportArgumentType]
                 ),
-                items=[
+                items=[  # pyright: ignore[reportArgumentType]
                     # PayPal allows 127 characters for an item name.
                     ItemRequest(name=item["name"][:127], quantity="1", unit_amount=_usd(item["priceCents"]))
                     for item in items
@@ -125,7 +128,7 @@ INVOICING_URL = "https://api-m.sandbox.paypal.com/v2/invoicing/invoices"
 PAID = ("PAID", "MARKED_AS_PAID")
 
 http = httpx.Client(timeout=30)
-_token = None
+_token: Any = None
 
 
 def _access_token() -> str:

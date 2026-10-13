@@ -1,6 +1,7 @@
 import json
 import os
 import unittest
+from typing import cast
 from unittest import mock
 
 import httpx
@@ -21,7 +22,7 @@ class FakePayPal(HTTPAdapter):
         self.requests = []
         self.replies = iter(replies)
 
-    def send(self, request, **kwargs):
+    def send(self, request, *args, **kwargs):
         self.requests.append(request)
         if request.path_url == "/v1/oauth2/token":
             status, body, headers = 200, {"access_token": "token-1", "expires_in": 3600}, {}
@@ -86,7 +87,7 @@ class PayPalTest(unittest.TestCase):
             paypal.capture_order("ORDER1"), {"orderId": "ORDER1", "status": "COMPLETED"}
         )
 
-        paypal.time.sleep.assert_called_once_with(5)
+        cast(mock.Mock, paypal.time.sleep).assert_called_once_with(5)
         self.assertEqual(self.paths()[1:], ["/v2/checkout/orders/ORDER1/capture"] * 2)
         self.assertEqual(
             [request.headers["paypal-request-id"] for request in self.requests[1:]],

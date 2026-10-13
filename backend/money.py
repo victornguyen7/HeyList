@@ -3,8 +3,10 @@
 Everything is integer cents. The dicts are the camelCase rows the API returns.
 """
 
+from collections.abc import Sequence
 
-def summary(members: list[dict], items: list[dict], receipts: list[dict], invoices: list[dict] = ()) -> dict:
+
+def summary(members: list[dict], items: list[dict], receipts: list[dict], invoices: Sequence[dict] = ()) -> dict:
     """What was spent, by whom, and who still owes whom once paid invoices are counted."""
     spent = {member["id"]: 0 for member in members}
     extras = {member["id"]: 0 for member in members}

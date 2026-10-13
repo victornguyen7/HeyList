@@ -6,6 +6,7 @@ import json
 import logging
 import os
 from functools import cache
+from typing import Any
 
 from ollama import Client
 
@@ -34,7 +35,7 @@ def _ask(prompt: str, schema: dict, image: bytes | None = None) -> dict:
         raise RuntimeError("OLLAMA_MODEL must be set")
     # The schema goes in the prompt as well as in `format`: hosted models can ignore `format`
     # and wrap their JSON in a code fence, so the object is cut out of the reply by hand.
-    message = {
+    message: dict[str, Any] = {
         "role": "user",
         "content": f"{prompt}\n\nReply with only a JSON object that matches this JSON schema, "
         f"using exactly these keys:\n{json.dumps(schema)}",
@@ -45,7 +46,7 @@ def _ask(prompt: str, schema: dict, image: bytes | None = None) -> dict:
         response = _client().chat(
             model=model, messages=[message], format=schema, think=False, options={"temperature": 0}
         )
-        content = response.message.content
+        content = response.message.content or ""
         answer = json.loads(content[content.index("{") : content.rindex("}") + 1])
     except Exception as exc:
         # The model's text is not logged: it can hold what the user said or what is on their receipt.
@@ -192,8 +193,8 @@ def read_receipt(image: bytes, items: list[dict]) -> dict:
         if not isinstance(line, dict) or not isinstance(line.get("text"), str) or not line["text"].strip():
             continue
         text, price, number = line["text"].strip()[:120], _cents(line.get("price_usd")), line.get("item")
-        on_list = isinstance(number, int) and not isinstance(number, bool) and 1 <= number <= len(items)
-        if on_list and number not in used:
+        # type() rather than isinstance(): True is an int, and must not count as item 1.
+        if type(number) is int and 1 <= number <= len(items) and number not in used:
             used.add(number)
             matches.append({"itemId": items[number - 1]["id"], "line": text, "priceCents": price})
         else:

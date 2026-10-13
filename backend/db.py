@@ -1,5 +1,6 @@
 import os
 from functools import cache
+from typing import cast
 
 from supabase import Client, create_client
 
@@ -20,6 +21,11 @@ def _where(query, filters: dict):
     return query
 
 
+def _rows(query) -> list[dict]:
+    # supabase types a row as any JSON value; a table row is always an object.
+    return cast(list[dict], query.execute().data)
+
+
 # The four calls the routes use. The tests replace these with an in-memory fake.
 
 
@@ -27,15 +33,15 @@ def select(table: str, order: str = "created_at", **filters) -> list[dict]:
     """Rows where every filter matches; a list value means "is one of"."""
     if any(value == [] for value in filters.values()):
         return []
-    return _where(client().table(table).select("*"), filters).order(order).execute().data
+    return _rows(_where(client().table(table).select("*"), filters).order(order))
 
 
 def insert(table: str, rows: list[dict]) -> list[dict]:
-    return client().table(table).insert(rows).execute().data if rows else []
+    return _rows(client().table(table).insert(rows)) if rows else []
 
 
 def update(table: str, values: dict, **filters) -> list[dict]:
-    return _where(client().table(table).update(values), filters).execute().data
+    return _rows(_where(client().table(table).update(values), filters))
 
 
 def delete(table: str, **filters) -> None:
