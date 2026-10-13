@@ -7,17 +7,36 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 
 import db
+import llm
 import paypal
 
 log = logging.getLogger(__name__)
 app = FastAPI()
 
-KINDS = ("groceries", "trip", "home", "party", "other")
+KINDS = llm.KINDS
 BAD_INPUT = (ValueError, KeyError, TypeError)
+IMAGE_TYPES = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
 
 
 def error(code: str, status: int) -> JSONResponse:
     return JSONResponse({"error": code}, status_code=status)
+
+
+@app.exception_handler(llm.LlmError)
+def llm_failed(request: Request, exc: llm.LlmError) -> JSONResponse:
+    return error("LLM_ERROR", 502)
+
+
+@app.exception_handler(Exception)
+def unexpected(request: Request, exc: Exception) -> JSONResponse:
+    """Keeps the {"error": "<CODE>"} contract when something we did not plan for fails."""
+    log.error("Unhandled %s on %s", type(exc).__name__, request.url.path, exc_info=exc)
+    return error("SERVER_ERROR", 500)
+
+
+async def raw_body(request: Request) -> bytes:
+    return await request.body()
 
 
 async def json_body(request: Request) -> dict | None:
@@ -322,3 +341,107 @@ def capture_order(order_id: str):
                 id=item["id"],
             )
     return result
+
+
+# AI. These three only suggest; the page shows the result and the user confirms it (decision 5).
+
+
+@app.post("/api/ai/list")
+def suggest_list(body=Depends(json_body)):
+    """A starting list from one sentence. Saved only when the user confirms, through POST /api/lists."""
+    try:
+        sentence = text(body["sentence"], 300)
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+    return llm.starting_list(sentence)
+
+
+@app.post("/api/ai/items")
+def suggest_items(body=Depends(json_body)):
+    """What was said or typed, split into items. Saved through POST /api/lists/{id}/items."""
+    try:
+        spoken = text(body["text"], 1000)
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+    return {"items": llm.split_items(spoken)}
+
+
+@app.post("/api/lists/{list_id}/receipts/scan")
+def scan_receipt(list_id: str, request: Request, image: bytes = Depends(raw_body)):
+    """Reads a receipt photo (the raw image is the body) and proposes matches and extras.
+
+    The photo is stored; nothing is checked off until POST /api/lists/{id}/receipts confirms it.
+    """
+    found = find("lists", list_id)
+    if not found:
+        return error("LIST_NOT_FOUND", 404)
+    content_type = request.headers.get("content-type", "")
+    if content_type not in IMAGE_TYPES or not image or len(image) > MAX_IMAGE_BYTES:
+        return error("INVALID_IMAGE", 400)
+
+    open_items = [item for item in db.select("items", "position", list_id=found["id"]) if not item["checked_at"]]
+    reading = llm.read_receipt(image, [{"id": item["id"], "name": item["name"]} for item in open_items])
+    # ponytail: a scan the user never confirms leaves its photo in the bucket; sweep them if storage matters.
+    path = f"{found['id']}/{uuid.uuid4()}.{IMAGE_TYPES[content_type]}"
+    db.upload(path, image, content_type)
+    return {"imagePath": path, **reading}
+
+
+@app.post("/api/lists/{list_id}/receipts")
+def save_receipt(list_id: str, body=Depends(json_body)):
+    """Saves a scan the user confirmed: the matched items are checked off with the receipt as proof."""
+    found = find("lists", list_id)
+    if not found:
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        path = body["imagePath"]
+        # The photo must be one this list's scan stored, and not already saved as a receipt.
+        if not isinstance(path, str) or not re.fullmatch(
+            rf"{found['id']}/[0-9a-f-]{{36}}\.(jpg|png|webp)", path
+        ):
+            raise ValueError("bad image path")
+        if db.select("receipts", image_path=path):
+            raise ValueError("already saved")
+        prices = {an_id(match["itemId"]): cents(match.get("priceCents")) for match in body["matches"]}
+        if len(prices) != len(body["matches"]) or len(body["extras"]) > 100:
+            raise ValueError("an item is matched twice")
+        items = db.select("items", list_id=found["id"], id=list(prices))
+        if len(items) != len(prices) or any(item["checked_at"] for item in items):
+            raise ValueError("an item cannot be checked off")
+        receipt = {
+            "list_id": found["id"],
+            "member_id": member_of(found["id"], body.get("memberId")),
+            "image_path": path,
+            "total_cents": cents(body.get("totalCents")),
+            "extras": [
+                {"name": text(extra["name"]), "priceCents": cents(extra.get("priceCents"))}
+                for extra in body["extras"]
+            ],
+        }
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+
+    saved = db.insert("receipts", [receipt])[0]
+    checked_at = now()
+    for item_id, price in prices.items():
+        db.update(
+            "items",
+            {
+                "checked_at": checked_at,
+                "bought_by": receipt["member_id"],
+                "price_cents": price,
+                "receipt_id": saved["id"],
+            },
+            id=item_id,
+        )
+    return list_state(found["id"])
+
+
+@app.get("/api/receipts/{receipt_id}/image")
+def receipt_image(receipt_id: str):
+    receipt = find("receipts", receipt_id)
+    if not receipt:
+        return error("RECEIPT_NOT_FOUND", 404)
+    extension = receipt["image_path"].rsplit(".", 1)[-1]
+    media_type = next(kind for kind, known in IMAGE_TYPES.items() if known == extension)
+    return Response(db.download(receipt["image_path"]), media_type=media_type)

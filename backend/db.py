@@ -40,3 +40,14 @@ def update(table: str, values: dict, **filters) -> list[dict]:
 
 def delete(table: str, **filters) -> None:
     _where(client().table(table).delete(), filters).execute()
+
+
+# Receipt photos, in the private "receipts" bucket.
+
+
+def upload(path: str, data: bytes, content_type: str) -> None:
+    client().storage.from_("receipts").upload(path, data, {"content-type": content_type})
+
+
+def download(path: str) -> bytes:
+    return client().storage.from_("receipts").download(path)

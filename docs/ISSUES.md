@@ -6,7 +6,7 @@ Last reviewed 2026-10-13.
 
 | # | Issue | Notes |
 |---|---|---|
-| 2 | Most of the planned stack is not installed | PayPal Checkout is in (Orders client on the backend, JS SDK on the page). Supabase holds lists, items and orders. Still missing: the LLM client and PayPal Invoicing |
+| 2 | Most of the planned stack is not installed | PayPal Checkout is in (Orders client on the backend, JS SDK on the page). Supabase holds lists, items, orders and receipts, and the LLM client is in (`backend/llm.py`). Still missing: PayPal Invoicing |
 | 3 | The LLM API key was written in plain text in the project notes | It now lives in `.env.local` (gitignored) and is not in the repo or its git history. Rotate the key if the notes were shared |
 | 6 | The order endpoints have no authentication or rate limiting | Anyone who can reach the backend can create sandbox orders. On Render, make the FastAPI service private so only Next.js reaches it |
 | 7 | The PayPal API base URL is hardcoded to the sandbox | `backend/paypal.py`. Move it to an environment variable before any live use (decision 41) |

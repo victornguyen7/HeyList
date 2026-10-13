@@ -5,6 +5,7 @@ from unittest import mock
 from fastapi.testclient import TestClient
 
 import db
+import llm
 import main
 import paypal
 
@@ -16,7 +17,14 @@ class FakeDb:
 
     def __init__(self):
         self.tables = {}
+        self.files = {}
         self.clock = 0
+
+    def upload(self, path, data, content_type):
+        self.files[path] = data
+
+    def download(self, path):
+        return self.files[path]
 
     def select(self, table, order="created_at", **filters):
         def matches(row):
@@ -67,7 +75,7 @@ class FakeDb:
 class ApiTest(unittest.TestCase):
     def setUp(self):
         self.db = FakeDb()
-        for name in ("select", "insert", "update", "delete"):
+        for name in ("select", "insert", "update", "delete", "upload", "download"):
             patch = mock.patch.object(db, name, getattr(self.db, name))
             patch.start()
             self.addCleanup(patch.stop)
@@ -365,6 +373,141 @@ class CaptureOrderTest(ApiTest):
         with mock.patch.object(paypal, "capture_order", side_effect=RuntimeError("no credentials")):
             with self.assertLogs("main", "ERROR"):
                 self.assert_error(client.post("/api/orders/ORDER1/capture"), 502, "PAYPAL_ERROR")
+
+
+class AiTest(ApiTest):
+    def test_a_starting_list_is_suggested_and_not_saved(self):
+        suggestion = {"title": "Move-in", "kind": "home", "budgetCents": 30000, "items": []}
+        with mock.patch.object(llm, "starting_list", return_value=suggestion) as starting_list:
+            response = client.post("/api/ai/list", json={"sentence": " move-in for 3, $300 "})
+        self.assertEqual(response.json(), suggestion)
+        starting_list.assert_called_once_with("move-in for 3, $300")
+        self.assertEqual(self.db.tables, {})
+
+    def test_spoken_text_is_split_into_items_and_not_saved(self):
+        items = [{"name": "eggs", "estPriceCents": 350}]
+        with mock.patch.object(llm, "split_items", return_value=items) as split_items:
+            response = client.post("/api/ai/items", json={"text": "groceries eggs"})
+        self.assertEqual(response.json(), {"items": items})
+        split_items.assert_called_once_with("groceries eggs")
+        self.assertEqual(self.db.tables, {})
+
+    def test_bad_input_never_reaches_the_llm(self):
+        with mock.patch.object(llm, "_ask") as ask:
+            for url, body in (
+                ("/api/ai/list", {}),
+                ("/api/ai/list", {"sentence": ""}),
+                ("/api/ai/list", {"sentence": "x" * 301}),
+                ("/api/ai/items", {"text": 5}),
+            ):
+                with self.subTest(url=url, body=body):
+                    self.assert_error(client.post(url, json=body), 400, "INVALID_BODY")
+        ask.assert_not_called()
+
+    def test_an_llm_failure_is_a_502(self):
+        with mock.patch.object(llm, "_ask", side_effect=llm.LlmError()):
+            self.assert_error(client.post("/api/ai/list", json={"sentence": "camping"}), 502, "LLM_ERROR")
+            self.assert_error(client.post("/api/ai/items", json={"text": "eggs"}), 502, "LLM_ERROR")
+
+
+class ReceiptsTest(ApiTest):
+    def setUp(self):
+        super().setUp()
+        self.list = self.make_list()
+        self.member = self.join(self.list["id"])
+        self.kettle, self.mop = (item["id"] for item in self.list["items"])
+        self.url = f"/api/lists/{self.list['id']}/receipts"
+
+    def scan(self, reading=None, content_type="image/jpeg", image=b"photo"):
+        reading = reading or {
+            "totalCents": 3099,
+            "matches": [{"itemId": self.kettle, "line": "KETTLE 1.7L", "priceCents": 2399}],
+            "extras": [{"name": "GUM", "priceCents": 700}],
+        }
+        with mock.patch.object(llm, "read_receipt", return_value=reading) as self.read_receipt:
+            return client.post(f"{self.url}/scan", content=image, headers={"Content-Type": content_type})
+
+    def test_a_scan_proposes_matches_and_checks_nothing_off(self):
+        client.patch(f"/api/items/{self.mop}", json={"checked": True})
+        response = self.scan()
+        self.assertEqual(response.status_code, 200)
+        proposal = response.json()
+        self.assertEqual(proposal["matches"][0]["itemId"], self.kettle)
+        self.assertEqual(proposal["extras"], [{"name": "GUM", "priceCents": 700}])
+        # Only the open items are offered to the model for matching.
+        self.read_receipt.assert_called_once_with(b"photo", [{"id": self.kettle, "name": "Kettle"}])
+        self.assertEqual(self.db.files, {proposal["imagePath"]: b"photo"})
+        self.assertTrue(proposal["imagePath"].startswith(self.list["id"] + "/"))
+        state = client.get(f"/api/lists/{self.list['id']}").json()
+        self.assertIsNone(state["items"][0]["checkedAt"])
+        self.assertEqual(state["receipts"], [])
+
+    def test_bad_scans(self):
+        self.assert_error(self.scan(content_type="application/pdf"), 400, "INVALID_IMAGE")
+        self.assert_error(self.scan(image=b""), 400, "INVALID_IMAGE")
+        self.assert_error(self.scan(image=b"x" * (main.MAX_IMAGE_BYTES + 1)), 400, "INVALID_IMAGE")
+        self.read_receipt.assert_not_called()
+        response = client.post(
+            f"/api/lists/{uuid.uuid4()}/receipts/scan", content=b"p", headers={"Content-Type": "image/png"}
+        )
+        self.assert_error(response, 404, "LIST_NOT_FOUND")
+        with mock.patch.object(llm, "_ask", side_effect=llm.LlmError()):
+            response = client.post(f"{self.url}/scan", content=b"p", headers={"Content-Type": "image/png"})
+        self.assert_error(response, 502, "LLM_ERROR")
+        self.assertEqual(self.db.files, {})
+
+    def test_confirming_checks_the_items_off_with_the_receipt_as_proof(self):
+        proposal = self.scan().json()
+        body = {
+            "imagePath": proposal["imagePath"],
+            "memberId": self.member["id"],
+            "totalCents": proposal["totalCents"],
+            "matches": [{"itemId": self.kettle, "priceCents": 2399}],
+            "extras": proposal["extras"],
+        }
+        response = client.post(self.url, json=body)
+        self.assertEqual(response.status_code, 200)
+        state = response.json()
+        receipt = state["receipts"][0]
+        self.assertEqual((receipt["totalCents"], receipt["memberId"]), (3099, self.member["id"]))
+        self.assertEqual(receipt["extras"], [{"name": "GUM", "priceCents": 700}])
+        kettle, mop = state["items"]
+        self.assertTrue(kettle["checkedAt"])
+        self.assertEqual(
+            (kettle["priceCents"], kettle["receiptId"], kettle["boughtBy"]),
+            (2399, receipt["id"], self.member["id"]),
+        )
+        self.assertIsNone(mop["checkedAt"])
+
+        image = client.get(f"/api/receipts/{receipt['id']}/image")
+        self.assertEqual((image.status_code, image.content), (200, b"photo"))
+        self.assertEqual(image.headers["content-type"], "image/jpeg")
+        # The same scan cannot be saved twice.
+        self.assert_error(client.post(self.url, json={**body, "matches": []}), 400, "INVALID_BODY")
+
+    def test_bad_confirmations_store_nothing(self):
+        path = self.scan().json()["imagePath"]
+        other_list = self.make_list()
+        good = {"imagePath": path, "matches": [{"itemId": self.kettle, "priceCents": 1}], "extras": []}
+        client.patch(f"/api/items/{self.mop}", json={"checked": True})
+        for change in (
+            {"imagePath": f"{other_list['id']}/{uuid.uuid4()}.jpg"},
+            {"imagePath": "../secrets.jpg"},
+            {"matches": [{"itemId": other_list["items"][0]["id"]}]},
+            {"matches": [{"itemId": self.mop}]},  # already checked off
+            {"matches": [{"itemId": self.kettle}, {"itemId": self.kettle}]},
+            {"matches": [{"itemId": self.kettle, "priceCents": -5}]},
+            {"extras": [{"name": ""}]},
+            {"memberId": str(uuid.uuid4())},
+            {"matches": None},
+        ):
+            with self.subTest(change=change):
+                self.assert_error(client.post(self.url, json={**good, **change}), 400, "INVALID_BODY")
+        self.assert_error(client.post(self.url, json=None), 400, "INVALID_BODY")
+        self.assertNotIn("receipts", self.db.tables)
+
+    def test_unknown_receipt_image_is_404(self):
+        self.assert_error(client.get(f"/api/receipts/{uuid.uuid4()}/image"), 404, "RECEIPT_NOT_FOUND")
 
 
 if __name__ == "__main__":
