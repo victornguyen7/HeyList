@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, Response
 
 import db
 import llm
+import money
 import paypal
 
 log = logging.getLogger(__name__)
@@ -124,14 +125,16 @@ def list_state(list_id: str) -> dict:
     def rows(table: str, order: str = "created_at", **filters) -> list[dict]:
         return [camel(row) for row in db.select(table, order, list_id=list_id, **filters)]
 
+    members, items, receipts = rows("members"), rows("items", "position"), rows("receipts")
     return {
         **camel(db.select("lists", id=list_id)[0]),
-        "members": rows("members"),
-        "items": rows("items", "position"),
-        "receipts": rows("receipts"),
+        "members": members,
+        "items": items,
+        "receipts": receipts,
         # Only captured orders are proof; an order the buyer walked away from is not shown.
         "orders": rows("orders", status="COMPLETED"),
         "invoices": rows("invoices"),
+        "money": money.summary(members, items, receipts),
     }
 
 
@@ -203,6 +206,51 @@ def join_list(list_id: str, body=Depends(json_body)):
     if values:
         return camel(db.update("members", values, id=existing[0]["id"])[0])
     return camel(existing[0])
+
+
+@app.post("/api/lists/{list_id}/assign")
+def assign_unclaimed(list_id: str):
+    """Shares the open, unclaimed items out between the members."""
+    found = find("lists", list_id)
+    if not found:
+        return error("LIST_NOT_FOUND", 404)
+    state = list_state(found["id"])
+    assigned = money.assign([member["id"] for member in state["members"]], state["items"])
+    for item_id, member_id in assigned.items():
+        db.update("items", {"claimed_by": member_id}, id=item_id)
+    return list_state(found["id"])
+
+
+@app.post("/api/lists/{list_id}/reuse")
+def reuse_list(list_id: str):
+    """A fresh copy of a list: same title, type, budget and items, nothing checked."""
+    found = find("lists", list_id)
+    if not found:
+        return error("LIST_NOT_FOUND", 404)
+    copy = db.insert(
+        "lists", [{"title": found["title"], "kind": found["kind"], "budget_cents": found["budget_cents"]}]
+    )[0]
+    db.insert(
+        "items",
+        [
+            {
+                "list_id": copy["id"],
+                "name": item["name"],
+                "position": item["position"],
+                # The price paid last time is the best estimate for next time.
+                "est_price_cents": item["price_cents"] or item["est_price_cents"],
+            }
+            for item in db.select("items", "position", list_id=found["id"])
+        ],
+    )
+    return list_state(copy["id"])
+
+
+@app.get("/api/history")
+def history(ids: str = ""):
+    """Spending across the lists this browser knows (it keeps their IDs; there are no accounts)."""
+    lists = [found for found in (find("lists", list_id) for list_id in ids.split(",")[:50]) if found]
+    return money.history([list_state(found["id"]) for found in lists])
 
 
 # Items

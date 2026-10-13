@@ -56,7 +56,7 @@ class FakeDb:
         added = []
         for row in rows:
             self.clock += 1
-            added.append({"id": str(uuid.uuid4()), "created_at": self.clock, **defaults, **row})
+            added.append({"id": str(uuid.uuid4()), "created_at": f"2026-10-13T00:00:00.{self.clock:06d}", **defaults, **row})
         self.tables.setdefault(table, []).extend(added)
         return [dict(row) for row in added]
 
@@ -151,6 +151,47 @@ class ListsTest(ApiTest):
         reopened = client.patch(f"/api/lists/{list_id}", json={"finished": False}).json()
         self.assertIsNone(reopened["finishedAt"])
         self.assert_error(client.patch(f"/api/lists/{list_id}", json={}), 400, "INVALID_BODY")
+
+    def test_the_state_carries_the_money_summary(self):
+        created = self.make_list()
+        ana, ben = self.join(created["id"], "Ana"), self.join(created["id"], "Ben")
+        client.patch(
+            f"/api/items/{created['items'][0]['id']}",
+            json={"checked": True, "memberId": ana["id"], "priceCents": 2000},
+        )
+        state_money = client.get(f"/api/lists/{created['id']}").json()["money"]
+        self.assertEqual(state_money["spentCents"], 2000)
+        self.assertEqual(state_money["owes"], [{"from": ben["id"], "to": ana["id"], "amountCents": 1000}])
+
+    def test_assign_shares_out_the_unclaimed_items(self):
+        created = self.make_list()
+        ana, ben = self.join(created["id"], "Ana"), self.join(created["id"], "Ben")
+        state = client.post(f"/api/lists/{created['id']}/assign").json()
+        self.assertEqual([item["claimedBy"] for item in state["items"]], [ana["id"], ben["id"]])
+        self.assert_error(client.post(f"/api/lists/{uuid.uuid4()}/assign"), 404, "LIST_NOT_FOUND")
+
+    def test_reuse_copies_the_list_unchecked_at_the_last_price_paid(self):
+        created = self.make_list()
+        client.patch(f"/api/items/{created['items'][0]['id']}", json={"checked": True, "priceCents": 2199})
+        copy = client.post(f"/api/lists/{created['id']}/reuse").json()
+        self.assertNotEqual(copy["id"], created["id"])
+        self.assertEqual((copy["title"], copy["kind"], copy["budgetCents"]), ("Move-in", "home", 30000))
+        self.assertEqual(
+            [(item["name"], item["estPriceCents"], item["checkedAt"]) for item in copy["items"]],
+            [("Kettle", 2199, None), ("Mop", 1200, None)],
+        )
+        self.assert_error(client.post(f"/api/lists/{uuid.uuid4()}/reuse"), 404, "LIST_NOT_FOUND")
+
+    def test_history_covers_the_lists_asked_for_and_skips_unknown_ids(self):
+        first, second = self.make_list(), self.make_list(title="Groceries", kind="groceries")
+        self.make_list(title="Someone else's")
+        client.patch(f"/api/items/{first['items'][0]['id']}", json={"checked": True, "priceCents": 2199})
+        ids = ",".join([first["id"], second["id"], str(uuid.uuid4()), "nope"])
+        result = client.get(f"/api/history?ids={ids}").json()
+        self.assertEqual(sorted(row["title"] for row in result["lists"]), ["Groceries", "Move-in"])
+        self.assertEqual(result["byKind"], {"home": 2199, "groceries": 0})
+        self.assertEqual(result["lastPaidCents"], {"kettle": 2199})
+        self.assertEqual(client.get("/api/history").json()["lists"], [])
 
 
 class MembersTest(ApiTest):
