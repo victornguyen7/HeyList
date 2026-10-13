@@ -1,5 +1,7 @@
 # HeyList — Build prompt
 
+> **Run on 2026-10-13.** This is kept as the record of what was asked. Its "Starting state" no longer describes the repo: all six phases are built (see [CHANGELOG.md](CHANGELOG.md)), decision 48 is recorded, and the sample `/checkout` it mentions has been deleted. What is still open is in [ISSUES.md](ISSUES.md).
+
 The prompt for building HeyList end to end with Claude Code and the APIMatic Context Plugin. Paste the block below into a new session started from the repo root, with the Supabase and Ollama variables already in `.env.local`.
 
 It reverses decision 21 (raw `httpx`, no PayPal SDK) in favour of the PayPal Server SDK for Python. Delete the "One decision changes" section to keep `httpx`.

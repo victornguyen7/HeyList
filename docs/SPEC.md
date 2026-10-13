@@ -8,6 +8,8 @@ The first use case is packing before a holiday; the app stays general-purpose so
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
+> This is the product spec: what HeyList is meant to be. What is built so far is in [ROADMAP.md](ROADMAP.md) and [ARCHITECTURE.md](ARCHITECTURE.md). Of the core features below, photo as proof for a single item and photo recognition are not built yet; a receipt photo is kept as proof.
+
 ## Problem
 
 Existing checklist apps assume users are comfortable tapping through menus, folders, and settings. People with little tech experience often give up on them and fall back to paper or memory.
