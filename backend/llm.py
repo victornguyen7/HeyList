@@ -3,8 +3,6 @@ from functools import cache
 
 from ollama import Client
 
-MODEL = "gemma4:31b"
-
 
 @cache
 def client() -> Client:
@@ -15,4 +13,7 @@ def client() -> Client:
 
 
 def chat(messages: list[dict]) -> str:
-    return client().chat(model=MODEL, messages=messages).message.content or ""
+    model = os.environ.get("OLLAMA_MODEL")
+    if not model:
+        raise RuntimeError("OLLAMA_MODEL must be set")
+    return client().chat(model=model, messages=messages).message.content or ""

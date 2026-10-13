@@ -29,7 +29,7 @@ Three backend routes, in `backend/main.py`. Every error body is `{"error": "<COD
 
 `backend/paypal.py` is the PayPal client, built on the PayPal Server SDK for Python (idempotency keys, one `429` retry; the SDK caches the OAuth token); `backend/sample_list.py` holds the items and the server-side total. One page uses them, `/checkout` (`app/checkout/`): a server page fetches the items and passes them, with the PayPal client ID, to a client component that holds the ticks, the PayPal button, and the paid state. Nothing is stored; a refresh loses the proof. The reasons behind this design are decisions 21–47 in [DECISIONS.md](DECISIONS.md).
 
-Environment, read from `.env.local`: `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` (backend), `SUPABASE_URL` and `SUPABASE_SECRET_KEY` (backend, read in `backend/db.py`; no route uses it yet), `BACKEND_URL` (Next.js, optional locally), `OLLAMA_API_KEY` (backend, read in `backend/llm.py`, which calls `gemma4:31b`; no route uses it yet).
+Environment, read from `.env.local`: `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` (backend), `SUPABASE_URL` and `SUPABASE_SECRET_KEY` (backend, read in `backend/db.py`; no route uses it yet), `BACKEND_URL` (Next.js, optional locally), `OLLAMA_API_KEY` and `OLLAMA_MODEL` (backend, read in `backend/llm.py`; the model must accept images, currently `gemma4:31b`; no route uses it yet).
 
 ## Overview
 
