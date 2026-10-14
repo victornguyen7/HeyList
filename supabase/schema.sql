@@ -76,6 +76,8 @@ create table if not exists items (
   order_id text references orders (id) on delete set null,
   created_at timestamptz not null default now()
 );
+-- A photo taken when checking the item off ("the stove is off"), in the "receipts" bucket.
+alter table items add column if not exists photo_path text;
 
 -- A PayPal invoice sent for settle-up: debtor owes creditor amount_cents.
 create table if not exists invoices (
@@ -105,7 +107,7 @@ alter table orders enable row level security;
 alter table items enable row level security;
 alter table invoices enable row level security;
 
--- Private bucket for receipt photos. The backend uploads and serves them; there is no public URL.
+-- Private bucket for receipt and item photos. The backend uploads and serves them; there is no public URL.
 insert into storage.buckets (id, name, public)
 values ('receipts', 'receipts', false)
 on conflict (id) do nothing;

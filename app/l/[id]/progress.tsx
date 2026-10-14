@@ -104,6 +104,19 @@ export default function Progress({ list, me, refresh, clientId }: PageProps & { 
     setBusy("");
   }
 
+  // Photo as proof: the photo checks the item off. No AI reads it, so there is nothing to confirm.
+  const photoProof = (itemId: string, file: File | undefined) =>
+    file &&
+    run(
+      "Saving the photo…",
+      async () => {
+        const query = me ? `?memberId=${me}` : "";
+        await api(`/items/${itemId}/photo${query}`, { image: await shrink(file) });
+        setTicked((current) => current.filter((id) => id !== itemId));
+      },
+      "The photo could not be saved. Please try again.",
+    );
+
   const saveScan = (confirmed: Scan) =>
     run(
       "Saving…",
@@ -290,8 +303,8 @@ export default function Progress({ list, me, refresh, clientId }: PageProps & { 
 
       <ul className="flex flex-col gap-2">
         {open.map((item) => (
-          <li key={item.id}>
-            <label className={`${card} flex items-center gap-4 text-xl`}>
+          <li key={item.id} className="flex items-stretch gap-2">
+            <label className={`${card} flex flex-1 items-center gap-4 text-xl`}>
               <input
                 type="checkbox"
                 className="size-7"
@@ -306,6 +319,20 @@ export default function Progress({ list, me, refresh, clientId }: PageProps & { 
               </span>
               {item.estPriceCents !== null && <span>{dollars(item.estPriceCents)}</span>}
             </label>
+            <label className={`${small} flex items-center`} aria-label={`Take a photo of ${item.name} as proof`}>
+              📷
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="sr-only"
+                disabled={Boolean(busy)}
+                onChange={(event) => {
+                  void photoProof(item.id, event.target.files?.[0]);
+                  event.target.value = "";
+                }}
+              />
+            </label>
           </li>
         ))}
         {done.map((item) => (
@@ -314,7 +341,7 @@ export default function Progress({ list, me, refresh, clientId }: PageProps & { 
             <span className="min-w-0 flex-1">
               <span className="line-through">{item.name}</span>
               <span className="block text-base text-zinc-600">
-                {item.orderId ? "Paid with PayPal" : item.receiptId ? "On a receipt" : "Done"}
+                {item.orderId ? "Paid with PayPal" : item.receiptId ? "On a receipt" : item.photoPath ? "Photo" : "Done"}
                 {nameOf(item.boughtBy) && ` · ${nameOf(item.boughtBy)}`}
               </span>
             </span>

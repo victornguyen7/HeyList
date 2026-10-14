@@ -15,9 +15,9 @@ Last reviewed 2026-10-13.
 | 12 | Nothing is deployed | `render.yaml` describes both services and has not been applied. The private service needs a paid Render plan. Set the six backend secrets and `PAYPAL_CLIENT_ID` in the dashboard |
 | 15 | The frontend has no automated test and was not clicked through during the build | The backend has 62 unit tests. Every call the pages make was run through the Next.js proxy against Supabase, the model and the sandbox, and lint and build pass. Still to do by hand in a browser: the pages themselves, voice, and the PayPal approval popup on a real list (the popup was hand-tested on the old sample page, closed issue 10) |
 | 16 | Paying a settle-up invoice has not been run | Create, send, duplicate refusal and status refresh were run in the sandbox. Paying one as a sandbox buyer and seeing it turn `PAID` has not |
-| 18 | A scan that is never confirmed leaves its photo in the bucket | `POST .../receipts/scan` stores the photo before the user confirms. Nothing sweeps the orphans |
+| 18 | Unused photos stay in the bucket | `POST .../receipts/scan` stores the photo before the user confirms, and unticking an item drops its proof photo's path but not the file. Nothing sweeps the orphans |
 | 19 | A sent invoice does not follow later spending | If more is bought after an invoice is sent, the debt shown changes but the invoice keeps its amount; the difference shows as still owed once it is paid |
-| 20 | Two spec features are not built | "Photo as proof" for a single item and "photo recognition" of a scene (SPEC, core features). The build prompt's target state did not include them |
+| 20 | A spec feature is not built | "Photo recognition" of a scene (SPEC, core features). "Photo as proof" for a single item is built: `POST /api/items/{id}/photo`, the camera button on Progress |
 | 21 | The local virtual environment is Python 3.14, not 3.13 | The tests pass on it. `render.yaml` pins 3.13.5 |
 
 ## Closed

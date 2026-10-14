@@ -289,7 +289,14 @@ def update_item(item_id: str, body=Depends(json_body)):
                 "price_cents": cents(body.get("priceCents")),
             }
         elif body.get("checked") is False:
-            values |= {"checked_at": None, "bought_by": None, "price_cents": None, "receipt_id": None}
+            # ponytail: the item photo stays in the bucket; sweep orphans with the receipt ones (issue 18).
+            values |= {
+                "checked_at": None,
+                "bought_by": None,
+                "price_cents": None,
+                "receipt_id": None,
+                "photo_path": None,
+            }
         if not values:
             raise ValueError("nothing to change")
     except BAD_INPUT:
@@ -299,6 +306,40 @@ def update_item(item_id: str, body=Depends(json_body)):
     if item["order_id"] and ("checked" in body or "estPriceCents" in body):
         return error("ITEM_PAID", 409)
     return camel(db.update("items", values, id=item["id"])[0])
+
+
+@app.post("/api/items/{item_id}/photo")
+def item_photo(item_id: str, request: Request, image: bytes = Depends(raw_body)):
+    """Checks an item off with a photo as proof. The raw image is the body; ?memberId= says who."""
+    item = find("items", item_id)
+    if not item:
+        return error("ITEM_NOT_FOUND", 404)
+    content_type = request.headers.get("content-type", "")
+    if content_type not in IMAGE_TYPES or not image or len(image) > MAX_IMAGE_BYTES:
+        return error("INVALID_IMAGE", 400)
+    try:
+        member_id = member_of(item["list_id"], request.query_params.get("memberId"))
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+    if item["order_id"]:
+        return error("ITEM_PAID", 409)
+
+    path = f"{item['list_id']}/{uuid.uuid4()}.{IMAGE_TYPES[content_type]}"
+    db.upload(path, image, content_type)
+    values = {
+        "photo_path": path,
+        "checked_at": item["checked_at"] or now(),
+        "bought_by": member_id or item["bought_by"],
+    }
+    return camel(db.update("items", values, id=item["id"])[0])
+
+
+@app.get("/api/items/{item_id}/photo")
+def item_photo_image(item_id: str):
+    item = find("items", item_id)
+    if not item or not item["photo_path"]:
+        return error("PHOTO_NOT_FOUND", 404)
+    return image_response(item["photo_path"])
 
 
 @app.delete("/api/items/{item_id}")
@@ -491,9 +532,13 @@ def receipt_image(receipt_id: str):
     receipt = find("receipts", receipt_id)
     if not receipt:
         return error("RECEIPT_NOT_FOUND", 404)
-    extension = receipt["image_path"].rsplit(".", 1)[-1]
+    return image_response(receipt["image_path"])
+
+
+def image_response(path: str) -> Response:
+    extension = path.rsplit(".", 1)[-1]
     media_type = next(kind for kind, known in IMAGE_TYPES.items() if known == extension)
-    return Response(db.download(receipt["image_path"]), media_type=media_type)
+    return Response(db.download(path), media_type=media_type)
 
 
 # Settle-up with PayPal Invoicing

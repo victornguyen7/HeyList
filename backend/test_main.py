@@ -49,6 +49,7 @@ class FakeDb:
                 "checked_at": None,
                 "receipt_id": None,
                 "order_id": None,
+                "photo_path": None,
             },
             "orders": {"status": "CREATED", "captured_at": None},
             "receipts": {"extras": [], "total_cents": None},
@@ -270,6 +271,44 @@ class ItemsTest(ApiTest):
         self.assertEqual(client.delete(f"/api/items/{item_id}").status_code, 204)
         self.assertEqual(len(client.get(f"/api/lists/{created['id']}").json()["items"]), 1)
         self.assert_error(client.delete(f"/api/items/{item_id}"), 404, "ITEM_NOT_FOUND")
+
+
+class ItemPhotoTest(ApiTest):
+    def setUp(self):
+        super().setUp()
+        self.list = self.make_list()
+        self.member = self.join(self.list["id"])
+        self.item_id = self.list["items"][0]["id"]
+
+    def send(self, item_id=None, image=b"stove", content_type="image/jpeg", member_id=None):
+        return client.post(
+            f"/api/items/{item_id or self.item_id}/photo",
+            params={"memberId": member_id or self.member["id"]},
+            content=image,
+            headers={"Content-Type": content_type},
+        )
+
+    def test_a_photo_checks_the_item_off_and_is_served_back(self):
+        item = self.send().json()
+        self.assertTrue(item["checkedAt"])
+        self.assertEqual(item["boughtBy"], self.member["id"])
+        self.assertTrue(item["photoPath"].startswith(self.list["id"] + "/"))
+        photo = client.get(f"/api/items/{self.item_id}/photo")
+        self.assertEqual((photo.status_code, photo.content), (200, b"stove"))
+        self.assertEqual(photo.headers["content-type"], "image/jpeg")
+
+        unchecked = client.patch(f"/api/items/{self.item_id}", json={"checked": False}).json()
+        self.assertIsNone(unchecked["photoPath"])
+        self.assert_error(client.get(f"/api/items/{self.item_id}/photo"), 404, "PHOTO_NOT_FOUND")
+
+    def test_bad_photos_store_nothing(self):
+        self.assert_error(self.send(content_type="application/pdf"), 400, "INVALID_IMAGE")
+        self.assert_error(self.send(image=b""), 400, "INVALID_IMAGE")
+        self.assert_error(self.send(member_id=str(uuid.uuid4())), 400, "INVALID_BODY")
+        self.assert_error(self.send(item_id=str(uuid.uuid4())), 404, "ITEM_NOT_FOUND")
+        self.db.update("items", {"order_id": "PAID-1"}, id=self.item_id)
+        self.assert_error(self.send(), 409, "ITEM_PAID")
+        self.assertEqual(self.db.files, {})
 
 
 class CreateOrderTest(ApiTest):

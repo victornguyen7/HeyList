@@ -11,6 +11,7 @@ export type Item = {
   checkedAt: string | null;
   receiptId: string | null;
   orderId: string | null;
+  photoPath: string | null;
 };
 export type Member = { id: string; name: string; email: string | null };
 export type Extra = { name: string; priceCents: number | null };

@@ -8,7 +8,7 @@ The first use case is packing before a holiday; the app stays general-purpose so
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
-> This is the product spec: what HeyList is meant to be. What is built so far is in [ROADMAP.md](ROADMAP.md) and [ARCHITECTURE.md](ARCHITECTURE.md). Of the core features below, photo as proof for a single item and photo recognition are not built yet; a receipt photo is kept as proof.
+> This is the product spec: what HeyList is meant to be. What is built so far is in [ROADMAP.md](ROADMAP.md) and [ARCHITECTURE.md](ARCHITECTURE.md). Of the core features below, photo recognition is not built yet.
 
 ## Problem
 

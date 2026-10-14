@@ -63,7 +63,7 @@ export function ItemsPage({ list, me, refresh, lastPaid }: PageProps & { lastPai
                       />
                     )}
                   </div>
-                  {/* The proof: the PayPal order, or the receipt photo. */}
+                  {/* The proof: the PayPal order, the receipt photo, or a photo of the item. */}
                   {item.orderId && <p className="text-base text-zinc-600">Proof: PayPal order {item.orderId}</p>}
                   {item.receiptId && (
                     <a
@@ -73,6 +73,11 @@ export function ItemsPage({ list, me, refresh, lastPaid }: PageProps & { lastPai
                       rel="noreferrer"
                     >
                       Proof: see the receipt
+                    </a>
+                  )}
+                  {item.photoPath && (
+                    <a className="text-base underline" href={`/api/items/${item.id}/photo`} target="_blank" rel="noreferrer">
+                      Proof: see the photo
                     </a>
                   )}
                   {!item.orderId && (
