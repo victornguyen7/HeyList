@@ -23,3 +23,11 @@ Decisions recorded in the project notes. A reason is listed only where the notes
 | 17 | Use the PayPal sandbox: Checkout JS SDK + Orders API, Invoicing API | — |
 | 18 | Use sponsor tools APIMatic Context Plugin, Postman, and Render; Channel3 only as a stretch | — |
 | 19 | History is the retention hook: buy again from a past list, plus price memory | — |
+| 20 | Server-side logic lives in a FastAPI (Python) backend; Next.js proxies `/api/*` to it | The browser stays same-origin, so no CORS setup and no backend URL exposed to it |
+| 21 | Prices live on the server; the client sends item IDs only | A buyer must not be able to change what they pay |
+| 22 | Money is handled in integer cents, converted to PayPal's string amounts without floats | No rounding errors |
+| 23 | Call PayPal through the Python PayPal Server SDK rather than raw REST | It is APIMatic-generated, matching the APIMatic sponsor tool; it also handles OAuth tokens |
+| 24 | Send each item's ID as its PayPal `sku` | The capture response says which items were bought, with nothing stored on our side |
+| 25 | Check items off only when the capture status is `COMPLETED` | An order can complete while its payment is still `PENDING` or `DECLINED` |
+| 26 | Use the order ID as the capture's `PayPal-Request-Id` | A repeated capture (retry, refresh) returns the first result instead of charging again |
+| 27 | Default `BACKEND_URL` is `http://127.0.0.1:8000`, not `localhost` | uvicorn listens on IPv4, while `localhost` can resolve to IPv6 `::1` on macOS |

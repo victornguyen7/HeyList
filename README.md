@@ -8,7 +8,7 @@ The first use case is packing before a holiday; the app stays general-purpose so
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
-> **Status:** project scaffold only. The features below are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status:** early build. The FastAPI backend can create and capture PayPal sandbox orders for a hard-coded sample list; the rest of the features below are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Why
 
@@ -45,29 +45,44 @@ Progress · Items · Money · Receipts · History · Settle-up — see [docs/SPE
 
 ## Stack
 
-- **App:** Next.js website, mobile-first (native app later)
+- **App:** Next.js website, mobile-first (native app later); `/api/*` is proxied to the backend
+- **Backend:** FastAPI (Python) in `backend/`
 - **Data:** Supabase — lists, receipts storage, realtime
-- **Payments:** PayPal sandbox — Checkout JS SDK + Orders API, Invoicing API
+- **Payments:** PayPal sandbox — Orders API through the PayPal Server SDK (Python, APIMatic-generated); Checkout JS SDK and Invoicing API planned
 - **AI:** one LLM with vision for lists and receipts (Ollama API); Web Speech API for voice
 - **Hosting:** Render
 - **Sponsor tools:** APIMatic Context Plugin, Postman, Render; Channel3 for the stretch
 
 ## Getting started
 
+Copy the env template and fill in your PayPal sandbox keys (and the others as features land):
+
+```bash
+cp .env.example .env.local
+```
+
+Frontend:
+
 ```bash
 npm install
 npm run dev
 ```
 
-Backend (FastAPI, proxied under `/api` by Next), in a second terminal:
+Backend (FastAPI, proxied under `/api` by Next), in a second terminal. The venv can live anywhere; these commands assume it sits next to the repo, at `../.venv`:
 
 ```bash
+python3 -m venv ../.venv
+../.venv/bin/pip install -r backend/requirements.txt
 cd backend && ../../.venv/bin/uvicorn main:app --port 8000 --env-file ../.env.local
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
+Backend tests (from `backend/`): `../../.venv/bin/python -m unittest`
+
 Other scripts: `npm run build`, `npm run start`, `npm run lint`.
+
+When deploying, set `BACKEND_URL` before `next build`: Next resolves the `/api` rewrite at build time.
 
 ## Docs
 
