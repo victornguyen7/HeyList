@@ -33,5 +33,21 @@ class CaptureRouteTest(unittest.TestCase):
         self.assertEqual((response.status_code, response.json()["detail"]), (502, "PAYPAL_UNREACHABLE"))
 
 
+class OrderRoutesTest(unittest.TestCase):
+    def test_items_lists_the_sample_list(self):
+        self.assertEqual(client.get("/api/items").json()[0]["id"], "sunscreen")
+
+    def test_create_returns_the_order_and_approval_link(self):
+        result = {"orderId": "ORDER1", "approveUrl": "https://paypal.example/approve"}
+        with mock.patch.object(paypal, "create_order", return_value=result) as create:
+            response = client.post("/api/orders", json={"itemIds": ["sunscreen"]})
+        self.assertEqual((response.status_code, response.json()), (200, result))
+        create.assert_called_once_with(["sunscreen"])
+
+    def test_an_invalid_selection_is_400(self):
+        response = client.post("/api/orders", json={"itemIds": []})
+        self.assertEqual((response.status_code, response.json()["detail"]), (400, "Select at least one item"))
+
+
 if __name__ == "__main__":
     unittest.main()

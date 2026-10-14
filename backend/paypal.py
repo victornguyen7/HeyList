@@ -72,7 +72,8 @@ def _usd(cents: int) -> Money:
     return Money(currency_code="USD", value=f"{cents // 100}.{cents % 100:02d}")
 
 
-def create_order(item_ids: list[str]) -> str:
+def create_order(item_ids: list[str]) -> dict:
+    """Returns the order ID and the PayPal page to send the buyer to."""
     total = _usd(total_cents(item_ids))
     body = OrderRequest(
         intent=CheckoutPaymentIntent.CAPTURE,
@@ -102,7 +103,9 @@ def create_order(item_ids: list[str]) -> str:
         ),
     )
     order = _call(_client().orders.create_order, {"body": body, "paypal_request_id": str(uuid.uuid4())})  # pyright: ignore[reportOptionalMemberAccess]
-    return order.id
+    # With payment_source.paypal, PayPal names the approval link "payer-action" rather than "approve".
+    approve_url = next(link.href for link in order.links if link.rel == "payer-action")
+    return {"orderId": order.id, "approveUrl": approve_url}
 
 
 def capture_order(order_id: str) -> dict:

@@ -66,9 +66,12 @@ class PayPalTest(unittest.TestCase):
         return [request.path_url for request in self.fake.requests]
 
     def test_create_order_sends_the_server_side_total_with_item_ids_as_skus(self):
-        self.fake_paypal((201, {"id": "ORDER1"}))
+        approve = "https://www.sandbox.paypal.com/checkoutnow?token=ORDER1"
+        self.fake_paypal((201, {"id": "ORDER1", "links": [{"rel": "payer-action", "href": approve}]}))
 
-        self.assertEqual(paypal.create_order(["sunscreen", "adapter"]), "ORDER1")
+        self.assertEqual(
+            paypal.create_order(["sunscreen", "adapter"]), {"orderId": "ORDER1", "approveUrl": approve}
+        )
 
         self.assertEqual(self.paths(), ["/v1/oauth2/token", "/v2/checkout/orders"])
         order = self.fake.requests[1]

@@ -4,7 +4,7 @@ The project notes do not set dates or phases beyond "first", "stretch", and "lat
 
 ## Status
 
-Early build. The FastAPI backend creates and captures PayPal sandbox orders for a hard-coded sample list, and the app shows the capture result when PayPal sends the buyer back. No user-facing features yet.
+Early build. The home page is a test checklist for a hard-coded sample list: pick items, pay through the PayPal sandbox, and see them checked off on return. No real list features yet.
 
 ## First: hackathon build
 
@@ -18,7 +18,7 @@ Flow, end to end:
 - [ ] Check off by PayPal Checkout: the order is the proof
   - [x] Backend: create order from item IDs, capture, report capture status and items bought
   - [x] Return page: capture after PayPal approval and show the result
-  - [ ] Create-order route and checkout button
+  - [x] Create-order route and checkout button (test UI for the sample list)
   - [ ] Store the order as proof and check the items off
 - [ ] Flag receipt lines that match nothing as extras; keep unchecked items open
 - [ ] Settle up on shared lists with PayPal invoices
