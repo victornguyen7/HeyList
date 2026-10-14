@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   // The FastAPI backend (backend/main.py); proxied so the browser stays same-origin.
   rewrites: async () => [
-    { source: "/api/:path*", destination: `${process.env.BACKEND_URL ?? "http://localhost:8000"}/api/:path*` },
+    { source: "/api/:path*", destination: `${process.env.BACKEND_URL ?? "http://127.0.0.1:8000"}/api/:path*` },
   ],
   turbopack: {
     rules: {
