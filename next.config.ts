@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   partialPrefetching: true,
+  // The FastAPI backend (backend/main.py); proxied so the browser stays same-origin.
+  rewrites: async () => [
+    { source: "/api/:path*", destination: `${process.env.BACKEND_URL ?? "http://localhost:8000"}/api/:path*` },
+  ],
   turbopack: {
     rules: {
       "*.css": {

@@ -59,6 +59,12 @@ npm install
 npm run dev
 ```
 
+Backend (FastAPI, proxied under `/api` by Next), in a second terminal:
+
+```bash
+cd backend && ../../.venv/bin/uvicorn main:app --port 8000 --env-file ../.env.local
+```
+
 Open [http://localhost:3000](http://localhost:3000).
 
 Other scripts: `npm run build`, `npm run start`, `npm run lint`.
