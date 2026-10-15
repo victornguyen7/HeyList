@@ -17,7 +17,12 @@ def client() -> Client:
 
 def _where(query, filters: dict):
     for column, value in filters.items():
-        query = query.in_(column, value) if isinstance(value, list) else query.eq(column, value)
+        if isinstance(value, list):
+            query = query.in_(column, value)
+        elif value is None:
+            query = query.is_(column, "null")
+        else:
+            query = query.eq(column, value)
     return query
 
 
@@ -26,7 +31,7 @@ def _where(query, filters: dict):
 
 
 def select(table: str, order: str = "created_at", **filters) -> list[Any]:
-    """Rows where every filter matches; a list value means "is one of"."""
+    """Rows where every filter matches; a list value means "is one of", None means "is null"."""
     if any(value == [] for value in filters.values()):
         return []
     return _where(client().table(table).select("*"), filters).order(order).execute().data
@@ -37,6 +42,7 @@ def insert(table: str, rows: list[dict]) -> list[Any]:
 
 
 def update(table: str, values: dict, **filters) -> list[Any]:
+    """The rows it changed. One UPDATE, so a filter like checked_at=None claims a row atomically."""
     return _where(client().table(table).update(values), filters).execute().data
 
 

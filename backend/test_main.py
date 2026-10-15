@@ -58,13 +58,23 @@ class FakeDB:
         return [dict(row) for row in added]
 
     def update(self, table, values, **filters):
-        for row in self.rows(table, filters):
+        # The rows it changed, like Postgres: matched before the write, so a filter on a column it sets still counts.
+        changed = self.rows(table, filters)
+        for row in changed:
             row.update(values)
-        return [dict(row) for row in self.rows(table, filters)]
+        return [dict(row) for row in changed]
 
     def delete(self, table, **filters):
         doomed = self.rows(table, filters)
         self.tables[table] = [row for row in self.tables[table] if row not in doomed]
+
+
+def stale_reads(fake, table, **columns):
+    """Selects from table show columns as given, as if another request changed the rows after they were read."""
+    select = fake.select
+    return mock.patch.object(
+        db, "select", lambda t, *args, **filters: [row | columns if t == table else row for row in select(t, *args, **filters)]
+    )
 
 
 class RoutesTest(unittest.TestCase):
@@ -169,6 +179,49 @@ class CheckoutTest(RoutesTest):
         self.assertIsNone(items["Map"]["checkedAt"])
         # A paid item cannot be unticked or re-priced.
         self.assertEqual(self.client.patch(f"/api/items/{self.adapter['id']}", json={"quantity": 2}).status_code, 409)
+
+    def test_capture_records_the_price_paypal_charged_even_if_the_item_changed_since(self):
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.order(self.sunscreen)
+        self.client.patch(f"/api/items/{self.sunscreen['id']}", json={"quantity": 5, "estPriceCents": 1})
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED"})
+        self.client.post("/api/orders/ORDER1/capture")
+
+        self.assertEqual(self.db.select("items", id=self.sunscreen["id"])[0]["price_cents"], 899 * 2)
+
+    def test_an_item_checked_off_by_a_receipt_before_capture_keeps_its_receipt(self):
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.order(self.sunscreen, self.adapter)
+        self.db.update("items", {"checked_at": "earlier", "receipt_id": "R1", "price_cents": 500}, id=self.adapter["id"])
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED"})
+
+        with self.assertLogs(main.log, "WARNING"):
+            self.assertEqual(self.client.post("/api/orders/ORDER1/capture").status_code, 200)
+        adapter = self.db.select("items", id=self.adapter["id"])[0]
+        self.assertEqual((adapter["receipt_id"], adapter["order_id"], adapter["price_cents"]), ("R1", None, 500))
+        self.assertEqual(self.db.select("items", id=self.sunscreen["id"])[0]["order_id"], "ORDER1")
+
+    def test_a_receipt_confirmed_while_capture_runs_keeps_its_item(self):
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.order(self.adapter)
+        self.db.update("items", {"checked_at": "earlier", "receipt_id": "R1", "price_cents": 500}, id=self.adapter["id"])
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED"})
+
+        with stale_reads(self.db, "items", checked_at=None), self.assertLogs(main.log, "WARNING"):
+            self.client.post("/api/orders/ORDER1/capture")
+        adapter = self.db.select("items", id=self.adapter["id"])[0]
+        self.assertEqual((adapter["receipt_id"], adapter["order_id"], adapter["price_cents"]), ("R1", None, 500))
+
+    def test_checking_off_by_hand_never_overwrites_a_purchase_that_just_landed(self):
+        self.db.update("items", {"checked_at": "earlier", "order_id": "ORDER1", "price_cents": 1499}, id=self.adapter["id"])
+        url = f"/api/items/{self.adapter['id']}"
+
+        with stale_reads(self.db, "items", checked_at=None, order_id=None):
+            self.assertEqual(self.client.patch(url, json={"checked": True, "priceCents": 1}).json(), {"error": "ITEM_CHECKED"})
+            self.assertEqual(self.client.patch(url, json={"checked": False}).json(), {"error": "ITEM_PAID"})
+            self.assertEqual(self.client.patch(url, json={"name": "Plug"}).status_code, 200)
+        adapter = self.db.select("items", id=self.adapter["id"])[0]
+        self.assertEqual((adapter["order_id"], adapter["price_cents"], adapter["name"]), ("ORDER1", 1499, "Plug"))
 
     def test_a_pending_payment_checks_nothing_off(self):
         response, items = self.capture("PENDING")
@@ -298,6 +351,20 @@ class ReceiptTest(RoutesTest):
         self.assertEqual(state["receipts"][0]["extras"], [{"name": "GUM", "priceCents": 199}])
         # Confirming twice would pay twice.
         again = self.client.post(f"/api/receipts/{receipt['id']}/confirm", json={"itemIds": [None, None, None]})
+        self.assertEqual(again.status_code, 409)
+
+    def test_confirm_racing_a_capture_or_another_confirm_checks_nothing_off_twice(self):
+        receipt = self.scan(matches=[self.milk, None, None]).json()
+        # Both happen after the route read the receipt and the items, as when two requests overlap.
+        self.db.update("items", {"checked_at": "earlier", "order_id": "ORDER1", "price_cents": 400}, id=self.milk)
+        with stale_reads(self.db, "items", checked_at=None):
+            state = self.client.post(f"/api/receipts/{receipt['id']}/confirm", json={"itemIds": [self.milk, None, None]}).json()
+        milk = next(i for i in state["items"] if i["name"] == "Milk")
+        self.assertEqual((milk["orderId"], milk["receiptId"], milk["priceCents"]), ("ORDER1", None, 400))
+        self.assertEqual(len(state["receipts"][0]["extras"]), 3)
+
+        with stale_reads(self.db, "receipts", confirmed_at=None):
+            again = self.client.post(f"/api/receipts/{receipt['id']}/confirm", json={"itemIds": [None, None, None]})
         self.assertEqual(again.status_code, 409)
 
     def test_confirm_rejects_items_that_cannot_be_checked_off(self):

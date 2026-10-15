@@ -55,6 +55,9 @@ create table if not exists orders (
   -- Who paid.
   member_id uuid references members (id) on delete set null,
   item_ids uuid[] not null,
+  -- What PayPal charges for each item, all units: {"<item id>": cents}. Fixed when the order is created,
+  -- so a quantity or price changed while the buyer is on PayPal doesn't change what is recorded as paid.
+  prices jsonb not null default '{}',
   -- The total the server computed and sent to PayPal.
   total_cents integer not null check (total_cents > 0),
   status text not null default 'CREATED',
@@ -125,5 +128,6 @@ alter table lists drop constraint if exists lists_kind_check;
 alter table lists add constraint lists_kind_check check (kind in ('groceries', 'trip', 'home', 'party', 'other'));
 alter table receipts add column if not exists lines jsonb not null default '[]';
 alter table receipts add column if not exists confirmed_at timestamptz;
+alter table orders add column if not exists prices jsonb not null default '{}';
 -- unique (list_id, name) already indexes members by list_id.
 drop index if exists members_list_id;

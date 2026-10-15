@@ -264,9 +264,17 @@ def update_item(item_id: str, body=Depends(json_body)):
         return error("INVALID_BODY", 400)
 
     # A captured PayPal order is proof of purchase; it cannot be unticked or re-priced.
-    if item["order_id"] and ("checked" in body or "estPriceCents" in body or "quantity" in body):
+    paid_fields = "checked" in body or "estPriceCents" in body or "quantity" in body
+    if item["order_id"] and paid_fields:
         return error("ITEM_PAID", 409)
-    return camel(db.update("items", values, id=item["id"])[0])
+    # The same rules again in the UPDATE itself, so a capture or receipt landing since the read above isn't
+    # overwritten: checking off needs the item still open, and the paid fields need it still unpaid.
+    checking = body.get("checked") is True
+    filters = ({"order_id": None} if paid_fields else {}) | ({"checked_at": None} if checking else {})
+    saved = db.update("items", values, id=item["id"], **filters)
+    if not saved:
+        return error("ITEM_CHECKED" if checking else "ITEM_PAID" if filters else "ITEM_NOT_FOUND", 409 if filters else 404)
+    return camel(saved[0])
 
 
 @app.delete("/api/items/{item_id}")
@@ -320,6 +328,7 @@ def create_order(list_id: str, body=Depends(json_body)):
                 "list_id": list_id,
                 "member_id": member_id,
                 "item_ids": [item["id"] for item in items],
+                "prices": {item["id"]: item["est_price_cents"] * item["quantity"] for item in items},
                 "total_cents": sum(item["est_price_cents"] * item["quantity"] for item in items),
             }
         ],
@@ -346,19 +355,28 @@ def capture_order(order_id: str):
 
     if result["status"] == "COMPLETED":
         # The captured order is the proof: its items are checked off, priced, and tied to it.
-        captured_at = now()
+        order, captured_at = orders[0], now()
         db.update("orders", {"status": "COMPLETED", "captured_at": captured_at}, id=order_id)
-        for item in db.select("items", id=orders[0]["item_ids"]):
-            db.update(
+        for item in db.select("items", id=order["item_ids"]):
+            # Already checked off: by this order on a repeated capture, or by a receipt while the buyer was on
+            # PayPal. An item has one proof (items_one_proof), so the receipt stays and the overlap is logged.
+            if item["checked_at"] and item["order_id"] == order_id:
+                continue
+            # checked_at=None makes the check and the write one step, so a receipt confirmed at the same moment
+            # can't be overwritten.
+            if not db.update(
                 "items",
                 {
                     "checked_at": captured_at,
-                    "bought_by": orders[0]["member_id"],
-                    "price_cents": item["est_price_cents"] * item["quantity"],
+                    "bought_by": order["member_id"],
+                    # What PayPal charged, not today's price; orders from before prices were stored fall back.
+                    "price_cents": order["prices"].get(item["id"], item["est_price_cents"] * item["quantity"]),
                     "order_id": order_id,
                 },
                 id=item["id"],
-            )
+                checked_at=None,
+            ):
+                log.warning("Order %s paid for item %s, which was already checked off", order_id, item["id"])
     return result
 
 
@@ -487,23 +505,33 @@ def confirm_receipt(receipt_id: str, body=Depends(json_body)):
     except BAD_INPUT:
         return error("INVALID_MATCHES", 400)
 
+    # Claimed first, in one step, so two confirms at the same moment can't both check items off.
+    checked_at = now()
+    if not db.update("receipts", {"confirmed_at": checked_at}, id=receipt["id"], confirmed_at=None):
+        return error("RECEIPT_CONFIRMED", 409)
+
     # Prices come from the stored lines, never the browser (decision 21). Several lines can be one item.
-    paid = dict.fromkeys(items, 0)
-    extras = []
+    by_item: dict[str, list[dict]] = {item_id: [] for item_id in items}
+    unmatched = []
     for line, item_id in zip(lines, item_ids):
         if item_id is None:
-            extras.append({"name": line["text"], "priceCents": line["priceCents"]})
+            unmatched.append(line)
         else:
-            paid[str(uuid.UUID(item_id))] += line["priceCents"]
+            by_item[str(uuid.UUID(item_id))].append(line)
 
-    checked_at = now()
-    for item_id, price in paid.items():
-        db.update(
-            "items",
-            {"checked_at": checked_at, "bought_by": receipt["member_id"], "price_cents": price, "receipt_id": receipt["id"]},
-            id=item_id,
-        )
-    db.update("receipts", {"extras": extras, "confirmed_at": checked_at}, id=receipt["id"])
+    for item_id, item_lines in by_item.items():
+        values = {
+            "checked_at": checked_at,
+            "bought_by": receipt["member_id"],
+            "price_cents": sum(line["priceCents"] for line in item_lines),
+            "receipt_id": receipt["id"],
+        }
+        # checked_at=None: an item checked off since the check above (a PayPal capture, another receipt) keeps
+        # that proof, and its lines count as extras on this receipt.
+        if not db.update("items", values, id=item_id, checked_at=None):
+            unmatched += item_lines
+    extras = [{"name": line["text"], "priceCents": line["priceCents"]} for line in unmatched]
+    db.update("receipts", {"extras": extras}, id=receipt["id"])
     return list_state(receipt["list_id"])
 
 
