@@ -72,9 +72,9 @@ def _usd(cents: int) -> Money:
     return Money(currency_code="USD", value=f"{cents // 100}.{cents % 100:02d}")
 
 
-def create_order(item_ids: list[str]) -> dict:
+def create_order(selection: dict[str, int]) -> dict:
     """Returns the order ID and the PayPal page to send the buyer to."""
-    total = _usd(total_cents(item_ids))
+    total = _usd(total_cents(selection))
     body = OrderRequest(
         intent=CheckoutPaymentIntent.CAPTURE,
         purchase_units=[
@@ -86,9 +86,9 @@ def create_order(item_ids: list[str]) -> dict:
                 ),
                 items=[  # pyright: ignore[reportArgumentType]  (SDK params are unannotated; SKIP default is a str)
                     # sku carries our item ID, so the capture response says which items were bought.
-                    ItemRequest(name=item["name"], unit_amount=_usd(item["priceCents"]), quantity="1", sku=item["id"])
+                    ItemRequest(name=item["name"], unit_amount=_usd(item["priceCents"]), quantity=str(selection[item["id"]]), sku=item["id"])
                     for item in ITEMS
-                    if item["id"] in item_ids
+                    if item["id"] in selection
                 ],
             )
         ],

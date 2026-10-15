@@ -3,7 +3,7 @@ import logging
 import requests
 from apimatic_core.exceptions.auth_validation_exception import AuthValidationException
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictInt
 
 import paypal
 from sample_list import ITEMS
@@ -18,13 +18,13 @@ def items() -> list[dict]:
 
 
 class OrderIn(BaseModel):
-    itemIds: list[str]
+    items: dict[str, StrictInt]  # item ID -> quantity; total_cents checks the range
 
 
 @app.post("/api/orders")
 def create(order: OrderIn) -> dict:
     try:
-        return paypal.create_order(order.itemIds)
+        return paypal.create_order(order.items)
     except ValueError as error:
         raise HTTPException(400, str(error)) from error
     except paypal.PayPalError as error:

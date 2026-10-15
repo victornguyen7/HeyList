@@ -70,7 +70,7 @@ class PayPalTest(unittest.TestCase):
         self.fake_paypal((201, {"id": "ORDER1", "links": [{"rel": "payer-action", "href": approve}]}))
 
         self.assertEqual(
-            paypal.create_order(["sunscreen", "adapter"]), {"orderId": "ORDER1", "approveUrl": approve}
+            paypal.create_order({"sunscreen": 2, "adapter": 1}), {"orderId": "ORDER1", "approveUrl": approve}
         )
 
         self.assertEqual(self.paths(), ["/v1/oauth2/token", "/v2/checkout/orders"])
@@ -78,9 +78,10 @@ class PayPalTest(unittest.TestCase):
         self.assertEqual(order.headers["authorization"], "Bearer token-1")
         self.assertTrue(order.headers["paypal-request-id"])
         unit = json.loads(order.body)["purchase_units"][0]
-        self.assertEqual(unit["amount"]["value"], "23.98")
-        self.assertEqual(unit["amount"]["breakdown"]["item_total"]["value"], "23.98")
+        self.assertEqual(unit["amount"]["value"], "32.97")
+        self.assertEqual(unit["amount"]["breakdown"]["item_total"]["value"], "32.97")
         self.assertEqual([item["unit_amount"]["value"] for item in unit["items"]], ["8.99", "14.99"])
+        self.assertEqual([item["quantity"] for item in unit["items"]], ["2", "1"])
         self.assertEqual([item["sku"] for item in unit["items"]], ["sunscreen", "adapter"])
 
     def test_capture_reports_the_payment_status_and_the_items_bought(self):
@@ -134,4 +135,4 @@ class PayPalTest(unittest.TestCase):
         self.addCleanup(paypal._client.cache_clear)
         with mock.patch.dict(os.environ, {"PAYPAL_CLIENT_ID": "id", "PAYPAL_CLIENT_SECRET": ""}):
             with self.assertRaisesRegex(RuntimeError, "must be set"):
-                paypal.create_order(["sunscreen"])
+                paypal.create_order({"sunscreen": 1})

@@ -10,7 +10,8 @@
 - Added `.env.example` (committed) listing every environment variable; `.env.local` stays ignored.
 - `.gitignore` now ignores `__pycache__/`; previously committed cache files were removed from git.
 - Added `GET /api/items` and `POST /api/orders`, and replaced the template home page with a checklist test UI (`app/checklist.tsx`): pick items, pay with PayPal, see them checked off on return. Page title is now HeyList.
-- Backend unit tests: `python -m unittest` from `backend/` (15 tests).
+- Items can be bought in quantity: a selection is `{item ID: quantity}` (1–99), sent to PayPal as each item's `quantity`; the test UI has −/+ buttons.
+- Backend unit tests: `python -m unittest` from `backend/` (16 tests).
 
 ## 2026-10-12
 

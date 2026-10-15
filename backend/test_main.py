@@ -40,13 +40,19 @@ class OrderRoutesTest(unittest.TestCase):
     def test_create_returns_the_order_and_approval_link(self):
         result = {"orderId": "ORDER1", "approveUrl": "https://paypal.example/approve"}
         with mock.patch.object(paypal, "create_order", return_value=result) as create:
-            response = client.post("/api/orders", json={"itemIds": ["sunscreen"]})
+            response = client.post("/api/orders", json={"items": {"sunscreen": 2}})
         self.assertEqual((response.status_code, response.json()), (200, result))
-        create.assert_called_once_with(["sunscreen"])
+        create.assert_called_once_with({"sunscreen": 2})
 
     def test_an_invalid_selection_is_400(self):
-        response = client.post("/api/orders", json={"itemIds": []})
+        response = client.post("/api/orders", json={"items": {}})
         self.assertEqual((response.status_code, response.json()["detail"]), (400, "Select at least one item"))
+
+    def test_a_quantity_must_be_a_real_integer(self):
+        for quantity in ["2", 2.5, True]:
+            with self.subTest(quantity=quantity):
+                response = client.post("/api/orders", json={"items": {"sunscreen": quantity}})
+                self.assertEqual(response.status_code, 422)
 
 
 if __name__ == "__main__":

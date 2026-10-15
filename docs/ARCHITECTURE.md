@@ -43,17 +43,17 @@ Currently installed:
 
 | File | What it does |
 |---|---|
-| `backend/sample_list.py` | Hard-coded sample items with prices in integer cents, and `total_cents()`, which validates a selection of item IDs and sums it. Stands in for LLM-generated and user-added items |
+| `backend/sample_list.py` | Hard-coded sample items with prices in integer cents, and `total_cents()`, which validates a selection (`{item ID: quantity}`, 1–99 each) and sums price × quantity. Stands in for LLM-generated and user-added items |
 | `backend/paypal.py` | PayPal Server SDK client (sandbox, built on first use). `create_order()` and `capture_order()` |
-| `backend/main.py` | FastAPI app. `GET /api/items`, `POST /api/orders` (returns the order ID and PayPal approval URL), `POST /api/orders/{order_id}/capture` |
-| `app/checklist.tsx` | Test UI on the home page: pick sample items, pay with PayPal, and on return capture the order and show the paid items checked off |
+| `backend/main.py` | FastAPI app. `GET /api/items`, `POST /api/orders` (takes `{"items": {id: quantity}}`, returns the order ID and PayPal approval URL), `POST /api/orders/{order_id}/capture` |
+| `app/checklist.tsx` | Test UI on the home page: pick sample items and quantities, pay with PayPal, and on return capture the order and show the paid items checked off |
 | `next.config.ts` | Rewrites `/api/*` to `BACKEND_URL` (default `http://127.0.0.1:8000`) |
 
 Not yet built: storing orders as proof (nothing persists across reloads except via the return URL). `llm.py`, `money.py` and `photo.py` are empty placeholders.
 
 ### Payment flow
 
-1. The client sends **item IDs only**. The backend looks up prices in `sample_list.py`, so a buyer cannot change what they pay.
+1. The client sends **item IDs and quantities only**. The backend looks up prices in `sample_list.py`, so a buyer cannot change what they pay.
 2. `create_order()` sends the order to PayPal with the server-side total in USD, each item's ID in its `sku`, and the app as the return and cancel URL (`APP_URL`).
 3. The browser goes to the approval URL (PayPal's `payer-action` link). PayPal sends the buyer back with `?token=<order id>&PayerID=...`; `app/checklist.tsx` posts to the capture route.
 4. `capture_order()` captures with `Prefer: return=representation` and returns `{orderId, status, itemIds}`. `status` is the **capture's** status, not the order's: check items off only when it is `COMPLETED`, since an order can complete while its payment is `PENDING` or `DECLINED`.

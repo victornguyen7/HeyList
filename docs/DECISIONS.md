@@ -24,7 +24,7 @@ Decisions recorded in the project notes. A reason is listed only where the notes
 | 18 | Use sponsor tools APIMatic Context Plugin, Postman, and Render; Channel3 only as a stretch | — |
 | 19 | History is the retention hook: buy again from a past list, plus price memory | — |
 | 20 | Server-side logic lives in a FastAPI (Python) backend; Next.js proxies `/api/*` to it | The browser stays same-origin, so no CORS setup and no backend URL exposed to it |
-| 21 | Prices live on the server; the client sends item IDs only | A buyer must not be able to change what they pay |
+| 21 | Prices live on the server; the client sends item IDs and quantities only | A buyer must not be able to change what they pay |
 | 22 | Money is handled in integer cents, converted to PayPal's string amounts without floats | No rounding errors |
 | 23 | Call PayPal through the Python PayPal Server SDK rather than raw REST | It is APIMatic-generated, matching the APIMatic sponsor tool; it also handles OAuth tokens |
 | 24 | Send each item's ID as its PayPal `sku` | The capture response says which items were bought, with nothing stored on our side |
