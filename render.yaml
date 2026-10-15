@@ -1,0 +1,43 @@
+# Render Blueprint: New → Blueprint → pick this repo.
+# Secrets are sync: false, so Render asks for their values on first deploy; values never live here.
+services:
+  - type: web
+    name: heylist-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.14.0"
+      - key: APP_URL # the heylist-web URL, for PayPal return links
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: OLLAMA_MODEL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: us-east-1
+
+  - type: web
+    name: heylist-web
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: BACKEND_URL # the heylist-api public URL, e.g. https://heylist-api.onrender.com
+        sync: false
