@@ -312,7 +312,7 @@ def create_order(list_id: str, body=Depends(json_body)):
         order = paypal.create_order(
             [{"name": item["name"], "priceCents": item["est_price_cents"], "quantity": item["quantity"]} for item in items],
             # Back to this list's page, which captures the order.
-            f"{APP_URL}/?list={list_id}",
+            f"{APP_URL}/lists/{list_id}",
         )
     except Exception as exc:
         if not isinstance(exc, paypal.PayPalError):

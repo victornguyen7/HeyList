@@ -1,0 +1,38 @@
+"use client";
+
+import Link from "next/link";
+import { usd } from "../../../api";
+import { card, useList } from "../list-context";
+
+// Items: each item's status, price, who bought it, and its proof of purchase.
+export default function ItemsPage() {
+  const { list, memberName } = useList();
+
+  return (
+    <ul className="flex flex-col gap-2">
+      {list.items.map((item) => {
+        const status = item.checkedAt ? `Bought${memberName(item.boughtBy) ? ` by ${memberName(item.boughtBy)}` : ""}` : item.claimedBy ? `${memberName(item.claimedBy)} buys it` : "Open";
+        return (
+          <li key={item.id} className={`${card} flex flex-col gap-1`}>
+            <span className="flex justify-between gap-2 text-xl">
+              <span>
+                {item.name}
+                {item.quantity > 1 && <span className="opacity-60"> × {item.quantity}</span>}
+              </span>
+              <span className="tabular-nums">
+                {item.checkedAt ? usd(item.priceCents ?? 0) : item.estPriceCents !== null ? `~${usd(item.estPriceCents * item.quantity)}` : "—"}
+              </span>
+            </span>
+            <span className="opacity-70">{status}</span>
+            {item.orderId && <span className="opacity-70">Proof: PayPal order {item.orderId}</span>}
+            {item.receiptId && (
+              <Link href={`/lists/${list.id}/receipts#${item.receiptId}`} className="underline underline-offset-4">
+                See the receipt
+              </Link>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}

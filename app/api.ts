@@ -12,8 +12,45 @@ export type Item = {
   receiptId: string | null;
 };
 export type ReceiptLine = { text: string; priceCents: number; lowConfidence: boolean; itemId: string | null };
-export type Receipt = { id: string; lines: ReceiptLine[]; totalCents: number | null; extras: { name: string; priceCents: number }[] };
-export type List = { id: string; title: string; budgetCents: number | null; members: Member[]; items: Item[]; receipts: Receipt[] };
+export type Receipt = {
+  id: string;
+  memberId: string | null;
+  lines: ReceiptLine[];
+  totalCents: number | null;
+  extras: { name: string; priceCents: number }[];
+  confirmedAt: string | null;
+  createdAt: string;
+};
+export type Order = { id: string; memberId: string | null; itemIds: string[]; totalCents: number; createdAt: string };
+export type Invoice = { id: string; debtorId: string | null; creditorId: string | null; amountCents: number; status: string; payUrl: string | null };
+export type List = {
+  id: string;
+  title: string;
+  kind: string;
+  budgetCents: number | null;
+  createdAt: string;
+  finishedAt: string | null;
+  members: Member[];
+  items: Item[];
+  receipts: Receipt[];
+  orders: Order[];
+  invoices: Invoice[];
+};
+
+// List IDs this browser has opened, newest first. There are no accounts (decision 6), so this is what History shows.
+const SEEN = "heylist:lists";
+export function seenLists(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(SEEN) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+export function rememberList(id: string) {
+  try {
+    localStorage.setItem(SEEN, JSON.stringify([id, ...seenLists().filter((seen) => seen !== id)].slice(0, 50)));
+  } catch {}
+}
 
 export const usd = (cents: number) => `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
 

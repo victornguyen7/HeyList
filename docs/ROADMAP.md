@@ -53,14 +53,14 @@ Core features:
 - [ ] Easy sharing (no account)
 - [ ] Simple interface
 
-Pages:
+Pages (simple first versions built, at `/lists/<id>` and `/history`):
 
-- [ ] Progress
-- [ ] Items
-- [ ] Money (split panel built: spent vs budget, per person, who pays whom)
-- [ ] Receipts
-- [ ] History
-- [ ] Settle-up
+- [x] Progress
+- [x] Items
+- [x] Money
+- [x] Receipts
+- [ ] History (by type, by month, buy again built; price memory not yet)
+- [ ] Settle-up (who pays whom built; PayPal invoices not yet)
 
 Infrastructure:
 

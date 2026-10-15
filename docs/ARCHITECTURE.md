@@ -50,10 +50,17 @@ Currently installed:
 | `backend/money.py` | Split math: `assign_unclaimed()` shares out open items, `split()` works out paid, share and balance per member, `settle()` the transfers |
 | `backend/receipts.py` | `read_receipt()` (AWS Textract `AnalyzeExpense` -> line items in cents with confidence; falls back to `read_with_ollama()`, the Ollama vision model) and `match_lines()` (Ollama, JSON schema -> list item per line) |
 | `backend/main.py` | FastAPI app. Lists (`POST /api/lists`, `GET`/`PATCH /api/lists/{id}`), members (`POST /api/lists/{id}/members`), items (`POST /api/lists/{id}/items`, `PATCH`/`DELETE /api/items/{id}`), checkout (`POST /api/lists/{id}/orders` with `{"itemIds": [...]}`, `POST /api/orders/{order_id}/capture`), starting lists (`POST /api/lists/suggest`), splitting (`POST /api/lists/{id}/assign`, `GET /api/lists/{id}/split`), receipts (`POST /api/lists/{id}/receipts` with the photo as the body, `POST /api/receipts/{id}/confirm`, `GET /api/receipts/{id}/image`). Errors are `{"error": CODE}` |
-| `app/checklist.tsx` | The list page (`/?list=<id>`): progress bar, join by name, quantities, who buys each item, share out the rest, pay with PayPal and capture on return. Without a list ID it shows the starter |
+| `app/page.tsx` | Home: the starter, and a link to History |
+| `app/lists/[id]/list-context.tsx` | Loads a list once for all its pages; title, tabs, join by name; captures a PayPal order on return (`/lists/<id>?token=`) |
+| `app/lists/[id]/page.tsx` | Progress: progress bar, quantities, who buys each item, share out the rest, pay with PayPal, mark finished |
+| `app/lists/[id]/items/page.tsx` | Items: status, price, who bought it, proof (PayPal order or a link to the receipt) |
+| `app/lists/[id]/money/page.tsx` | Money: spent vs budget, still to buy, extras, per person |
+| `app/lists/[id]/receipts/page.tsx` | Receipts: scan, plus every confirmed receipt (photo and lines) and PayPal order |
+| `app/lists/[id]/settle/page.tsx` | Settle up: who pays whom, invoice status |
+| `app/history/page.tsx` | History: lists this browser has opened, spending by type and month, buy again |
 | `app/starter.tsx` | Describe the situation, review the AI's starting list and budget, create it |
 | `app/receipt-scan.tsx` | Camera capture, shrink, scan, review and correct matches, confirm |
-| `app/split.tsx` | Money panel: spent vs budget, paid and share per person, who pays whom |
+| `app/split.tsx` | `useSplit()` fetches the split; `SplitPanel` shows paid and share per person |
 | `app/api.ts` | Shared types, `api()` fetch helper with readable error messages, `usd()` |
 | `next.config.ts` | Rewrites `/api/*` to `BACKEND_URL` (default `http://127.0.0.1:8000`) |
 
@@ -62,7 +69,7 @@ Currently installed:
 ### Payment flow
 
 1. The client sends **item IDs only**. The backend reads each item's estimated price and quantity from Supabase, so a buyer cannot change what they pay. Every item must be on the list, unchecked, and priced.
-2. `create_order()` sends the order to PayPal with the total (price × quantity) in USD, and the list page (`APP_URL/?list=<id>`) as the return and cancel URL. The order, its item IDs and total are stored in `orders`.
+2. `create_order()` sends the order to PayPal with the total (price × quantity) in USD, and the list page (`APP_URL/lists/<id>`) as the return and cancel URL. The order, its item IDs and total are stored in `orders`.
 3. The browser goes to the approval URL (PayPal's `payer-action` link). PayPal sends the buyer back with `?token=<order id>&PayerID=...`; `app/checklist.tsx` posts to the capture route.
 4. `capture_order()` captures with `Prefer: return=representation` and returns `{orderId, status}`. `status` is the **capture's** status, not the order's. Only when it is `COMPLETED` does the route mark the order captured and check its items off, with `price_cents` = price × quantity and `order_id` as proof.
 

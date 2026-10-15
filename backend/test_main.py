@@ -151,7 +151,7 @@ class CheckoutTest(RoutesTest):
             items,
             [{"name": "Sunscreen", "priceCents": 899, "quantity": 2}, {"name": "Adapter", "priceCents": 1499, "quantity": 1}],
         )
-        self.assertEqual(return_url, f"{main.APP_URL}/?list={self.list['id']}")
+        self.assertEqual(return_url, f"{main.APP_URL}/lists/{self.list['id']}")
         self.assertEqual(self.db.tables["orders"][0]["total_cents"], 899 * 2 + 1499)
 
     def test_items_without_a_price_or_from_another_list_cannot_be_ordered(self):

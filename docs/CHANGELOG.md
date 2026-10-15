@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Pages.** Home (`/`), the list pages at `/lists/<id>` (Progress, Items, Money, Receipts, Settle up, as tabs) and History (`/history`). The old single list page `app/checklist.tsx` is split across them. History shows the lists this browser has opened (there are no accounts), spending by type and month, and "Buy again", which copies a list with its items unchecked. PayPal now returns the buyer to `/lists/<id>`.
+
 - **Supabase storage.** Schema in `supabase/schema.sql`: lists, members, items, receipts, orders, invoices, and a private `receipts` bucket. Row level security is on with no policies, so only the backend's secret key can read or write. `backend/db.py` wraps it (`select`, `insert`, `update`, `delete`, `upload`, `download`).
 - **Lists API** in `backend/main.py`: create, read and update lists; join as a member; add, edit and delete items; PayPal checkout for chosen items (`POST /api/lists/{id}/orders`), with prices read from the database.
 - **AI starting lists.** `POST /api/lists/suggest` turns one sentence and an optional budget into a starting list that the person reviews before creating (`backend/llm.py` on Ollama, `app/starter.tsx`). Prices are per unit, and the review screen shows the estimated total and any amount over budget.
