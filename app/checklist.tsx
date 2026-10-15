@@ -2,42 +2,26 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { api, usd, type Item, type List, type Member } from "./api";
+import { ReceiptScan } from "./receipt-scan";
+import { SplitPanel } from "./split";
+import { Starter } from "./starter";
 
-type Item = {
-  id: string;
-  name: string;
-  quantity: number;
-  estPriceCents: number | null;
-  checkedAt: string | null;
-  orderId: string | null;
-};
-type List = { id: string; title: string; items: Item[] };
 type Capture = { orderId: string; status: string };
 
-// Stand-in for an LLM-made list until that exists. Prices are estimates; checkout charges what the server stored.
-const SAMPLE = {
-  title: "Packing list",
-  kind: "trip",
-  items: [
-    { name: "Sunscreen", estPriceCents: 899 },
-    { name: "Travel adapter", estPriceCents: 1499 },
-    { name: "Toothbrush", estPriceCents: 349 },
-  ],
-};
+const button = "h-14 rounded-full bg-foreground text-xl font-medium text-background disabled:opacity-40";
 
-const usd = (cents: number) => `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    ...init,
-    headers: init?.body ? { "Content-Type": "application/json" } : undefined,
-  });
-  if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? res.statusText);
-  return res.json();
+// Who "you" are on a list is remembered in this browser only; there are no accounts (decision 6).
+const memberKey = (listId: string) => `heylist:member:${listId}`;
+function storedMember(listId: string): string | null {
+  try {
+    return localStorage.getItem(memberKey(listId));
+  } catch {
+    return null;
+  }
 }
 
-// Test UI: make a sample list, pick items, pay with PayPal, come back to see them checked off.
-// The list ID lives in the URL (?list=), which is also where PayPal sends the buyer back,
+// The list page. The list ID lives in the URL (?list=), which is also where PayPal sends the buyer back,
 // adding ?token=<order id>&PayerID=... after approval, or only ?token= after a cancel.
 export function Checklist() {
   const router = useRouter();
@@ -47,13 +31,18 @@ export function Checklist() {
   const approved = params.has("PayerID");
 
   const [list, setList] = useState<List | null>(null);
+  // Set on join, for browsers where localStorage is unavailable.
+  const [joined, setJoined] = useState<string | null>(null);
+  const [name, setName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!listId) return;
-    const load = () => api<List>(`/api/lists/${encodeURIComponent(listId)}`).then(setList);
+    // The first load only fills an empty page: if a join or a change already set a newer list, a slow
+    // response (dev compile, Strict Mode's second run) must not overwrite it.
+    const load = () => api<List>(`/api/lists/${encodeURIComponent(listId)}`).then((loaded) => setList((current) => (current?.id === loaded.id ? current : loaded)));
     if (!orderId || !approved) {
       load().catch((e) => setStatus(`Could not load the list: ${e.message}`));
       return;
@@ -73,24 +62,34 @@ export function Checklist() {
       .catch((e) => setStatus(`Could not load the list: ${e.message}`));
   }, [listId, orderId, approved]);
 
-  async function start() {
-    setBusy(true);
+  async function join(e: React.FormEvent) {
+    e.preventDefault();
     try {
-      const created = await api<List>("/api/lists", { method: "POST", body: JSON.stringify(SAMPLE) });
-      router.push(`/?list=${created.id}`);
-    } catch (e) {
-      setStatus(`Could not make the list: ${(e as Error).message}`);
+      const member = await api<Member>(`/api/lists/${list!.id}/members`, { method: "POST", body: JSON.stringify({ name }) });
+      try {
+        localStorage.setItem(memberKey(list!.id), member.id);
+      } catch {}
+      setJoined(member.id);
+      setList({ ...list!, members: [...list!.members.filter((m) => m.id !== member.id), member] });
+    } catch (err) {
+      setStatus(`Could not add you: ${(err as Error).message}`);
     }
-    setBusy(false);
   }
 
-  // The quantity is saved on the item, so the server charges it at checkout.
-  async function setQuantity(item: Item, quantity: number) {
+  async function patchItem(item: Item, change: object) {
     try {
-      const saved = await api<Item>(`/api/items/${item.id}`, { method: "PATCH", body: JSON.stringify({ quantity }) });
+      const saved = await api<Item>(`/api/items/${item.id}`, { method: "PATCH", body: JSON.stringify(change) });
       setList((current) => current && { ...current, items: current.items.map((i) => (i.id === saved.id ? saved : i)) });
-    } catch (e) {
-      setStatus(`Could not change the quantity: ${(e as Error).message}`);
+    } catch (err) {
+      setStatus(`Could not save that change: ${(err as Error).message}`);
+    }
+  }
+
+  async function assign() {
+    try {
+      setList(await api<List>(`/api/lists/${list!.id}/assign`, { method: "POST" }));
+    } catch (err) {
+      setStatus((err as Error).message);
     }
   }
 
@@ -106,7 +105,7 @@ export function Checklist() {
     try {
       const { approveUrl } = await api<{ approveUrl: string }>(`/api/lists/${list!.id}/orders`, {
         method: "POST",
-        body: JSON.stringify({ itemIds: [...selected] }),
+        body: JSON.stringify({ itemIds: [...selected], memberId: me }),
       });
       window.location.assign(approveUrl);
     } catch (e) {
@@ -115,8 +114,23 @@ export function Checklist() {
     }
   }
 
+  if (!listId) {
+    return (
+      <div className="flex w-full flex-col gap-6">
+        <h1 className="text-3xl font-semibold">HeyList</h1>
+        <Starter onCreated={(created) => router.push(`/?list=${created.id}`)} />
+      </div>
+    );
+  }
+
+  // A remembered member who is no longer on the list doesn't count.
+  const remembered = joined ?? (list ? storedMember(list.id) : null);
+  const me = list?.members.some((member) => member.id === remembered) ? remembered : null;
   const message = status ?? (orderId ? (approved ? "Confirming your payment…" : "Payment cancelled.") : null);
   const items = list?.items ?? [];
+  const members = list?.members ?? [];
+  const memberName = (id: string | null) => members.find((m) => m.id === id)?.name;
+  const done = items.filter((item) => item.checkedAt).length;
   const total = items
     .filter((item) => selected.has(item.id) && !item.checkedAt)
     .reduce((sum, item) => sum + (item.estPriceCents ?? 0) * item.quantity, 0);
@@ -131,78 +145,115 @@ export function Checklist() {
         </p>
       )}
 
-      {!listId && (
-        <button
-          type="button"
-          onClick={start}
-          disabled={busy}
-          className="h-14 rounded-full bg-foreground text-xl font-medium text-background disabled:opacity-40"
-        >
-          Start a sample packing list
-        </button>
-      )}
-
-      <ul className="flex flex-col gap-2">
-        {items.map((item) => {
-          const done = Boolean(item.checkedAt);
-          const priced = item.estPriceCents !== null;
-          return (
-            <li
-              key={item.id}
-              className="flex min-h-14 items-center gap-4 rounded-lg border border-zinc-200 px-4 text-xl dark:border-zinc-800"
-            >
-              <label className="flex flex-1 cursor-pointer items-center gap-4 py-3">
-                <input
-                  type="checkbox"
-                  className="size-6"
-                  checked={done || selected.has(item.id)}
-                  disabled={done || !priced || busy}
-                  onChange={() => toggle(item.id)}
-                />
-                <span className={done ? "line-through opacity-60" : ""}>{item.name}</span>
-              </label>
-              {!done && (
-                <span className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    aria-label={`One fewer ${item.name}`}
-                    disabled={busy || item.quantity <= 1}
-                    onClick={() => setQuantity(item, item.quantity - 1)}
-                    className="size-10 rounded-full border border-zinc-300 dark:border-zinc-700"
-                  >
-                    −
-                  </button>
-                  <span aria-live="polite" className="w-6 text-center tabular-nums">
-                    {item.quantity}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`One more ${item.name}`}
-                    disabled={busy || item.quantity >= 99}
-                    onClick={() => setQuantity(item, item.quantity + 1)}
-                    className="size-10 rounded-full border border-zinc-300 dark:border-zinc-700"
-                  >
-                    +
-                  </button>
-                </span>
-              )}
-              <span className="tabular-nums">
-                {item.orderId ? "Paid" : priced ? usd(item.estPriceCents! * item.quantity) : "—"}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-
       {list && (
-        <button
-          type="button"
-          onClick={pay}
-          disabled={total === 0 || busy}
-          className="h-14 rounded-full bg-foreground text-xl font-medium text-background disabled:opacity-40"
-        >
-          {busy ? "Opening PayPal…" : `Pay ${usd(total)} with PayPal`}
-        </button>
+        <>
+          <progress className="h-3 w-full" value={done} max={items.length || 1} aria-label={`${done} of ${items.length} done`} />
+
+          {me ? (
+            <p className="text-lg">You are {memberName(me)}. People: {members.map((m) => m.name).join(", ")}</p>
+          ) : (
+            <form onSubmit={join} className="flex gap-2">
+              <input
+                className="h-14 flex-1 rounded-lg border border-zinc-300 px-4 text-xl dark:border-zinc-700 dark:bg-zinc-950"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                aria-label="Your name"
+                maxLength={40}
+                required
+              />
+              <button type="submit" className="h-14 rounded-full bg-foreground px-6 text-xl font-medium text-background">
+                Join
+              </button>
+            </form>
+          )}
+
+          <ul className="flex flex-col gap-2">
+            {items.map((item) => {
+              const isDone = Boolean(item.checkedAt);
+              const priced = item.estPriceCents !== null;
+              return (
+                <li key={item.id} className="flex flex-col gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-xl dark:border-zinc-800">
+                  <div className="flex min-h-12 items-center gap-4">
+                    <label className="flex flex-1 cursor-pointer items-center gap-4">
+                      <input
+                        type="checkbox"
+                        className="size-6"
+                        checked={isDone || selected.has(item.id)}
+                        disabled={isDone || !priced || busy}
+                        onChange={() => toggle(item.id)}
+                      />
+                      <span className={isDone ? "line-through opacity-60" : ""}>{item.name}</span>
+                    </label>
+                    {!isDone && (
+                      <span className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          aria-label={`One fewer ${item.name}`}
+                          disabled={busy || item.quantity <= 1}
+                          onClick={() => patchItem(item, { quantity: item.quantity - 1 })}
+                          className="size-10 rounded-full border border-zinc-300 dark:border-zinc-700"
+                        >
+                          −
+                        </button>
+                        <span aria-live="polite" className="w-6 text-center tabular-nums">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`One more ${item.name}`}
+                          disabled={busy || item.quantity >= 99}
+                          onClick={() => patchItem(item, { quantity: item.quantity + 1 })}
+                          className="size-10 rounded-full border border-zinc-300 dark:border-zinc-700"
+                        >
+                          +
+                        </button>
+                      </span>
+                    )}
+                    <span className="tabular-nums">
+                      {isDone ? usd(item.priceCents ?? 0) : priced ? usd(item.estPriceCents! * item.quantity) : "—"}
+                    </span>
+                  </div>
+                  {isDone ? (
+                    <span className="text-base opacity-70">
+                      {item.orderId ? "Paid with PayPal" : item.receiptId ? "On a receipt" : "Checked off"}
+                      {memberName(item.boughtBy) && ` by ${memberName(item.boughtBy)}`}
+                    </span>
+                  ) : (
+                    members.length > 0 && (
+                      <select
+                        aria-label={`Who buys ${item.name}`}
+                        className="h-11 rounded-lg border border-zinc-300 px-2 text-lg dark:border-zinc-700 dark:bg-zinc-950"
+                        value={item.claimedBy ?? ""}
+                        onChange={(e) => patchItem(item, { claimedBy: e.target.value || null })}
+                      >
+                        <option value="">Nobody yet</option>
+                        {members.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name} buys it
+                          </option>
+                        ))}
+                      </select>
+                    )
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {members.length > 0 && items.some((item) => !item.checkedAt && !item.claimedBy) && (
+            <button type="button" onClick={assign} className="h-14 rounded-full border-2 border-foreground text-xl font-medium">
+              Share out the rest evenly
+            </button>
+          )}
+
+          <button type="button" onClick={pay} disabled={total === 0 || busy} className={button}>
+            {busy ? "Opening PayPal…" : `Pay ${usd(total)} with PayPal`}
+          </button>
+
+          <ReceiptScan list={list} memberId={me} onDone={setList} />
+          <SplitPanel list={list} />
+        </>
       )}
     </div>
   );

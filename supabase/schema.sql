@@ -36,8 +36,13 @@ create table if not exists receipts (
   member_id uuid references members (id) on delete set null,
   image_path text not null,
   total_cents integer check (total_cents >= 0),
+  -- Every line Textract read, with the list item the AI proposed for it, until the person confirms:
+  -- [{"text": "2% MILK 1GAL", "priceCents": 429, "confidence": 98.1, "lowConfidence": false, "itemId": "<uuid>" | null}, ...]
+  lines jsonb not null default '[]',
   -- Receipt lines that matched no list item: [{"name": "...", "priceCents": 123}, ...]
   extras jsonb not null default '[]',
+  -- Set when the person confirmed the matches and the items were checked off. Null means proposals only.
+  confirmed_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -118,5 +123,7 @@ alter table items drop constraint if exists items_one_proof;
 alter table items add constraint items_one_proof check (receipt_id is null or order_id is null);
 alter table lists drop constraint if exists lists_kind_check;
 alter table lists add constraint lists_kind_check check (kind in ('groceries', 'trip', 'home', 'party', 'other'));
+alter table receipts add column if not exists lines jsonb not null default '[]';
+alter table receipts add column if not exists confirmed_at timestamptz;
 -- unique (list_id, name) already indexes members by list_id.
 drop index if exists members_list_id;

@@ -2,13 +2,63 @@
 
 ## 2026-10-15
 
-- Added the Supabase schema (`supabase/schema.sql`): lists, members, items, receipts, orders, invoices, and a private `receipts` bucket. Row level security is on with no policies, so only the backend's secret key can read or write.
-- Added `backend/db.py`, the backend's Supabase access (`select`, `insert`, `update`, `delete`).
-- Rewrote `backend/main.py` around stored lists: create, read and update lists, join as a member, add, edit and delete items, and PayPal checkout for chosen list items (`POST /api/lists/{id}/orders`). Prices come from the database.
-- Items have a quantity (1–99); checkout charges estimated price × quantity, and a captured order records the line total as `price_cents`.
-- Capture again reports the capture's own status, not the order's, so a pending or declined payment never checks items off.
-- The checklist test UI now makes a sample list in Supabase and keeps its ID in the URL (`/?list=`), which is also PayPal's return address.
-- Removed `backend/sample_list.py`; tests rewritten for the new routes, with an in-memory fake of `db`.
+### Added
+
+- **Supabase storage.** Schema in `supabase/schema.sql`: lists, members, items, receipts, orders, invoices, and a private `receipts` bucket. Row level security is on with no policies, so only the backend's secret key can read or write. `backend/db.py` wraps it (`select`, `insert`, `update`, `delete`, `upload`, `download`).
+- **Lists API** in `backend/main.py`: create, read and update lists; join as a member; add, edit and delete items; PayPal checkout for chosen items (`POST /api/lists/{id}/orders`), with prices read from the database.
+- **AI starting lists.** `POST /api/lists/suggest` turns one sentence and an optional budget into a starting list that the person reviews before creating (`backend/llm.py` on Ollama, `app/starter.tsx`). Prices are per unit, and the review screen shows the estimated total and any amount over budget.
+- **Item splitting.** Claim items ("who buys it"), share out unclaimed items evenly by estimated cost (`POST /api/lists/{id}/assign`), and see what each person paid, their equal share and who pays whom (`GET /api/lists/{id}/split`; `backend/money.py`, `app/split.tsx`).
+- **Receipt scanning** (`backend/receipts.py`, `app/receipt-scan.tsx`):
+  - The phone camera takes the photo, which is shrunk to 2000 px JPEG in the browser.
+  - `POST /api/lists/{id}/receipts?memberId=` reads the receipt and proposes a list item for each line. Nothing is checked off yet.
+  - `POST /api/receipts/{id}/confirm` applies the person's checked or corrected matches: items are checked off with the receipt prices and the scanner as buyer, and the other lines are saved as extras.
+  - `GET /api/receipts/{id}/image` serves the stored photo.
+- **Reading and matching** (decision 38):
+  - **Reading:** AWS Textract is tried first, because it gives a confidence score per line. When Textract is unavailable (no permission, no keys, an outage), `read_with_ollama()` reads the photo with the Ollama model's vision. An unreadable photo is not retried.
+  - **Matching:** `match_lines()` uses one text-only Ollama call. The model sees item names and receipt text only, never IDs or prices.
+- **Spend guards:** 10 receipt scans per list per hour and 20 starting lists per client per hour (`429 TOO_MANY_REQUESTS`). A matching call takes at most 150 receipt lines and 300 list items (`RECEIPT_TOO_LONG`).
+- **List page** (`app/checklist.tsx`): join by name (remembered in this browser), a who-buys-it picker per item, "Share out the rest evenly", a progress bar, scanning and the Money panel. Shared types, fetch helper and error messages live in `app/api.ts`.
+- **`docs/RULES.md`:** Anthropic's rules for API keys (from Anthropic's support article, authentication docs, Commercial Terms and Usage Policy) and how this project applies them to the Anthropic, AWS and Ollama keys. `AGENTS.md` and the README point to it.
+- **Spec and roadmap:** photo recognition of real objects, with options to learn and a plan (not built).
+- **Tests:** `test_llm.py`, `test_money.py` and `test_receipts.py`, plus route tests in `test_main.py`, for 51 in total. None calls a paid service: Ollama is mocked and Textract is stubbed.
+
+### Changed
+
+- **Items have a quantity** (1–99). Checkout charges estimated price × quantity, and a captured order records the line total as `price_cents`.
+- **Capture reports the capture's own status,** not the order's, so a pending or declined payment never checks items off.
+- **The list ID lives in the URL** (`/?list=`), which is also PayPal's return address.
+- **Removed:**
+  - `backend/sample_list.py`. The route tests use an in-memory fake of `db` that reads its columns from `schema.sql`.
+  - The `anthropic` dependency. The first version of receipt matching used Claude Haiku (decision 31); the owner chose to keep the Claude API out for now, so `ANTHROPIC_API_KEY` is unused.
+- **Dependencies:** `boto3` 1.43.114 added (Textract).
+- **New variables:** `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_REGION`.
+- **Schema:** added `receipts.lines` and `receipts.confirmed_at`, applied to the live database.
+- **`llm.json_reply()`:** pulls the JSON out of an Ollama reply, even inside a ```json fence. Starting lists and receipts share it.
+
+### Fixed
+
+- **Join could be undone.** The list page's first load could arrive after Join and replace the list with a copy without the new member, so the scan button said "add your name first". A late first load no longer overwrites a newer list (`app/checklist.tsx`).
+- **Money panel could show an old total.** An older `/split` answer could overwrite a newer one, leaving the panel at "Spent $0.00" after confirming a receipt. Only the latest answer is used now (`app/split.tsx`).
+
+### Tested live
+
+All test lists and photos were deleted afterwards.
+
+- **Ollama, on its own:**
+  - Starting lists: a camping trip (26 items, $132 against a $150 budget) and a kids' party ($125 against $100; the AI ignores the budget, see issue 14).
+  - Receipt scanning on a synthetic receipt: Textract was denied, so Ollama read all 6 lines and the $24.89 total exactly (1.4 s). It matched milk, bread, eggs and sunscreen, and left bananas and gum as extras (0.6 s).
+- **Backend with the live Supabase database:**
+  - The scan returned 200 and the photo came back byte-for-byte identical.
+  - Confirm checked off the 4 items with the receipt prices and the scanner as buyer, and saved the extras.
+  - A second confirm was refused (409).
+  - The split was $19.76.
+- **Web page** (Chrome at phone size, driven by Playwright from outside the project):
+  - Join, photo upload, review, a correction by hand (gum -> toothbrush), then confirm.
+  - Afterwards: 5 of 5 items checked off, Money panel at $21.75, no browser errors. This run found the two bugs under Fixed.
+  - One misread: the photo, shrunk and compressed in the browser, made "20OZ" read as "200Z" (issue 23).
+- **Not yet live:**
+  - Textract: the IAM user lacks `textract:AnalyzeExpense` (issue 15).
+  - Claude: not used. The key was valid but the account had no credit, so nothing was charged.
 
 ## 2026-10-14
 

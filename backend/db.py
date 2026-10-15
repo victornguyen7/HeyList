@@ -22,7 +22,7 @@ def _where(query, filters: dict):
 
 
 # Rows are list[Any]: supabase types .data as List[JSON], which Pylance won't accept as list[dict].
-# The four calls the routes use. The tests replace these with an in-memory fake.
+# The calls the routes use. The tests replace these with an in-memory fake.
 
 
 def select(table: str, order: str = "created_at", **filters) -> list[Any]:
@@ -42,3 +42,14 @@ def update(table: str, values: dict, **filters) -> list[Any]:
 
 def delete(table: str, **filters) -> None:
     _where(client().table(table).delete(), filters).execute()
+
+
+# Receipt photos live in the private "receipts" bucket; only the backend reads or writes them.
+
+
+def upload(path: str, data: bytes, content_type: str) -> None:
+    client().storage.from_("receipts").upload(path, data, {"content-type": content_type})
+
+
+def download(path: str) -> bytes:
+    return client().storage.from_("receipts").download(path)

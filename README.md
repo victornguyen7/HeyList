@@ -8,7 +8,7 @@ The first use case is packing before a holiday; the app stays general-purpose so
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
-> **Status:** early build. The home page is a test checklist: make a sample list (stored in Supabase), pay for items through the PayPal sandbox, and see them checked off; the rest of the features below are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status:** early build. Built so far: AI starting lists from one sentence, claiming and sharing out items, paying through the PayPal sandbox, receipt scanning (Textract, or the Ollama vision model while Textract is unavailable, then Ollama matching, with a confirm step), and the split of who owes whom. Voice, photo recognition, invoices and history are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md). Before working with API keys, read [docs/RULES.md](docs/RULES.md).
 
 ## Why
 

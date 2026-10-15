@@ -46,12 +46,18 @@ Currently installed:
 | `supabase/schema.sql` | Tables and the private `receipts` bucket. Run in the Supabase SQL editor; safe to run again |
 | `backend/db.py` | Supabase client (secret key, server only) and the four calls the routes use: `select`, `insert`, `update`, `delete` |
 | `backend/paypal.py` | PayPal Server SDK client (sandbox, built on first use). `create_order()` and `capture_order()` |
-| `backend/llm.py` | Ollama client and `chat()`; not used by a route yet |
-| `backend/main.py` | FastAPI app. Lists (`POST /api/lists`, `GET`/`PATCH /api/lists/{id}`), members (`POST /api/lists/{id}/members`), items (`POST /api/lists/{id}/items`, `PATCH`/`DELETE /api/items/{id}`), checkout (`POST /api/lists/{id}/orders` with `{"itemIds": [...]}`, `POST /api/orders/{order_id}/capture`). Errors are `{"error": CODE}` |
-| `app/checklist.tsx` | Test UI on the home page: make a sample list, set quantities, pay with PayPal, and on return capture the order and show the paid items checked off |
+| `backend/llm.py` | Ollama client, `chat()` (with an optional JSON schema), `json_reply()`, and `starting_list()`, which asks for a starting list and checks every field of the reply |
+| `backend/money.py` | Split math: `assign_unclaimed()` shares out open items, `split()` works out paid, share and balance per member, `settle()` the transfers |
+| `backend/receipts.py` | `read_receipt()` (AWS Textract `AnalyzeExpense` -> line items in cents with confidence; falls back to `read_with_ollama()`, the Ollama vision model) and `match_lines()` (Ollama, JSON schema -> list item per line) |
+| `backend/main.py` | FastAPI app. Lists (`POST /api/lists`, `GET`/`PATCH /api/lists/{id}`), members (`POST /api/lists/{id}/members`), items (`POST /api/lists/{id}/items`, `PATCH`/`DELETE /api/items/{id}`), checkout (`POST /api/lists/{id}/orders` with `{"itemIds": [...]}`, `POST /api/orders/{order_id}/capture`), starting lists (`POST /api/lists/suggest`), splitting (`POST /api/lists/{id}/assign`, `GET /api/lists/{id}/split`), receipts (`POST /api/lists/{id}/receipts` with the photo as the body, `POST /api/receipts/{id}/confirm`, `GET /api/receipts/{id}/image`). Errors are `{"error": CODE}` |
+| `app/checklist.tsx` | The list page (`/?list=<id>`): progress bar, join by name, quantities, who buys each item, share out the rest, pay with PayPal and capture on return. Without a list ID it shows the starter |
+| `app/starter.tsx` | Describe the situation, review the AI's starting list and budget, create it |
+| `app/receipt-scan.tsx` | Camera capture, shrink, scan, review and correct matches, confirm |
+| `app/split.tsx` | Money panel: spent vs budget, paid and share per person, who pays whom |
+| `app/api.ts` | Shared types, `api()` fetch helper with readable error messages, `usd()` |
 | `next.config.ts` | Rewrites `/api/*` to `BACKEND_URL` (default `http://127.0.0.1:8000`) |
 
-`money.py` and `photo.py` are empty placeholders.
+`photo.py` is an empty placeholder.
 
 ### Payment flow
 
@@ -65,6 +71,16 @@ Safety details:
 - Every POST carries a `PayPal-Request-Id`; capture uses the order ID, so a repeated capture returns the first result instead of charging again. That makes the single retry on `429` (in `_call`, wait capped at 5 seconds) safe.
 - PayPal errors become `PayPalError(status, issue)`, with PayPal's `debug_id` logged. The capture route returns `422` for `INSTRUMENT_DECLINED` and `502` for everything else, including network failures and token errors.
 
+### Receipt flow
+
+1. The browser shrinks the photo to 2000 px JPEG and posts it as the request body to `POST /api/lists/{id}/receipts?memberId=`. The backend accepts JPEG or PNG up to 5 MB.
+2. `read_receipt()` calls Textract `AnalyzeExpense`. Each line becomes `{text, priceCents, confidence, lowConfidence}` (under 90% is low); lines without a positive price are dropped. If Textract is unavailable (no permission, no keys, outage), `read_with_ollama()` sends the photo to the Ollama model instead; its lines have no confidence (`confidence: null`). An unreadable photo is not retried.
+3. `match_lines()` sends the receipt lines and the open items' names (numbered, no IDs or prices) to the Ollama model with a JSON schema. Numbers out of range or malformed matches are discarded.
+4. The photo goes to the private `receipts` bucket and the receipt row stores every line with its proposed `itemId`. Nothing is checked off yet.
+5. `POST /api/receipts/{id}/confirm` with `{"itemIds": [...]}` (one per line, possibly corrected) checks the items off with the summed line prices and the scanner as buyer, saves unmatched lines as extras, and sets `confirmed_at`, so a receipt can't be applied twice.
+
+Errors: an unreadable photo is `422 UNREADABLE_IMAGE` (retake it); Textract and Ollama both being unavailable, or Ollama for matching, including missing keys, is `502` and logged.
+
 ### Environment variables
 
 Listed in `.env.example`; copy it to `.env.local`. The backend reads it via `uvicorn --env-file ../.env.local`.
@@ -75,7 +91,9 @@ Listed in `.env.example`; copy it to `.env.local`. The backend reads it via `uvi
 | `APP_URL` | `backend/main.py` — PayPal's return/cancel URL (default `http://localhost:3000`) |
 | `BACKEND_URL` | `next.config.ts` — where `/api/*` goes; must be set at build time |
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | `backend/db.py` |
-| `OLLAMA_API_KEY`, `OLLAMA_MODEL` | `backend/llm.py` |
+| `OLLAMA_API_KEY`, `OLLAMA_MODEL` | `backend/llm.py`: starting lists, receipt matching, and receipt reading when Textract is unavailable (the model needs vision) |
+| `ANTHROPIC_API_KEY` | Not used for now (decision 38) |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | `backend/receipts.py`: Textract (region defaults to `us-east-1`) |
 | `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_JWKS_URL` | Not used: the browser never talks to Supabase |
 
 ## Responsibilities

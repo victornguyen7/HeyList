@@ -33,3 +33,13 @@ Decisions recorded in the project notes. A reason is listed only where the notes
 | 27 | Default `BACKEND_URL` is `http://127.0.0.1:8000`, not `localhost` | uvicorn listens on IPv4, while `localhost` can resolve to IPv6 `::1` on macOS |
 | 28 | Store each PayPal order (its item IDs and server-computed total) in Supabase when it is created | The capture knows which list items it paid for without trusting PayPal's item fields |
 | 29 | Quantity is a column on the list item; checkout charges `est_price_cents` × `quantity` | The quantity is saved with the list, and the browser still sends only item IDs at checkout |
+| 30 | Starting lists come from the existing Ollama model; the suggestion is not saved until the person reviews and creates it | Decision 5; the Ollama key and client were already in place |
+| 31 | Receipts are read by AWS Textract `AnalyzeExpense`, then matched to items by one text-only Claude Haiku (`claude-haiku-5-5`) call with structured output. Narrows decision 11 for receipts. **Matching part replaced by decision 38** | Textract gives clean line items with a confidence per line; the matching step is cheap text, not vision |
+| 32 | A scan only proposes; items are checked off when the person confirms or corrects the matches. Prices come from the stored lines, not the browser | Decision 5 and decision 21 |
+| 33 | `est_price_cents` is the price of one unit; the AI is asked for per-unit prices | Checkout already charges price x quantity (decision 29) |
+| 34 | The budget check is done in code: the review screen shows how far over budget the suggestion is, and the person unticks items | The AI doesn't reliably keep within the budget (issue 14); decision 10 |
+| 35 | Spending on list items is split equally among the list's members; receipt extras are personal and not split; payments are settled with the fewest transfers | Simplest fair default for a shared list; weighted shares can come later |
+| 36 | Unclaimed items are shared out greedily, most expensive first, to whoever carries the least estimated cost | Decision 10; good enough at list size |
+| 37 | Receipt photos are taken with `<input type="file" capture="environment">` and shrunk to 2000 px JPEG in the browser | Native camera, no library; keeps uploads under the 5 MB backend limit |
+| 38 | Receipt matching uses the Ollama model (`OLLAMA_MODEL`) instead of Claude Haiku, and when Textract is unavailable the same model reads the photo itself (it has vision). Replaces the Claude part of decision 31 | The owner chose to keep the Claude API out for now. Textract is still tried first for its confidence scores; a bad photo is not retried with Ollama |
+

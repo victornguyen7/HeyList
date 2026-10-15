@@ -1,14 +1,20 @@
 import logging
 import os
 import re
+import time
 import uuid
+from collections import defaultdict, deque
 from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse, Response
+from starlette.concurrency import run_in_threadpool
 
 import db
+import llm
+import money
 import paypal
+import receipts
 
 log = logging.getLogger(__name__)
 app = FastAPI()
@@ -16,7 +22,6 @@ app = FastAPI()
 # The app's own address: PayPal sends the buyer back here after checkout.
 APP_URL = os.environ.get("APP_URL", "http://localhost:3000")
 
-KINDS = ("groceries", "trip", "home", "party", "other")
 BAD_INPUT = (ValueError, KeyError, TypeError)
 
 
@@ -128,6 +133,23 @@ def list_state(list_id: str) -> dict:
     }
 
 
+# Paid calls: Ollama and Textract are billed to the owner (RULES.md). There are no accounts, so anyone with a
+# link could repeat them; these caps bound what one list or one client can spend.
+# ponytail: in-memory, per process, reset on restart; move to the database if the app runs on several processes.
+_calls: dict[str, deque] = defaultdict(deque)
+
+
+def allow(key: str, limit: int, seconds: int) -> bool:
+    """True if fewer than limit calls were made under key in the last seconds, and counts this one."""
+    calls, cutoff = _calls[key], time.monotonic() - seconds
+    while calls and calls[0] < cutoff:
+        calls.popleft()
+    if len(calls) >= limit:
+        return False
+    calls.append(time.monotonic())
+    return True
+
+
 # Lists
 
 
@@ -139,7 +161,7 @@ def create_list(body=Depends(json_body)):
             "kind": body.get("kind", "other"),
             "budget_cents": cents(body.get("budgetCents")),
         }
-        if row["kind"] not in KINDS:
+        if row["kind"] not in llm.KINDS:
             raise ValueError("bad kind")
         # Checked before the list is inserted, so bad items leave nothing behind.
         new_items("", body.get("items", []))
@@ -338,3 +360,158 @@ def capture_order(order_id: str):
                 id=item["id"],
             )
     return result
+
+
+# AI starting lists
+
+
+@app.post("/api/lists/suggest")
+def suggest_list(request: Request, body=Depends(json_body)):
+    """A starting list from one sentence. Nothing is saved: the person edits it, then creates it with POST /api/lists."""
+    if not allow(f"suggest:{request.client.host if request.client else ''}", 20, 3600):
+        return error("TOO_MANY_REQUESTS", 429)
+    try:
+        description = text(body["description"], 500)
+        budget = cents(body.get("budgetCents"))
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+    try:
+        return llm.starting_list(description, budget)
+    except Exception:
+        log.exception("Starting list failed")
+        return error("AI_UNAVAILABLE", 502)
+
+
+# Splitting
+
+
+@app.post("/api/lists/{list_id}/assign")
+def assign_items(list_id: str):
+    """Gives every open, unclaimed item to a member, evening out the estimated cost."""
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    members = [member["id"] for member in db.select("members", list_id=list_id)]
+    if not members:
+        return error("NO_MEMBERS", 409)
+    for item_id, member_id in money.assign_unclaimed(db.select("items", list_id=list_id), members).items():
+        db.update("items", {"claimed_by": member_id}, id=item_id)
+    return list_state(list_id)
+
+
+@app.get("/api/lists/{list_id}/split")
+def split_list(list_id: str):
+    """What each member paid, their equal share, and who pays whom to settle up."""
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    members = [member["id"] for member in db.select("members", list_id=list_id)]
+    return money.split(db.select("items", list_id=list_id), members)
+
+
+# Receipts
+
+# Textract takes JPEG and PNG (also PDF and TIFF, not offered here). The app shrinks photos well below this.
+RECEIPT_TYPES = {"image/jpeg": "jpg", "image/png": "png"}
+MAX_RECEIPT_BYTES = 5_000_000
+
+
+@app.post("/api/lists/{list_id}/receipts")
+async def scan_receipt(list_id: str, request: Request):
+    """The body is the photo itself. Reads it, proposes a list item for each line, and stores the receipt
+    unconfirmed: nothing is checked off until POST /api/receipts/{id}/confirm (decision 5)."""
+    content_type = request.headers.get("content-type", "").split(";")[0].strip()
+    if content_type not in RECEIPT_TYPES:
+        return error("UNSUPPORTED_IMAGE", 415)
+    image = await request.body()
+    if not image or len(image) > MAX_RECEIPT_BYTES:
+        return error("IMAGE_TOO_LARGE" if image else "INVALID_BODY", 413 if image else 400)
+    # Textract, Ollama and Supabase are blocking calls; keep them off the event loop.
+    return await run_in_threadpool(_scan, list_id, request.query_params.get("memberId"), image, content_type)
+
+
+def _scan(list_id: str, member_id, image: bytes, content_type: str):
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        member_id = member_of(list_id, member_id)
+    except BAD_INPUT:
+        return error("INVALID_MEMBER", 400)
+    # Checked after the list and member, so made-up IDs can't use up a real list's scans.
+    if not allow(f"scan:{list_id}", 10, 3600):
+        return error("TOO_MANY_REQUESTS", 429)
+
+    try:
+        read = receipts.read_receipt(image)
+        if not read["lines"]:
+            return error("NO_LINES_FOUND", 422)
+        open_items = [item for item in db.select("items", "position", list_id=list_id) if not item["checked_at"]]
+        proposed = receipts.match_lines(read["lines"], open_items)
+    except receipts.ReceiptError as exc:
+        # The cause (missing keys, an Ollama outage) is for the server log, not the person.
+        log.warning("Receipt scan failed: %s (%r)", exc, exc.__cause__)
+        return error(str(exc), 422 if str(exc) in ("UNREADABLE_IMAGE", "RECEIPT_TOO_LONG") else 502)
+    except Exception:
+        log.exception("Receipt scan failed")
+        return error("SCANNING_UNAVAILABLE", 502)
+
+    path = f"{list_id}/{uuid.uuid4()}.{RECEIPT_TYPES[content_type]}"
+    db.upload(path, image, content_type)
+    row = {
+        "list_id": list_id,
+        "member_id": member_id,
+        "image_path": path,
+        "total_cents": read["totalCents"],
+        "lines": [line | {"itemId": item_id} for line, item_id in zip(read["lines"], proposed)],
+    }
+    return camel(db.insert("receipts", [row])[0])
+
+
+@app.post("/api/receipts/{receipt_id}/confirm")
+def confirm_receipt(receipt_id: str, body=Depends(json_body)):
+    """Applies the matches the person confirmed or corrected: {"itemIds": [item ID or null, one per line]}.
+    Matched items are checked off with the receipt's prices; the rest of the lines become extras."""
+    receipt = find("receipts", receipt_id)
+    if not receipt:
+        return error("RECEIPT_NOT_FOUND", 404)
+    if receipt["confirmed_at"]:
+        return error("RECEIPT_CONFIRMED", 409)
+    lines = receipt["lines"]
+    try:
+        item_ids = body["itemIds"]
+        if not isinstance(item_ids, list) or len(item_ids) != len(lines):
+            raise ValueError("one item ID or null per line")
+        chosen = {an_id(item_id) for item_id in item_ids if item_id is not None}
+        items = {item["id"]: item for item in db.select("items", list_id=receipt["list_id"], id=list(chosen))}
+        # Every chosen item must be on this list and still open.
+        if len(items) != len(chosen) or any(item["checked_at"] for item in items.values()):
+            raise ValueError("an item cannot be checked off")
+    except BAD_INPUT:
+        return error("INVALID_MATCHES", 400)
+
+    # Prices come from the stored lines, never the browser (decision 21). Several lines can be one item.
+    paid = dict.fromkeys(items, 0)
+    extras = []
+    for line, item_id in zip(lines, item_ids):
+        if item_id is None:
+            extras.append({"name": line["text"], "priceCents": line["priceCents"]})
+        else:
+            paid[str(uuid.UUID(item_id))] += line["priceCents"]
+
+    checked_at = now()
+    for item_id, price in paid.items():
+        db.update(
+            "items",
+            {"checked_at": checked_at, "bought_by": receipt["member_id"], "price_cents": price, "receipt_id": receipt["id"]},
+            id=item_id,
+        )
+    db.update("receipts", {"extras": extras, "confirmed_at": checked_at}, id=receipt["id"])
+    return list_state(receipt["list_id"])
+
+
+@app.get("/api/receipts/{receipt_id}/image")
+def receipt_image(receipt_id: str):
+    """The photo, served by the backend because the bucket is private."""
+    receipt = find("receipts", receipt_id)
+    if not receipt:
+        return error("RECEIPT_NOT_FOUND", 404)
+    media_type = "image/png" if receipt["image_path"].endswith(".png") else "image/jpeg"
+    return Response(db.download(receipt["image_path"]), media_type=media_type)
