@@ -65,8 +65,8 @@ def settle(balance: dict[str, int]) -> list[dict]:
     while owes and owed:
         amount = min(owes[0][0], owed[0][0])
         transfers.append({"from": owes[0][1], "to": owed[0][1], "amountCents": amount})
-        owes[0][0] -= amount
-        owed[0][0] -= amount
+        owes[0][0] -= amount # pyright: ignore[reportOperatorIssue]
+        owed[0][0] -= amount # pyright: ignore[reportOperatorIssue]
         owes = sorted((pair for pair in owes if pair[0]), reverse=True)
         owed = sorted((pair for pair in owed if pair[0]), reverse=True)
     return transfers
