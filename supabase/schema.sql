@@ -66,7 +66,7 @@ create table if not exists items (
   quantity integer not null default 1 check (quantity between 1 and 99),
   -- The estimate (from the LLM or typed in). This is what PayPal Checkout charges.
   est_price_cents integer check (est_price_cents >= 0),
-  -- What was actually paid, from the receipt or the captured order.
+  -- What was actually paid for all of them, from the receipt or the captured order.
   price_cents integer check (price_cents >= 0),
   -- Who said they will buy it.
   claimed_by uuid references members (id) on delete set null,

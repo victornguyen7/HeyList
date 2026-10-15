@@ -8,7 +8,7 @@ The first use case is packing before a holiday; the app stays general-purpose so
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
-> **Status:** early build. The home page is a test checklist: pick sample items, pay through the PayPal sandbox, and see them checked off; the rest of the features below are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status:** early build. The home page is a test checklist: make a sample list (stored in Supabase), pay for items through the PayPal sandbox, and see them checked off; the rest of the features below are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Why
 

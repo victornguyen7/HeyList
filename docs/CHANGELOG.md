@@ -1,5 +1,15 @@
 # HeyList — Changelog
 
+## 2026-10-15
+
+- Added the Supabase schema (`supabase/schema.sql`): lists, members, items, receipts, orders, invoices, and a private `receipts` bucket. Row level security is on with no policies, so only the backend's secret key can read or write.
+- Added `backend/db.py`, the backend's Supabase access (`select`, `insert`, `update`, `delete`).
+- Rewrote `backend/main.py` around stored lists: create, read and update lists, join as a member, add, edit and delete items, and PayPal checkout for chosen list items (`POST /api/lists/{id}/orders`). Prices come from the database.
+- Items have a quantity (1–99); checkout charges estimated price × quantity, and a captured order records the line total as `price_cents`.
+- Capture again reports the capture's own status, not the order's, so a pending or declined payment never checks items off.
+- The checklist test UI now makes a sample list in Supabase and keeps its ID in the URL (`/?list=`), which is also PayPal's return address.
+- Removed `backend/sample_list.py`; tests rewritten for the new routes, with an in-memory fake of `db`.
+
 ## 2026-10-14
 
 - Added the FastAPI backend in `backend/`, with pinned dependencies in `backend/requirements.txt`.

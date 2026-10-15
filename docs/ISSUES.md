@@ -6,7 +6,6 @@
 |---|---|---|
 | 2 | Frontend has none of the planned stack yet | No Supabase client in `package.json`. The PayPal Checkout JS SDK isn't added either; checkout currently relies on PayPal's hosted page redirecting back to `APP_URL` |
 | 3 | The LLM API key was written in plain text in the project notes | Keep it out of the repo: load it from an environment variable, and rotate the key if the notes were shared |
-| 7 | Small cleanups in `backend/sample_list.py` | `priceCents` is camelCase (fine if it matches the frontend JSON). The test-file name mismatch is fixed (`test_sample_list.py`) |
 
 ## Closed
 
@@ -14,6 +13,7 @@
 |---|---|---|
 | 4 | `backend/__pycache__/` was committed in `4a2b88f` | Untracked in `f1dc1f6`; `.gitignore` now ignores `__pycache__/` |
 | 5 | PayPal amounts must be strings, not cents | `_usd()` in `backend/paypal.py` converts cents without floats; currency is USD |
+| 7 | Small cleanups in `backend/sample_list.py` | File removed: lists and prices now live in Supabase |
 | 8 | Order status is not payment status | `capture_order` returns the capture's own status (`purchase_units[0].payments.captures[0].status`); check items off only when it is `COMPLETED` |
 | 9 | Capture doesn't say which items were bought | Item IDs are sent as each PayPal item's `sku`; capture asks for `return=representation` and returns them as `itemIds` |
 | 10 | `paypal-server-sdk` was in `requirements.txt` but unused | `backend/paypal.py` now uses the SDK; the unused `httpx` pin was removed |

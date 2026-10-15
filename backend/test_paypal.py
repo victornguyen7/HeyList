@@ -36,14 +36,7 @@ def captured(capture_status):
     return {
         "id": "ORDER1",
         "status": "COMPLETED",
-        "purchase_units": [
-            {
-                "items": [
-                    {"name": "Sunscreen", "quantity": "1", "sku": "sunscreen", "unit_amount": {"currency_code": "USD", "value": "8.99"}},
-                ],
-                "payments": {"captures": [{"id": "CAP1", "status": capture_status}]},
-            }
-        ],
+        "purchase_units": [{"payments": {"captures": [{"id": "CAP1", "status": capture_status}]}}],
     }
 
 
@@ -52,45 +45,41 @@ class PayPalTest(unittest.TestCase):
         self.fake = FakePayPal(replies)
         session = requests.Session()
         session.mount("https://", self.fake)
-        env = {"PAYPAL_CLIENT_ID": "id", "PAYPAL_CLIENT_SECRET": "secret"}
-        with mock.patch.dict(os.environ, env):
-            paypal._client.cache_clear()
-            config = paypal._client().config.clone_with(http_client_instance=session)
+        for patch in (
+            mock.patch.object(paypal, "session", session),
+            mock.patch.dict(os.environ, {"PAYPAL_CLIENT_ID": "id", "PAYPAL_CLIENT_SECRET": "secret"}),
+        ):
+            patch.start()
+            self.addCleanup(patch.stop)
+        paypal._client.cache_clear()
         self.addCleanup(paypal._client.cache_clear)
-        client = paypal.PaypalServersdkClient(config=config)
-        patch = mock.patch.object(paypal, "_client", lambda: client)
-        patch.start()
-        self.addCleanup(patch.stop)
 
     def paths(self):
         return [request.path_url for request in self.fake.requests]
 
-    def test_create_order_sends_the_server_side_total_with_item_ids_as_skus(self):
+    def test_create_order_sends_price_times_quantity_and_the_return_url(self):
         approve = "https://www.sandbox.paypal.com/checkoutnow?token=ORDER1"
         self.fake_paypal((201, {"id": "ORDER1", "links": [{"rel": "payer-action", "href": approve}]}))
 
-        self.assertEqual(
-            paypal.create_order({"sunscreen": 2, "adapter": 1}), {"orderId": "ORDER1", "approveUrl": approve}
-        )
+        items = [{"name": "Sunscreen", "priceCents": 899, "quantity": 2}, {"name": "Adapter", "priceCents": 1499, "quantity": 1}]
+        self.assertEqual(paypal.create_order(items, "http://app/?list=L1"), {"orderId": "ORDER1", "approveUrl": approve})
 
         self.assertEqual(self.paths(), ["/v1/oauth2/token", "/v2/checkout/orders"])
         order = self.fake.requests[1]
         self.assertEqual(order.headers["authorization"], "Bearer token-1")
         self.assertTrue(order.headers["paypal-request-id"])
-        unit = json.loads(order.body)["purchase_units"][0]
+        body = json.loads(order.body)
+        unit = body["purchase_units"][0]
         self.assertEqual(unit["amount"]["value"], "32.97")
         self.assertEqual(unit["amount"]["breakdown"]["item_total"]["value"], "32.97")
         self.assertEqual([item["unit_amount"]["value"] for item in unit["items"]], ["8.99", "14.99"])
         self.assertEqual([item["quantity"] for item in unit["items"]], ["2", "1"])
-        self.assertEqual([item["sku"] for item in unit["items"]], ["sunscreen", "adapter"])
+        self.assertEqual(body["payment_source"]["paypal"]["experience_context"]["return_url"], "http://app/?list=L1")
 
-    def test_capture_reports_the_payment_status_and_the_items_bought(self):
+    def test_capture_reports_the_payment_status(self):
         self.fake_paypal((201, captured("COMPLETED")))
 
-        self.assertEqual(
-            paypal.capture_order("ORDER1"),
-            {"orderId": "ORDER1", "status": "COMPLETED", "itemIds": ["sunscreen"]},
-        )
+        self.assertEqual(paypal.capture_order("ORDER1"), {"orderId": "ORDER1", "status": "COMPLETED"})
 
         capture = self.fake.requests[1]
         self.assertEqual(capture.path_url, "/v2/checkout/orders/ORDER1/capture")
@@ -101,6 +90,13 @@ class PayPalTest(unittest.TestCase):
         self.fake_paypal((201, captured("PENDING")))
 
         self.assertEqual(paypal.capture_order("ORDER1")["status"], "PENDING")
+
+    def test_one_429_is_retried(self):
+        self.fake_paypal((429, {"name": "RATE_LIMIT_REACHED"}), (201, captured("COMPLETED")))
+
+        with mock.patch.object(paypal.time, "sleep") as sleep:
+            self.assertEqual(paypal.capture_order("ORDER1")["status"], "COMPLETED")
+        sleep.assert_called_once_with(1)
 
     def test_a_paypal_failure_carries_the_issue_and_logs_the_debug_id(self):
         self.fake_paypal(
@@ -135,4 +131,4 @@ class PayPalTest(unittest.TestCase):
         self.addCleanup(paypal._client.cache_clear)
         with mock.patch.dict(os.environ, {"PAYPAL_CLIENT_ID": "id", "PAYPAL_CLIENT_SECRET": ""}):
             with self.assertRaisesRegex(RuntimeError, "must be set"):
-                paypal.create_order({"sunscreen": 1})
+                paypal.capture_order("ORDER1")

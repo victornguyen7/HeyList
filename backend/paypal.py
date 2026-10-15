@@ -1,7 +1,11 @@
+# pyright: reportArgumentType=false
+# The SDK's model parameters are unannotated with string defaults, so Pylance types them all as str.
 import logging
 import os
+import time
 import uuid
 from functools import cache
+from typing import Any
 
 from paypalserversdk.configuration import Environment
 from paypalserversdk.exceptions.api_exception import ApiException
@@ -18,11 +22,10 @@ from paypalserversdk.models.paypal_wallet_experience_context import PaypalWallet
 from paypalserversdk.models.purchase_unit_request import PurchaseUnitRequest
 from paypalserversdk.paypal_serversdk_client import PaypalServersdkClient
 
-from sample_list import ITEMS, total_cents
-
 log = logging.getLogger(__name__)
 
-APP_URL = os.environ.get("APP_URL", "http://localhost:3000")
+# The requests.Session the SDK sends through. None means the SDK's own; the tests put a fake here.
+session = None
 
 
 class PayPalError(Exception):
@@ -34,91 +37,102 @@ class PayPalError(Exception):
 
 @cache
 def _client() -> PaypalServersdkClient:
-    """Built on first use, so importing this module doesn't need credentials. The SDK caches the token."""
     client_id = os.environ.get("PAYPAL_CLIENT_ID")
     client_secret = os.environ.get("PAYPAL_CLIENT_SECRET")
     if not client_id or not client_secret:
         raise RuntimeError("PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be set")
     return PaypalServersdkClient(
+        # Sandbox only (decision 17). The SDK also has PRODUCTION; it is never selected here.
         environment=Environment.SANDBOX,
         client_credentials_auth_credentials=ClientCredentialsAuthCredentials(
-            o_auth_client_id=client_id, o_auth_client_secret=client_secret
+            o_auth_client_id=client_id,
+            o_auth_client_secret=client_secret,
+            # The SDK caches the token; this refreshes it two minutes early.
+            o_auth_clock_skew=120,
         ),
+        http_client_instance=session,
         timeout=30,
-        # Every POST here carries a PayPal-Request-Id, so retrying one cannot charge twice.
-        max_retries=1,
-        retry_statuses=[429],
-        retry_methods=["GET", "PUT", "POST"],
+        # The one 429 retry is done in _call, where the wait can be capped.
+        max_retries=0,
     )
 
 
-def _call(operation, options: dict):
-    """Runs an SDK operation; logs the debug_id PayPal support asks for and raises an error the routes can map."""
-    try:
-        return operation(options).body
-    except ApiException as error:
-        details = getattr(error, "details", None) or [None]
-        issue = getattr(details[0], "issue", None) or getattr(error, "name", None)
-        log.error(
-            "PayPal error status=%s issue=%s debug_id=%s",
-            error.response_code,
-            issue,
-            getattr(error, "debug_id", None) or error.response.headers.get("paypal-debug-id"),
-        )
-        raise PayPalError(error.response_code, issue) from error
+def _to_error(exc: ApiException) -> PayPalError:
+    """Logs the debug_id PayPal support asks for, then returns an error the routes can map."""
+    # The typed fields are only set when the body was a JSON object, so every read has a default.
+    details = getattr(exc, "details", None) or []
+    issue = (details[0].issue if details else None) or getattr(exc, "name", None)
+    log.error(
+        "PayPal error status=%s issue=%s debug_id=%s",
+        exc.response_code,
+        issue,
+        getattr(exc, "debug_id", None) or exc.response.headers.get("paypal-debug-id"),
+    )
+    return PayPalError(exc.response_code, issue)
+
+
+def _call(operation: str, options: dict) -> Any:
+    """Runs one Orders operation and returns its body. The SDK is synchronous, so the routes are too."""
+    method = getattr(_client().orders, operation)
+    for retried in (False, True):
+        try:
+            return method(options).body
+        except ApiException as exc:
+            if exc.response_code == 429 and not retried:
+                try:
+                    seconds = int(exc.response.headers.get("retry-after", ""))
+                except ValueError:
+                    seconds = 1
+                time.sleep(min(seconds or 1, 5))
+                continue
+            raise _to_error(exc) from None
 
 
 def _usd(cents: int) -> Money:
     return Money(currency_code="USD", value=f"{cents // 100}.{cents % 100:02d}")
 
 
-def create_order(selection: dict[str, int]) -> dict:
-    """Returns the order ID and the PayPal page to send the buyer to."""
-    total = _usd(total_cents(selection))
+def create_order(items: list[dict], return_url: str) -> dict:
+    """Creates an order for [{"name", "priceCents", "quantity"}, ...] and returns its ID and the PayPal page to send
+    the buyer to. The caller looked the prices up; none came from the browser."""
+    total = sum(item["priceCents"] * item["quantity"] for item in items)
+
     body = OrderRequest(
         intent=CheckoutPaymentIntent.CAPTURE,
         purchase_units=[
             PurchaseUnitRequest(
                 amount=AmountWithBreakdown(
-                    currency_code=total.currency_code,
-                    value=total.value,
-                    breakdown=AmountBreakdown(item_total=total), # pyright: ignore[reportArgumentType]
+                    currency_code="USD",
+                    value=_usd(total).value,
+                    breakdown=AmountBreakdown(item_total=_usd(total)),
                 ),
-                items=[  # pyright: ignore[reportArgumentType]  (SDK params are unannotated; SKIP default is a str)
-                    # sku carries our item ID, so the capture response says which items were bought.
-                    ItemRequest(name=item["name"], unit_amount=_usd(item["priceCents"]), quantity=str(selection[item["id"]]), sku=item["id"])
-                    for item in ITEMS
-                    if item["id"] in selection
+                items=[
+                    # PayPal allows 127 characters for an item name.
+                    ItemRequest(name=item["name"][:127], quantity=str(item["quantity"]), unit_amount=_usd(item["priceCents"]))
+                    for item in items
                 ],
             )
         ],
-        # Where PayPal sends the buyer after the hosted checkout page; it adds ?token=<order id>&PayerID=...
-        # The JS SDK popup ignores these and calls onApprove instead.
-        payment_source=PaymentSource(  # pyright: ignore[reportArgumentType]
-            paypal=PaypalWallet(  # pyright: ignore[reportArgumentType]
-                experience_context=PaypalWalletExperienceContext(  # pyright: ignore[reportArgumentType]
-                    return_url=APP_URL, cancel_url=APP_URL
-                )
+        # Where PayPal's hosted page sends the buyer back; it adds ?token=<order id>&PayerID=... after approval.
+        payment_source=PaymentSource(
+            paypal=PaypalWallet(
+                experience_context=PaypalWalletExperienceContext(return_url=return_url, cancel_url=return_url)
             )
         ),
     )
-    order = _call(_client().orders.create_order, {"body": body, "paypal_request_id": str(uuid.uuid4())})  # pyright: ignore[reportOptionalMemberAccess]
+    order = _call("create_order", {"body": body, "paypal_request_id": str(uuid.uuid4())})
     # With payment_source.paypal, PayPal names the approval link "payer-action" rather than "approve".
     approve_url = next(link.href for link in order.links if link.rel == "payer-action")
     return {"orderId": order.id, "approveUrl": approve_url}
 
 
 def capture_order(order_id: str) -> dict:
-    """Check items off only when status is COMPLETED: the order can complete while the payment is PENDING or DECLINED."""
+    """status is the capture's, not the order's: an order can be COMPLETED while its payment is PENDING or DECLINED
+    (decision 25). Check items off only when it is COMPLETED."""
     order = _call(
-        _client().orders.capture_order, # pyright: ignore[reportOptionalMemberAccess]
+        "capture_order",
         # The order ID is the idempotency key, so a repeated capture returns the first result.
-        # return=representation includes the items, which the default minimal response leaves out.
+        # return=representation includes the payments, which the default minimal response may leave out.
         {"id": order_id, "paypal_request_id": order_id, "prefer": "return=representation"},
     )
-    unit = order.purchase_units[0]
-    return {
-        "orderId": order.id,
-        "status": unit.payments.captures[0].status,
-        "itemIds": [item.sku for item in getattr(unit, "items", []) if hasattr(item, "sku")],
-    }
+    return {"orderId": order.id, "status": order.purchase_units[0].payments.captures[0].status}
