@@ -12,11 +12,23 @@
 | 18 | Split is equal shares only | Everyone on the list pays the same share; no "Ann isn't eating" or weighted shares yet (decision 35) |
 | 23 | Lines read by Ollama have no confidence score | Textract gives one per line; a vision model doesn't, so no line is flagged "hard to read". The person still reviews every line before confirming. Seen in the web test: after the browser's JPEG shrink, "20OZ" was read as "200Z" (the match was still right; line text can't be edited in the review) |
 | 19 | `starlette.testclient` warns that `httpx` is deprecated in favour of `httpx2` | Test-only warning from the installed FastAPI/Starlette; harmless. Goes away when FastAPI's test client moves to `httpx2` |
+| 25 | The PayPal return on `/lists/<id>` is not tested live | Everything else on the new pages was checked in Chrome on 2026-10-15 with a throwaway list (two people, a confirmed receipt with its photo, a captured order): join, claim, mark finished and reopen, Items proof and receipt link, Receipts photo, lines, extra and order, Money totals and per person, Settle up (Ben → Ann $2.47), the old `/?list=` redirect, History totals and Buy again. All passed with no page errors; the test lists were deleted. Left: one PayPal sandbox payment through the Pay button, which needs the owner to approve it on PayPal's sandbox page |
+| 26 | History only knows lists opened in this browser | No accounts (decision 6), so list IDs are kept in `localStorage` (newest 50). Another phone, a private window or cleared site data shows an empty History. Needs a way to tie lists to a person (e.g. the email given at settle-up) to fix |
+| 27 | History shows every opened list, not only finished ones | The spec says a finished list joins History; for now open and finished lists both show, marked "Finished" or "n of m done". Decide whether open lists belong there |
+| 28 | History loads every list in full | One `GET /api/lists/{id}` per remembered list (up to 50 at once), each with all items, receipts and orders. Fine for a few lists; add a summary endpoint if History gets slow |
+| 29 | "Spent" leaves out receipt extras | Money's "Spent on items" and History's totals add item prices only; extras are shown separately on Money and not counted in History. Decide whether History spending should include them |
+| 30 | Buy again copies the old estimates, not what was paid | The new list gets each item's `estPriceCents` and the old budget. Using the paid price is part of price memory (decision 19), not built yet |
+| 31 | List pages don't refresh while open | The list loads once when its pages are opened; switching tabs doesn't reload it, so changes made by someone else show only after a page reload. Fixed by realtime updates (ROADMAP) |
+| 32 | Unconfirmed receipt scans are invisible | The Receipts tab shows confirmed receipts only. A scan the person walked away from before confirming stays in the database, can't be finished later, and still counts toward the 10-scans-per-hour limit |
+| 33 | `next dev` reports "could not validate instant navigation" for the list pages | Each list page renders only after the list loads in the browser, so Next.js can't check it. Dev-only; tab switches are client-side and instant. Silencing it means rendering the pages before the list loads (a loading state in each page) |
+| 34 | The join form shows on every list tab | Useful on Progress and Receipts, where it's needed to claim, pay or scan; on Items, Money and Settle up it only takes space. Consider showing it only where it's needed |
+| 35 | Receipt photos load at full size | The Receipts tab shows each photo from `GET /api/receipts/{id}/image` (up to 2000 px). Lazy-loaded, but heavy on a phone with many receipts; add thumbnails if it gets slow |
 
 ## Closed
 
 | # | Issue | Resolution |
 |---|---|---|
+| 24 | Old `/?list=<id>` links landed on the home page | `next.config.ts` redirects `/?list=<id>` to `/lists/<id>` and passes the query through, so a PayPal return (`token`, `PayerID`) still captures. Checked with curl: both forms redirect (308); a `list` value that isn't an ID stays on the home page |
 | 16 | The live database needed the schema run again | Schema run 2026-10-15; a full scan through the running backend saved the receipt, its photo and its lines, and confirming checked the items off |
 | 4 | `backend/__pycache__/` was committed in `4a2b88f` | Untracked in `f1dc1f6`; `.gitignore` now ignores `__pycache__/` |
 | 5 | PayPal amounts must be strings, not cents | `_usd()` in `backend/paypal.py` converts cents without floats; currency is USD |
