@@ -23,7 +23,7 @@ export default function ItemsPage() {
                 {item.checkedAt ? usd(item.priceCents ?? 0) : item.estPriceCents !== null ? `~${usd(item.estPriceCents * item.quantity)}` : "—"}
               </span>
             </span>
-            <span className="opacity-70">{status}</span>
+            <span className="self-start rounded-full bg-chip px-3 py-1">{status}</span>
             {item.orderId && <span className="opacity-70">Proof: PayPal order {item.orderId}</span>}
             {item.receiptId && (
               <Link href={`/lists/${list.id}/receipts#${item.receiptId}`} className="underline underline-offset-4">

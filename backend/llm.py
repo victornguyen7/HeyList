@@ -22,8 +22,12 @@ def chat(messages: list[dict], format: dict | None = None) -> str:
 
 
 def json_reply(text: str) -> dict:
-    # Ollama's cloud models don't always honour format: the JSON can come wrapped in a ```json fence.
-    reply = json.loads(text[text.find("{") : text.rfind("}") + 1])
+    # Ollama's cloud models don't always honour format: the JSON can come wrapped in a ```json fence,
+    # or be followed by more text (even a second object), so only the first whole object is read.
+    start = text.find("{")
+    if start < 0:
+        raise ValueError("reply has no JSON object")
+    reply, _ = json.JSONDecoder().raw_decode(text, start)
     if not isinstance(reply, dict):
         raise ValueError("reply is not a JSON object")
     return reply

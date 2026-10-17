@@ -48,6 +48,11 @@ class StartingListTest(unittest.TestCase):
 
         self.assertEqual(llm.starting_list("Picnic"), {"title": "Picnic", "kind": "other", "items": []})
 
+    def test_text_after_the_object_is_ignored(self):
+        self.reply('{"title": "Picnic", "kind": "party", "items": []}\n\nAlternative: {"title": "x"}')
+
+        self.assertEqual(llm.starting_list("Picnic"), {"title": "Picnic", "kind": "party", "items": []})
+
     def test_a_reply_that_is_not_json_raises(self):
         self.reply("Sorry, I can't help with that.")
 

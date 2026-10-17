@@ -5,8 +5,8 @@ import { api, usd, type List } from "./api";
 
 type Suggestion = { title: string; kind: string; items: { name: string; quantity: number; estPriceCents: number | null }[] };
 
-const button = "h-14 rounded-full bg-foreground text-xl font-medium text-background disabled:opacity-40";
-const field = "h-14 rounded-lg border border-zinc-300 px-4 text-xl dark:border-zinc-700 dark:bg-zinc-950";
+const button = "h-14 rounded-2xl bg-accent text-xl font-bold text-white disabled:opacity-40";
+const field = "h-14 rounded-2xl border-2 border-line bg-card px-4 text-xl";
 
 // Describe the situation, review the AI's starting list, untick what you don't need, then create it.
 // Nothing is saved until "Create list" (decision 5).
@@ -73,19 +73,19 @@ export function Starter({ onCreated }: { onCreated: (list: List) => void }) {
       </form>
 
       {status && (
-        <p role="status" className="rounded-lg bg-zinc-100 p-4 text-lg dark:bg-zinc-900">
+        <p role="status" className="rounded-2xl bg-chip p-4 text-lg">
           {status}
         </p>
       )}
 
       {suggestion && (
         <>
-          <h2 className="text-2xl font-semibold">{suggestion.title}</h2>
+          <h2 className="text-2xl font-bold">{suggestion.title}</h2>
           <p className="text-lg">Untick anything you don&apos;t need.</p>
           <ul className="flex flex-col gap-2">
             {suggestion.items.map((item, index) => (
               <li key={index}>
-                <label className="flex min-h-14 cursor-pointer items-center gap-4 rounded-lg border border-zinc-200 px-4 text-xl dark:border-zinc-800">
+                <label className="flex min-h-14 cursor-pointer items-center gap-4 rounded-2xl border border-line bg-card px-4 text-xl">
                   <input
                     type="checkbox"
                     className="size-6"

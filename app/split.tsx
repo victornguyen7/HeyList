@@ -36,7 +36,7 @@ export function SplitPanel({ list }: { list: List }) {
   if (!split || list.members.length === 0) return null;
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-2xl font-semibold">Per person</h2>
+      <h2 className="text-2xl font-bold">Per person</h2>
       <ul className="flex flex-col gap-1 text-lg">
         {split.members.map((member) => (
           <li key={member.memberId} className="flex justify-between tabular-nums">

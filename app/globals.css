@@ -1,13 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #fafafa;
   --foreground: #171717;
+  --card: #ffffff;
+  --line: #d9d9de;
+  --chip: #e6e6e9;
+  --accent: #2b7a5b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-chip: var(--chip);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,6 +24,10 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --card: #18181b;
+    --line: #3f3f46;
+    --chip: #27272a;
+    --accent: #3a9a74;
   }
 }
 
@@ -23,4 +35,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  accent-color: var(--accent);
+}
+
+progress {
+  appearance: none;
+  border: 0;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: var(--chip);
+}
+progress::-webkit-progress-bar {
+  background: var(--chip);
+}
+progress::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: 9999px;
+}
+progress::-moz-progress-bar {
+  background: var(--accent);
+  border-radius: 9999px;
 }

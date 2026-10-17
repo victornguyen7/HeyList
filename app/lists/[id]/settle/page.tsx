@@ -16,7 +16,7 @@ export default function SettlePage() {
   return (
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl font-semibold">Who pays whom</h2>
+        <h2 className="text-2xl font-bold">Who pays whom</h2>
         {split.transfers.length === 0 && <p className="text-lg">{split.totalCents > 0 ? "Everyone is even." : "Nothing has been bought yet."}</p>}
         <ul className="flex flex-col gap-2">
           {split.transfers.map((t, index) => (
@@ -24,14 +24,14 @@ export default function SettlePage() {
               <span>
                 {name(t.from)} → {name(t.to)}
               </span>
-              <span className="font-semibold">{usd(t.amountCents)}</span>
+              <span className="font-bold">{usd(t.amountCents)}</span>
             </li>
           ))}
         </ul>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl font-semibold">Invoices</h2>
+        <h2 className="text-2xl font-bold">Invoices</h2>
         {list.invoices.length === 0 ? (
           <p className="text-lg opacity-70">Sending these as PayPal invoices is coming soon.</p>
         ) : (
