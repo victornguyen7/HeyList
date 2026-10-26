@@ -97,4 +97,5 @@ When deploying, set `BACKEND_URL` before `next build`: Next resolves the `/api` 
 
 - [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/)
 - [PayPal developer dashboard](https://developer.paypal.com/dashboard/accounts)
+- [Dark redesign draft (Figma)](https://www.figma.com/design/Wv3JGTqJewtLNMax2PWmSk)
 - Sponsors: [APIMatic](https://paypalaihackathon.devpost.com/details/apimatic) · [Postman](https://paypalaihackathon.devpost.com/details/postman) · [Render](https://paypalaihackathon.devpost.com/details/render) · [Channel3](https://paypalaihackathon.devpost.com/details/channel3)

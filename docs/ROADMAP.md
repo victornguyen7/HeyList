@@ -79,7 +79,12 @@ Validation:
 
 - [ ] Channel3
 
+## Next: dark redesign (design in progress, not planned yet)
+
+- [ ] Dark, Whoop-inspired look for Home, AI review, Progress, Money and Settle up. Draft in Figma: [HeyList — Dark redesign](https://www.figma.com/design/Wv3JGTqJewtLNMax2PWmSk). Colors so far: green for lists and progress, coral for money, light blue (#36B9F5, near PayPal's) for AI, people and PayPal pay buttons; slim headings and numbers in Geist; no emoji. Still being decided by the owner, so don't build from it yet
+
 ## Later
 
 - Native app
+- Light mode with a dark/light switch. The redesign ships dark only; keep its colors as CSS variables so a light set can be added later
 - Small-business restocking
