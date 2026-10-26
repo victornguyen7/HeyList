@@ -134,7 +134,9 @@ export default function ProgressPage() {
         </button>
       )}
 
-      <button type="button" onClick={pay} disabled={total === 0 || busy} className={button}>
+      {/* A payment with no name can't be paid back in the split, so joining comes first (as for receipts). */}
+      {!me && total > 0 && <p className="text-lg">Add your name above first, so the payment counts as yours.</p>}
+      <button type="button" onClick={pay} disabled={total === 0 || busy || !me} className={button}>
         {busy ? "Opening PayPal…" : `Pay ${usd(total)} with PayPal`}
       </button>
 

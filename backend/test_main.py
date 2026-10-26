@@ -267,7 +267,7 @@ class StartingListTest(RoutesTest):
             with self.subTest(body=body), self.assertLogs(main.log) if status == 502 else self.assertNoLogs(main.log):
                 self.assertEqual(self.client.post("/api/lists/suggest", json=body).status_code, status)
 
-    def test_suggestions_per_client_are_capped(self):
+    def test_suggestions_are_capped(self):
         self.mock_llm(return_value={"title": "x", "kind": "other", "items": []})
         statuses = [self.client.post("/api/lists/suggest", json={"description": "x"}).status_code for _ in range(21)]
         self.assertEqual(statuses[-2:], [200, 429])

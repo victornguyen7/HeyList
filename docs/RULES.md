@@ -42,7 +42,7 @@ Sources, checked 2026-10-15:
 - Nothing calls Claude for now. Ollama does starting lists, receipt matching (`receipts.match_lines`) and, while Textract is unavailable, receipt reading (`receipts.read_with_ollama`).
 - When Claude comes back: `claude-haiku-5-5`, the cheapest current model ($0.10 per million input tokens, $0.50 per million output tokens, under 100K-token prompts), low effort, bounded `max_tokens`. Don't switch to a larger model without the owner's agreement.
 - A matching call takes at most 150 receipt lines and 300 list items, and is made only after lines were found and only when the list has open items.
-- Paid routes are rate-limited: 10 receipt scans per list per hour and 20 starting lists per client per hour (`allow()` in `backend/main.py`). There are no accounts, so anyone with a list link could otherwise keep spending.
+- Paid routes are rate-limited: 10 receipt scans per list per hour and 20 starting lists per hour across all clients (`allow()` in `backend/main.py`; the backend sits behind proxies, so it can't safely tell clients apart). There are no accounts, so anyone with a list link could otherwise keep spending.
 
 **Tests and development**
 

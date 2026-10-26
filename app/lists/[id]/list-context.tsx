@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname, useSearchParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, use, useEffect, useState } from "react";
 import { api, rememberList, type List, type Member } from "../../api";
 
@@ -46,6 +46,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
   const { id: listId } = useParams<{ id: string }>();
   const pathname = usePathname();
   const params = useSearchParams();
+  const router = useRouter();
   const orderId = params.get("token");
   const approved = params.has("PayerID");
 
@@ -64,7 +65,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       load().catch((e) => setStatus(`Could not load the list: ${e.message}`));
       return;
     }
-    // Capture is idempotent on the backend, so a repeat (Strict Mode, refresh) returns the same result.
+    // Capture is idempotent on the backend for a while, so a repeat (Strict Mode) returns the same result.
     api<Capture>(`/api/orders/${encodeURIComponent(orderId)}/capture`, { method: "POST" })
       .then(
         (result) =>
@@ -73,9 +74,10 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
           ),
         (e) => setStatus(`Payment could not be confirmed: ${e.message}`),
       )
-      .then(load)
-      .catch((e) => setStatus(`Could not load the list: ${e.message}`));
-  }, [listId, orderId, approved]);
+      // Drop ?token=&PayerID= so a reload or a shared link doesn't capture again after PayPal's idempotency
+      // window, which would report a failure for an order already paid. The effect then runs again and loads the list.
+      .then(() => router.replace(`/lists/${listId}`, { scroll: false }));
+  }, [listId, orderId, approved, router]);
 
   async function join(e: React.FormEvent) {
     e.preventDefault();

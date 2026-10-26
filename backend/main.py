@@ -384,9 +384,11 @@ def capture_order(order_id: str):
 
 
 @app.post("/api/lists/suggest")
-def suggest_list(request: Request, body=Depends(json_body)):
+def suggest_list(body=Depends(json_body)):
     """A starting list from one sentence. Nothing is saved: the person edits it, then creates it with POST /api/lists."""
-    if not allow(f"suggest:{request.client.host if request.client else ''}", 20, 3600):
+    # One cap for everyone: behind the Next.js proxy and Render's load balancer, request.client is the proxy,
+    # not the person, and X-Forwarded-For can be forged to get round a per-client cap.
+    if not allow("suggest", 20, 3600):
         return error("TOO_MANY_REQUESTS", 429)
     try:
         description = text(body["description"], 500)

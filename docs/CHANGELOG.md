@@ -1,5 +1,14 @@
 # HeyList — Changelog
 
+## 2026-10-24
+
+### Fixed
+
+- **Paying without a name.** The Pay button now needs the person to join first, as receipt scanning does; a payment with no buyer was left out of the split.
+- **Starting-list cap.** 20 per hour across all clients. It was keyed on the client address, which behind the Next.js proxy and Render is the proxy, so it was already shared; now it says so.
+- **Ollama timeout.** Calls time out after 120 s instead of never.
+- **PayPal return.** After the capture, `?token=&PayerID=` is removed from the address, so a reload or shared link doesn't capture again and report a failure for a paid order.
+
 ## 2026-10-15
 
 ### Added

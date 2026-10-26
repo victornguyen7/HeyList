@@ -10,7 +10,8 @@ def client() -> Client:
     key = os.environ.get("OLLAMA_API_KEY")
     if not key:
         raise RuntimeError("OLLAMA_API_KEY must be set")
-    return Client(host="https://ollama.com", headers={"Authorization": f"Bearer {key}"})
+    # The default is no timeout, so a hung call would hold a server thread forever.
+    return Client(host="https://ollama.com", headers={"Authorization": f"Bearer {key}"}, timeout=120)
 
 
 def chat(messages: list[dict], format: dict | None = None) -> str:
