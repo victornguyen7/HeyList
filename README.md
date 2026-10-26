@@ -92,6 +92,7 @@ When deploying, set `BACKEND_URL` before `next build`: Next resolves the `/api` 
 - [Roadmap](docs/ROADMAP.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Issues](docs/ISSUES.md)
+- [PayPal](docs/PayPal.md)
 
 ## Links
 
