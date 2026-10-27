@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "HeyList",
-  description: "Simple checklists with money built in.",
+  description: "Turn everyday needs into shared lists, and know what really got done.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -1,14 +1,29 @@
 # HeyList
 
-**Simple checklists with money built in.**
+**Turn everyday needs into shared lists, and know what really got done.**
 
-A simple checklist website for everyday life, built mobile-first so it works in a phone browser with nothing to install. Anyone can use it, including people with little tech experience. Create lists by typing, speaking, or taking a photo, whichever is easiest at that moment.
+HeyList turns a sentence like "weekend camping trip for 3 friends, $150" into a list, lets the group split up who buys what, and keeps a record of what was actually bought, by whom, for how much, and how they know. The AI and PayPal aren't separate features: the AI's list sets what PayPal charges, and PayPal payments and AI-read receipts are what check items off.
+
+A checklist website for everyday life, built mobile-first so it works in a phone browser with nothing to install. Anyone can use it, including people with little tech experience. Create lists by typing, speaking, or taking a photo, whichever is easiest at that moment.
 
 The first use case is packing before a holiday; the app stays general-purpose so it fits groceries, errands, routines, and any other daily list.
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
 > **Status:** early build. Built so far: AI starting lists from one sentence, claiming and sharing out items, paying through the PayPal sandbox, receipt scanning (Textract, or the Ollama vision model while Textract is unavailable, then Ollama matching, with a confirm step), and the split of who owes whom. Voice, photo recognition, invoices and history are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md). Before working with API keys, read [docs/RULES.md](docs/RULES.md).
+
+## The loop
+
+Every step keeps what the step before it established: the quantities and estimates from the AI, who claimed what, and what proves an item was bought.
+
+| Step | Question it answers | How | Status |
+|---|---|---|---|
+| **Need** | What do we need? | Describe the situation in one sentence; the AI suggests a list with quantities and estimated prices within the budget; you untick what you don't need before anything is saved | Built (typing). Voice planned |
+| **Coordinate** | Who handles it? | Share the link, join by name, claim items, or share out the rest evenly by estimated cost | Built. Realtime updates planned |
+| **Verify** | What got done? | Pay with PayPal (a completed capture is the proof) or scan a receipt (the AI reads it and matches lines to items, and you confirm). Each item says what its status rests on: "Paid with PayPal", "On a receipt", "Marked bought by hand", or "Payment pending at PayPal" | Built |
+| **Settle** | Who owes whom? | Code (not AI) works out each person's share from the recorded prices and the fewest payments to even up | Built. PayPal invoices planned |
+
+Labels claim only what the evidence shows: a PayPal capture proves the payment, not that the item arrived. If an item is bought twice (a receipt and a PayPal payment at the same time), the PayPal charge is refunded to the person who paid it.
 
 ## Why
 
@@ -21,14 +36,21 @@ Existing checklist apps assume users are comfortable tapping through menus, fold
 
 ## Features
 
-- **Type** — add items the familiar way.
-- **Voice** — speak naturally; the app splits speech into clean items and shows them to confirm.
-- **Photo as proof** — take a photo when checking an item; it is saved with the item.
-- **Photo recognition** — snap a scene; the app suggests which items it sees for you to confirm.
+Built:
+
 - **Smart starting lists** — describe the situation and get a suggested list to edit.
+- **Easy sharing** — send a list by link; no account needed to view, claim or check items.
+- **PayPal Checkout** — pay for chosen items; the captured order is the proof, and pending payments hold their items.
+- **Receipt scanning** — the AI reads a receipt photo and proposes a list item for each line; you confirm.
+- **Split and settle** — who paid what, equal shares, and who pays whom.
+- **History** — lists this browser has opened, spending by type and month, buy again.
+
+Planned:
+
+- **Voice** — speak naturally; the app splits speech into clean items and shows them to confirm.
+- **Photo as proof** and **photo recognition** — see [docs/SPEC.md](docs/SPEC.md#photo-recognition-planned-spec-and-learning-plan-only).
 - **Reuse** — repeating lists reset with one tap.
-- **Easy sharing** — send a list by link; no account needed to view or check items.
-- **Simple interface** — large text, few screens, one big talk button; advanced options hidden.
+- **PayPal invoices** for settle-up.
 
 ## How it works
 
@@ -93,6 +115,7 @@ When deploying, set `BACKEND_URL` before `next build`: Next resolves the `/api` 
 - [Changelog](docs/CHANGELOG.md)
 - [Issues](docs/ISSUES.md)
 - [PayPal](docs/PayPal.md)
+- [Hackathon rules](docs/HACKATHON.md) · [Submission and demo script](docs/SUBMISSION.md) · [Improvements](docs/IMPROVEMENTS.md)
 
 ## Links
 

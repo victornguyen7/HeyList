@@ -1,6 +1,8 @@
 # HeyList — Spec
 
-**Simple checklists with money built in.**
+**Turn everyday needs into shared lists, and know what really got done.**
+
+Product loop: **Need** (what we need) → **Coordinate** (who handles it) → **Verify** (what got done) → **Settle** (who owes whom). Each step keeps the context and status from the one before (decision 41).
 
 A simple checklist website for everyday life, built mobile-first so it works in a phone browser with nothing to install. Anyone can use it, including people with little tech experience. Users create lists by typing, speaking, or taking a photo, whichever is easiest at that moment.
 

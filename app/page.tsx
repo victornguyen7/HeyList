@@ -14,6 +14,7 @@ export default function Home() {
           History
         </Link>
       </div>
+      <p className="text-xl opacity-70">Say what you need. Share who buys what. See what really got done.</p>
       <Starter onCreated={(created) => router.push(`/lists/${created.id}`)} />
     </main>
   );

@@ -7,7 +7,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | Phase | Area | Status |
 |---|---|---|
 | 1 | 3. Trustworthy purchase verification | Done 2026-10-27 (see below) |
-| 2 | 1. Core promise | Not started |
+| 2 | 1. Core promise | Done 2026-10-27 (see below) |
 | 3 | 2. AI reliability (narrow) | Not started |
 | 4 | 5. Group accounting (narrow) | Not started |
 | 5 | 4. Less effort (narrow) | Not started |
@@ -20,6 +20,14 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 - **Estimates marked** with `~` on Progress.
 - **Tests:** 64 pass (new: pending holds items, pending then completed, pending then declined, get_order, refund request, single item refunded once, every unit of a multi-unit item refunded, failed refund still counted). `tsc` and `eslint` are clean.
 - **Not checked live:** the new UI was not run against Supabase or the PayPal sandbox in this phase. A sandbox capture rarely comes back `PENDING`, so that path is covered by unit tests only.
+
+### Phase 2 — core promise (done)
+
+- **Thesis:** "Turn everyday needs into shared lists, and know what really got done." Used in the README, SPEC, the page metadata, and a one-line promise on the home page ("Say what you need. Share who buys what. See what really got done.").
+- **README** now opens with the loop (Need → Coordinate → Verify → Settle), with what is built and what is planned for each step. The feature list no longer presents voice, photo and reuse as built.
+- **[SUBMISSION.md](SUBMISSION.md):** the 2:40 camping-trip demo script, scene by scene, with timings and the judging criterion each scene serves; a pre-recording checklist; a draft of the Devpost text and the Tools section.
+- **Decision 41:** one loop, one demo scenario; the product stays general (decision 2).
+- **Not done:** the video itself, the `LICENSE` file, and the hosted URL. The script avoids voice and invoices, which aren't built.
 
 ## Summary
 

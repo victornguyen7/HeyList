@@ -6,6 +6,7 @@ Phase 1 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification
 
 ### Added
 
+- **Product framing** (phase 2): the README and SPEC open with the Need → Coordinate → Verify → Settle loop and a new tagline; the home page has a one-line promise; [SUBMISSION.md](SUBMISSION.md) has the demo script and Devpost text draft (decision 41).
 - **Pending payments.** A capture that comes back `PENDING` is now stored on the order. Progress shows the payment as pending, holds its items (they can't be ticked, re-quantified or paid for again: `409 PAYMENT_PENDING`), and offers **Check again**. That calls the new `POST /api/orders/{id}/refresh`, which reads the order with `paypal.get_order()` and checks the items off if the payment has completed, or releases them if it was declined.
 - **Proof labels.** Every item on Progress and Items says what its status rests on: "Paid with PayPal", "On a receipt", "Marked bought by hand" or "Payment pending at PayPal", and who paid. An open item is "Needed".
 - **Estimates marked.** Open items' prices on Progress show as `~$4.00`, as on Items; a bought item shows what was paid.
