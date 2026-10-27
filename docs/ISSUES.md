@@ -23,7 +23,7 @@
 | 33 | `next dev` reports "could not validate instant navigation" for the list pages | Each list page renders only after the list loads in the browser, so Next.js can't check it. Dev-only; tab switches are client-side and instant. Silencing it means rendering the pages before the list loads (a loading state in each page) |
 | 34 | The join form shows on every list tab | Useful on Progress and Receipts, where it's needed to claim, pay or scan; on Items, Money and Settle up it only takes space. Consider showing it only where it's needed |
 | 36 | A pending payment is only re-checked when someone presses Check again | No PayPal webhook yet (decision 40), so a payment that settles while nobody looks stays "pending" in the app until the button is used. The sandbox rarely returns `PENDING`, so this path is covered by unit tests only |
-| 37 | A double purchase is counted, not refunded | Decision 39 keeps the money right in the split, but the group did buy the item twice. Refunding the PayPal capture is the alternative, if the owner wants it |
+| 37 | Refunds are not tested against the live sandbox | The refund call and the quantity-1 rule are covered by unit tests (fake PayPal session, mocked routes). Reproducing it live needs a receipt confirmed while the buyer is on PayPal's page. The `orders` table needs `capture_id` and `refunds`: run `supabase/schema.sql` again |
 | 35 | Receipt photos load at full size | The Receipts tab shows each photo from `GET /api/receipts/{id}/image` (up to 2000 px). Lazy-loaded, but heavy on a phone with many receipts; add thumbnails if it gets slow |
 
 ## Closed

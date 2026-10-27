@@ -45,7 +45,7 @@ Currently installed:
 |---|---|
 | `supabase/schema.sql` | Tables and the private `receipts` bucket. Run in the Supabase SQL editor; safe to run again |
 | `backend/db.py` | Supabase client (secret key, server only) and the four calls the routes use: `select`, `insert`, `update`, `delete` |
-| `backend/paypal.py` | PayPal Server SDK client (sandbox, built on first use). `create_order()`, `capture_order()` and `get_order()` |
+| `backend/paypal.py` | PayPal Server SDK client (sandbox, built on first use). `create_order()`, `capture_order()`, `get_order()` and `refund()` |
 | `backend/llm.py` | Ollama client, `chat()` (with an optional JSON schema), `json_reply()`, and `starting_list()`, which asks for a starting list and checks every field of the reply |
 | `backend/money.py` | Split math: `assign_unclaimed()` shares out open items, `split()` works out paid, share and balance per member, `settle()` the transfers |
 | `backend/receipts.py` | `read_receipt()` (AWS Textract `AnalyzeExpense` -> line items in cents with confidence; falls back to `read_with_ollama()`, the Ollama vision model) and `match_lines()` (Ollama, JSON schema -> list item per line) |

@@ -61,6 +61,11 @@ create table if not exists orders (
   -- The total the server computed and sent to PayPal.
   total_cents integer not null check (total_cents > 0),
   status text not null default 'CREATED',
+  -- PayPal's capture ID, needed to refund part of it.
+  capture_id text,
+  -- Charges refunded because the item (quantity 1) was already checked off when the payment went through:
+  -- {"<item id>": {"refundId": "...", "cents": 1499, "status": "COMPLETED"}} (decision 39).
+  refunds jsonb not null default '{}',
   created_at timestamptz not null default now(),
   captured_at timestamptz
 );
@@ -129,5 +134,7 @@ alter table lists add constraint lists_kind_check check (kind in ('groceries', '
 alter table receipts add column if not exists lines jsonb not null default '[]';
 alter table receipts add column if not exists confirmed_at timestamptz;
 alter table orders add column if not exists prices jsonb not null default '{}';
+alter table orders add column if not exists capture_id text;
+alter table orders add column if not exists refunds jsonb not null default '{}';
 -- unique (list_id, name) already indexes members by list_id.
 drop index if exists members_list_id;

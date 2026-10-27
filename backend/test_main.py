@@ -19,7 +19,7 @@ COLUMNS = {
     for table, body in re.findall(r"create table if not exists (\w+) \((.*?)\n\);", SCHEMA, re.S)
 }
 # Column defaults the routes read back.
-DEFAULTS = {"lists": {"kind": "other"}, "items": {"position": 0, "quantity": 1}, "orders": {"status": "CREATED"}}
+DEFAULTS = {"lists": {"kind": "other"}, "items": {"position": 0, "quantity": 1}, "orders": {"status": "CREATED", "prices": {}, "refunds": {}}}
 
 
 class FakeDB:
@@ -137,6 +137,7 @@ class CheckoutTest(RoutesTest):
             [{"name": "Sunscreen", "estPriceCents": 899, "quantity": 2}, {"name": "Adapter", "estPriceCents": 1499}, {"name": "Map"}]
         )
         self.sunscreen, self.adapter, self.map = self.list["items"]
+        self.refund = self.mock_paypal("refund", return_value={"refundId": "REF1", "status": "COMPLETED"})
 
     def order(self, *items):
         return self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": [item["id"] for item in items]})
@@ -166,14 +167,14 @@ class CheckoutTest(RoutesTest):
     def capture(self, status):
         self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
         self.order(self.sunscreen, self.adapter)
-        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": status})
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": status, "captureId": "CAP1"})
         response = self.client.post("/api/orders/ORDER1/capture")
         return response, {item["name"]: item for item in self.client.get(f"/api/lists/{self.list['id']}").json()["items"]}
 
     def test_a_completed_capture_checks_the_items_off_at_price_times_quantity(self):
         response, items = self.capture("COMPLETED")
 
-        self.assertEqual(response.json(), {"orderId": "ORDER1", "status": "COMPLETED"})
+        self.assertEqual(response.json(), {"orderId": "ORDER1", "status": "COMPLETED", "refundedCents": 0})
         self.assertEqual(items["Sunscreen"]["priceCents"], 899 * 2)
         self.assertEqual(items["Adapter"]["orderId"], "ORDER1")
         self.assertIsNone(items["Map"]["checkedAt"])
@@ -184,38 +185,65 @@ class CheckoutTest(RoutesTest):
         self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
         self.order(self.sunscreen)
         self.client.patch(f"/api/items/{self.sunscreen['id']}", json={"quantity": 5, "estPriceCents": 1})
-        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED"})
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
         self.client.post("/api/orders/ORDER1/capture")
 
         self.assertEqual(self.db.select("items", id=self.sunscreen["id"])[0]["price_cents"], 899 * 2)
 
-    def test_an_item_checked_off_by_a_receipt_before_capture_keeps_its_receipt(self):
+    def test_a_single_item_already_checked_off_is_refunded_to_the_paypal_buyer(self):
         self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
         self.order(self.sunscreen, self.adapter)
         self.db.update("items", {"checked_at": "earlier", "receipt_id": "R1", "price_cents": 500}, id=self.adapter["id"])
-        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED"})
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
 
-        with self.assertLogs(main.log, "WARNING"):
-            self.assertEqual(self.client.post("/api/orders/ORDER1/capture").status_code, 200)
+        response = self.client.post("/api/orders/ORDER1/capture").json()
+        # A repeated capture (refresh, Strict Mode) doesn't refund again.
+        self.client.post("/api/orders/ORDER1/capture")
+
+        self.assertEqual(response, {"orderId": "ORDER1", "status": "COMPLETED", "refundedCents": 1499})
+        self.refund.assert_called_once_with("CAP1", 1499, f"ORDER1-{self.adapter['id']}")
         adapter = self.db.select("items", id=self.adapter["id"])[0]
         self.assertEqual((adapter["receipt_id"], adapter["order_id"], adapter["price_cents"]), ("R1", None, 500))
         self.assertEqual(self.db.select("items", id=self.sunscreen["id"])[0]["order_id"], "ORDER1")
-        # The buyer paid PayPal for the adapter too, and the split counts it (decision 39). No one joined in
-        # this test, so it all shows as unattributed.
+        self.assertEqual(self.db.tables["orders"][0]["refunds"][self.adapter["id"]]["refundId"], "REF1")
+        # The refunded charge isn't money the buyer spent (decision 39).
         split = self.client.get(f"/api/lists/{self.list['id']}/split").json()
-        self.assertEqual(split["unattributedCents"], 899 * 2 + 1499 + 500)
-        self.assertEqual(split["boughtTwice"], [{"orderId": "ORDER1", "itemId": self.adapter["id"], "cents": 1499}])
+        self.assertEqual((split["unattributedCents"], split["boughtTwice"]), (899 * 2 + 500, []))
+
+    def test_every_unit_of_an_item_already_checked_off_is_refunded(self):
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.order(self.sunscreen)
+        self.db.update("items", {"checked_at": "earlier", "receipt_id": "R1", "price_cents": 900}, id=self.sunscreen["id"])
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
+
+        # Both units were already bought, so both units PayPal charged for go back.
+        self.assertEqual(self.client.post("/api/orders/ORDER1/capture").json()["refundedCents"], 899 * 2)
+        self.refund.assert_called_once_with("CAP1", 899 * 2, f"ORDER1-{self.sunscreen['id']}")
+        self.assertEqual(self.client.get(f"/api/lists/{self.list['id']}/split").json()["boughtTwice"], [])
+
+    def test_a_failed_refund_still_counts_the_charge(self):
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.order(self.adapter)
+        self.db.update("items", {"checked_at": "earlier", "receipt_id": "R1", "price_cents": 500}, id=self.adapter["id"])
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
+        self.refund.side_effect = paypal.PayPalError(422, "CAPTURE_FULLY_REFUNDED")
+
+        with self.assertLogs(main.log, "ERROR"):
+            self.assertEqual(self.client.post("/api/orders/ORDER1/capture").json()["refundedCents"], 0)
+        split = self.client.get(f"/api/lists/{self.list['id']}/split").json()
+        self.assertEqual([b["cents"] for b in split["boughtTwice"]], [1499])
 
     def test_a_receipt_confirmed_while_capture_runs_keeps_its_item(self):
         self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
         self.order(self.adapter)
         self.db.update("items", {"checked_at": "earlier", "receipt_id": "R1", "price_cents": 500}, id=self.adapter["id"])
-        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED"})
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
 
-        with stale_reads(self.db, "items", checked_at=None), self.assertLogs(main.log, "WARNING"):
+        with stale_reads(self.db, "items", checked_at=None):
             self.client.post("/api/orders/ORDER1/capture")
         adapter = self.db.select("items", id=self.adapter["id"])[0]
         self.assertEqual((adapter["receipt_id"], adapter["order_id"], adapter["price_cents"]), ("R1", None, 500))
+        self.refund.assert_called_once()
 
     def test_checking_off_by_hand_never_overwrites_a_purchase_that_just_landed(self):
         self.db.update("items", {"checked_at": "earlier", "order_id": "ORDER1", "price_cents": 1499}, id=self.adapter["id"])
@@ -243,7 +271,7 @@ class CheckoutTest(RoutesTest):
 
     def test_a_pending_payment_that_completes_later_checks_the_items_off(self):
         self.capture("PENDING")
-        self.mock_paypal("get_order", return_value={"orderId": "ORDER1", "status": "COMPLETED"})
+        self.mock_paypal("get_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
 
         self.assertEqual(self.client.post("/api/orders/ORDER1/refresh").json()["status"], "COMPLETED")
         items = self.db.select("items", order_id="ORDER1")
@@ -254,7 +282,7 @@ class CheckoutTest(RoutesTest):
 
     def test_a_pending_payment_that_is_declined_releases_its_items(self):
         self.capture("PENDING")
-        self.mock_paypal("get_order", return_value={"orderId": "ORDER1", "status": "DECLINED"})
+        self.mock_paypal("get_order", return_value={"orderId": "ORDER1", "status": "DECLINED", "captureId": "CAP1"})
         self.client.post("/api/orders/ORDER1/refresh")
 
         self.assertEqual(self.client.get(f"/api/lists/{self.list['id']}").json()["orders"], [])

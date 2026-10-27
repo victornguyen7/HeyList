@@ -22,7 +22,12 @@ export type Receipt = {
   createdAt: string;
 };
 // COMPLETED is proof of purchase; PENDING means PayPal hasn't settled the payment yet (its items are held).
-export type Order = { id: string; memberId: string | null; itemIds: string[]; totalCents: number; status: "COMPLETED" | "PENDING"; createdAt: string };
+export type Order = {
+  id: string; memberId: string | null; itemIds: string[]; totalCents: number; status: "COMPLETED" | "PENDING";
+  // Charges given back because a single item had already been checked off when the payment went through (decision 39).
+  refunds: Record<string, { refundId: string; cents: number; status: string }>;
+  createdAt: string;
+};
 export type Invoice = { id: string; debtorId: string | null; creditorId: string | null; amountCents: number; status: string; payUrl: string | null };
 export type List = {
   id: string;
@@ -62,6 +67,9 @@ export function proofLabel(item: Item, orders: Order[]): string | null {
   if (orders.some((order) => order.status === "PENDING" && order.itemIds.includes(item.id))) return "Payment pending at PayPal";
   return null;
 }
+
+// Said after a capture: how much came back for items someone had already bought.
+export const refundNote = (cents: number) => (cents > 0 ? ` ${usd(cents)} was refunded for items someone had already bought.` : "");
 
 export const usd = (cents: number) => `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
 

@@ -20,6 +20,7 @@ from paypalserversdk.models.payment_source import PaymentSource
 from paypalserversdk.models.paypal_wallet import PaypalWallet
 from paypalserversdk.models.paypal_wallet_experience_context import PaypalWalletExperienceContext
 from paypalserversdk.models.purchase_unit_request import PurchaseUnitRequest
+from paypalserversdk.models.refund_request import RefundRequest
 from paypalserversdk.paypal_serversdk_client import PaypalServersdkClient
 
 log = logging.getLogger(__name__)
@@ -71,9 +72,9 @@ def _to_error(exc: ApiException) -> PayPalError:
     return PayPalError(exc.response_code, issue)
 
 
-def _call(operation: str, options: dict) -> Any:
-    """Runs one Orders operation and returns its body. The SDK is synchronous, so the routes are too."""
-    method = getattr(_client().orders, operation)
+def _call(operation: str, options: dict, controller: str = "orders") -> Any:
+    """Runs one Orders (or Payments) operation and returns its body. The SDK is synchronous, so the routes are too."""
+    method = getattr(getattr(_client(), controller), operation)
     for retried in (False, True):
         try:
             return method(options).body
@@ -135,7 +136,8 @@ def capture_order(order_id: str) -> dict:
         # return=representation includes the payments, which the default minimal response may leave out.
         {"id": order_id, "paypal_request_id": order_id, "prefer": "return=representation"},
     )
-    return {"orderId": order.id, "status": order.purchase_units[0].payments.captures[0].status}
+    capture = order.purchase_units[0].payments.captures[0]
+    return {"orderId": order.id, "status": capture.status, "captureId": capture.id}
 
 
 def get_order(order_id: str) -> dict:
@@ -145,4 +147,18 @@ def get_order(order_id: str) -> dict:
     # The SDK leaves absent fields off the model rather than setting them to None.
     captures = getattr(getattr(order.purchase_units[0], "payments", None), "captures", None)
     # No capture yet means nothing was paid, whatever the order's own status says.
-    return {"orderId": order.id, "status": captures[0].status if captures else "NOT_CAPTURED"}
+    if not captures:
+        return {"orderId": order.id, "status": "NOT_CAPTURED", "captureId": None}
+    return {"orderId": order.id, "status": captures[0].status, "captureId": captures[0].id}
+
+
+def refund(capture_id: str, cents: int, request_id: str) -> dict:
+    """Refunds part of a capture to the buyer. request_id is the idempotency key, so a repeated call (a retried
+    capture) refunds once."""
+    body = RefundRequest(amount=_usd(cents), note_to_payer="Someone on your list had already bought this item.")
+    result = _call(
+        "refund_captured_payment",
+        {"capture_id": capture_id, "body": body, "paypal_request_id": request_id, "prefer": "return=representation"},
+        "payments",
+    )
+    return {"refundId": result.id, "status": result.status}

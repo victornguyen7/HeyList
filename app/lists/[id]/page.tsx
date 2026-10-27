@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api, proofLabel, usd, type Item, type List } from "../../api";
+import { api, proofLabel, refundNote, usd, type Item, type List } from "../../api";
 import { button, outline, useList } from "./list-context";
 
 // Progress: the checklist itself. Tick open items to pay for them with PayPal; claim who buys what.
@@ -40,8 +40,8 @@ export default function ProgressPage() {
   async function checkAgain(orderId: string) {
     setBusy(true);
     try {
-      const { status } = await api<{ status: string }>(`/api/orders/${orderId}/refresh`, { method: "POST" });
-      setStatus(status === "COMPLETED" ? "Paid. Those items are checked off." : status === "PENDING" ? "Still pending at PayPal." : "That payment did not go through. The items are open again.");
+      const { status, refundedCents } = await api<{ status: string; refundedCents: number }>(`/api/orders/${orderId}/refresh`, { method: "POST" });
+      setStatus(status === "COMPLETED" ? `Paid. Those items are checked off.${refundNote(refundedCents)}` : status === "PENDING" ? "Still pending at PayPal." : "That payment did not go through. The items are open again.");
       setList(await api<List>(`/api/lists/${list.id}`));
     } catch (err) {
       setStatus((err as Error).message);

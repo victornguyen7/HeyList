@@ -35,6 +35,7 @@ How HeyList meets them:
 | Orders API v2: create order | `paypal.create_order()`, route `POST /api/lists/{id}/orders` | One order for the items a person chose, with each item's name, quantity and unit price |
 | PayPal wallet experience context | same | `return_url` and `cancel_url` send the buyer back to the list page after PayPal |
 | Orders API v2: capture order | `paypal.capture_order()`, route `POST /api/orders/{id}/capture` | Takes the payment after the buyer approves, then checks the items off |
+| Payments API v2: refund captured payment | `paypal.refund()`, inside capture | Gives back the charge for a single item someone had already bought (decision 39) |
 | Orders API v2: show order details | `paypal.get_order()`, route `POST /api/orders/{id}/refresh` | Asks again about a capture that came back `PENDING` |
 | Idempotency (`PayPal-Request-Id`) | both calls | A new UUID on create; the order ID on capture, so a repeated capture returns the first result instead of charging again (decision 26) |
 | `Prefer: return=representation` | capture | Gets the full order back, including the capture inside `purchase_units[0].payments.captures[0]` |
@@ -65,7 +66,7 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 - **Rate limits.** One retry on `429`, waiting for `Retry-After` but at most 5 seconds. The SDK's own retries are off (`max_retries=0`) so the wait stays capped. Calls time out after 30 seconds.
 - **Errors.** PayPal errors become `PayPalError(status, issue)`. Capture answers `422 INSTRUMENT_DECLINED` when the buyer's funding source is declined (they can go back and pick another) and `502 PAYPAL_ERROR` for everything else, including network failures. Creating an order answers `502 PAYPAL_ERROR` on any failure.
 - **One proof per item.** An item is proven bought by a PayPal order or by a receipt, never both (`items_one_proof` in `supabase/schema.sql`). If a receipt is confirmed while the buyer is on PayPal, the receipt keeps the item and the overlap is logged. Every check-off is a conditional update (`checked_at` still empty), so a capture and a receipt confirmed at the same moment can't overwrite each other.
-- **Paid twice.** If a receipt or a hand tick got to an item first, the PayPal charge for it still counts toward the buyer in the split and is listed in `boughtTwice` (decision 39), so no money drops out of who-owes-whom.
+- **Paid twice.** If a receipt or a hand tick got to an item first (decision 39): every unit was already bought, so the PayPal charge for that item is refunded to the buyer from the capture, whatever the quantity (`paypal.refund()`, `PayPal-Request-Id` = `<order ID>-<item ID>`, so a repeated capture refunds once), and recorded in `orders.refunds`. If the refund fails, the charge counts toward the buyer in the split (`boughtTwice`), so no money drops out of who-owes-whom.
 - **Pending payments hold their items.** Items in a `PENDING` order can't be put in another order (`409 PAYMENT_PENDING`).
 - **Paid items are locked.** An item with a PayPal order can't be unticked, re-priced, have its quantity changed, or be deleted (`409 ITEM_PAID`).
 - **Old links.** Orders created when list pages lived at `/?list=<id>` still return there; `next.config.ts` redirects to `/lists/<id>` and keeps PayPal's query, so the capture still runs.

@@ -79,7 +79,7 @@ class PayPalTest(unittest.TestCase):
     def test_capture_reports_the_payment_status(self):
         self.fake_paypal((201, captured("COMPLETED")))
 
-        self.assertEqual(paypal.capture_order("ORDER1"), {"orderId": "ORDER1", "status": "COMPLETED"})
+        self.assertEqual(paypal.capture_order("ORDER1"), {"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
 
         capture = self.fake.requests[1]
         self.assertEqual(capture.path_url, "/v2/checkout/orders/ORDER1/capture")
@@ -94,10 +94,20 @@ class PayPalTest(unittest.TestCase):
     def test_get_order_reads_the_capture_status_without_capturing_again(self):
         self.fake_paypal((200, captured("COMPLETED")), (200, {"id": "ORDER1", "status": "APPROVED", "purchase_units": [{}]}))
 
-        self.assertEqual(paypal.get_order("ORDER1"), {"orderId": "ORDER1", "status": "COMPLETED"})
+        self.assertEqual(paypal.get_order("ORDER1"), {"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
         self.assertEqual(paypal.get_order("ORDER1")["status"], "NOT_CAPTURED")
         self.assertEqual([r.method for r in self.fake.requests[1:]], ["GET", "GET"])
         self.assertEqual(self.fake.requests[1].path_url, "/v2/checkout/orders/ORDER1")
+
+    def test_refund_returns_part_of_a_capture_once(self):
+        self.fake_paypal((201, {"id": "REF1", "status": "COMPLETED"}))
+
+        self.assertEqual(paypal.refund("CAP1", 1499, "ORDER1-item"), {"refundId": "REF1", "status": "COMPLETED"})
+
+        request = self.fake.requests[1]
+        self.assertEqual(request.path_url, "/v2/payments/captures/CAP1/refund")
+        self.assertEqual(request.headers["paypal-request-id"], "ORDER1-item")
+        self.assertEqual(json.loads(request.body)["amount"], {"currency_code": "USD", "value": "14.99"})
 
     def test_one_429_is_retried(self):
         self.fake_paypal((429, {"name": "RATE_LIMIT_REACHED"}), (201, captured("COMPLETED")))

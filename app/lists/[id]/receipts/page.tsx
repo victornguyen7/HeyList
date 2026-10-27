@@ -57,6 +57,12 @@ export default function ReceiptsPage() {
               {memberName(order.memberId) && ` · paid by ${memberName(order.memberId)}`}
             </span>
             <span>{order.itemIds.map(itemName).filter(Boolean).join(", ")}</span>
+            {Object.entries(order.refunds).map(([itemId, refund]) => (
+              <span key={itemId} className="opacity-70">
+                Refunded {usd(refund.cents)} for {itemName(itemId) ?? "an item"}: it had already been bought
+                {refund.status !== "COMPLETED" && ` (${refund.status.toLowerCase()})`}
+              </span>
+            ))}
           </article>
         ))}
       </section>

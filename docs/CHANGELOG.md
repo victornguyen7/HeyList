@@ -12,7 +12,8 @@ Phase 1 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification
 
 ### Fixed
 
-- **A PayPal payment could drop out of the split.** When a receipt checked an item off while its buyer was on PayPal, the PayPal charge was only logged. `money.split()` now counts it toward the buyer and lists it in `boughtTwice`; Money shows a note for each one (decision 39).
+- **A PayPal payment could drop out of the split.** When a receipt or a hand tick checked an item off while its buyer was on PayPal, the PayPal charge was only logged. Now (decision 39) the extra purchase is **refunded** to the PayPal buyer, for any quantity (`paypal.refund()`, recorded in `orders.refunds`, shown on Receipts and in the payment message). If the refund fails, the charge counts toward the buyer in the split (`boughtTwice`, with a note on Money).
+- **Schema:** `orders.capture_id` and `orders.refunds`. Run `supabase/schema.sql` again in the Supabase SQL editor.
 
 ## 2026-10-24
 

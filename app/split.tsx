@@ -51,8 +51,8 @@ export function SplitPanel({ list }: { list: List }) {
       </ul>
       {split.boughtTwice.map((twice) => (
         <p key={twice.orderId + twice.itemId} className="text-base text-amber-700">
-          {list.items.find((item) => item.id === twice.itemId)?.name ?? "An item"} was paid for with PayPal ({usd(twice.cents)}) after it was already
-          checked off. Both purchases count.
+          {list.items.find((item) => item.id === twice.itemId)?.name ?? "An item"} was bought again with PayPal ({usd(twice.cents)}) after it was
+          already checked off, and the refund didn&apos;t go through. Both purchases count.
         </p>
       ))}
       {split.unattributedCents > 0 && (

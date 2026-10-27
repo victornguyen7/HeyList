@@ -356,8 +356,7 @@ def capture_order(order_id: str):
         if not isinstance(exc, paypal.PayPalError):
             log.exception("Capture order failed")
         return error("PAYPAL_ERROR", 502)
-    record_capture(orders[0], result["status"])
-    return result
+    return record_capture(orders[0], result)
 
 
 @app.post("/api/orders/{order_id}/refresh")
@@ -377,24 +376,22 @@ def refresh_order(order_id: str):
         if not isinstance(exc, paypal.PayPalError):
             log.exception("Get order failed")
         return error("PAYPAL_ERROR", 502)
-    record_capture(orders[0], result["status"])
-    return result
+    return record_capture(orders[0], result)
 
 
-def record_capture(order: dict, status: str) -> None:
+def record_capture(order: dict, result: dict) -> dict:
     """Stores the capture's status on the order. PENDING keeps the order on the list page with its items held;
-    COMPLETED checks them off."""
+    COMPLETED checks them off. Returns the status and how much was refunded for items already bought."""
+    order_id, status = order["id"], result["status"]
     if status != "COMPLETED":
-        db.update("orders", {"status": status}, id=order["id"])
-        return
+        db.update("orders", {"status": status, "capture_id": result["captureId"]}, id=order_id)
+        return {"orderId": order_id, "status": status, "refundedCents": 0}
     # The captured order is the proof: its items are checked off, priced, and tied to it.
-    order_id, captured_at = order["id"], now()
-    db.update("orders", {"status": "COMPLETED", "captured_at": captured_at}, id=order_id)
+    captured_at, refunds = now(), dict(order["refunds"])
+    db.update("orders", {"status": "COMPLETED", "captured_at": captured_at, "capture_id": result["captureId"]}, id=order_id)
     for item in db.select("items", id=order["item_ids"]):
-        # Already checked off: by this order on a repeated capture, or by a receipt while the buyer was on
-        # PayPal. An item has one proof (items_one_proof), so the receipt stays; the PayPal charge still
-        # counts toward what the buyer paid (money.split, decision 39), and the overlap is logged.
-        if item["checked_at"] and item["order_id"] == order_id:
+        # Already checked off by this order (a repeated capture), or already refunded by an earlier one.
+        if (item["checked_at"] and item["order_id"] == order_id) or item["id"] in refunds:
             continue
         # checked_at=None makes the check and the write one step, so a receipt confirmed at the same moment
         # can't be overwritten.
@@ -410,7 +407,25 @@ def record_capture(order: dict, status: str) -> None:
             id=item["id"],
             checked_at=None,
         ):
-            log.warning("Order %s paid for item %s, which was already checked off", order_id, item["id"])
+            # Checked off first by a receipt or a hand tick while the buyer was on PayPal. An item has one proof
+            # (items_one_proof), so that stays. A checked-off item has all its units bought, so every unit this
+            # order paid for is beyond what the list needs, and the charge is refunded to the buyer (decision 39).
+            # ponytail: whole-item refunds; refund only the extra units once buying part of a quantity is possible.
+            cents = order["prices"].get(item["id"], 0)
+            if not cents:
+                continue
+            try:
+                refunds[item["id"]] = paypal.refund(result["captureId"], cents, f"{order_id}-{item['id']}") | {"cents": cents}
+            except Exception:
+                # Not refunded: the charge stays counted toward the buyer, so the split is still right.
+                log.exception("Refund for order %s item %s failed", order_id, item["id"])
+    if refunds != order["refunds"]:
+        db.update("orders", {"refunds": refunds}, id=order_id)
+    return {"orderId": order_id, "status": status, "refundedCents": sum(r["cents"] for r in refunds.values() if r["status"] not in REFUND_FAILED)}
+
+
+# A refund in any other state (COMPLETED, PENDING) is money on its way back to the buyer.
+REFUND_FAILED = ("FAILED", "CANCELLED")
 
 
 # AI starting lists
@@ -457,7 +472,11 @@ def split_list(list_id: str):
     if not find("lists", list_id):
         return error("LIST_NOT_FOUND", 404)
     members = [member["id"] for member in db.select("members", list_id=list_id)]
-    return money.split(db.select("items", list_id=list_id), members, db.select("orders", list_id=list_id, status="COMPLETED"))
+    orders = db.select("orders", list_id=list_id, status="COMPLETED")
+    for order in orders:
+        # A refunded charge was given back, so it is not money the buyer spent.
+        order["prices"] = {k: v for k, v in order["prices"].items() if order["refunds"].get(k, {}).get("status", "FAILED") in REFUND_FAILED}
+    return money.split(db.select("items", list_id=list_id), members, orders)
 
 
 # Receipts

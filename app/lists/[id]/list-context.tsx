@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, use, useEffect, useState } from "react";
-import { api, rememberList, type List, type Member } from "../../api";
+import { api, refundNote, rememberList, type List, type Member } from "../../api";
 
-type Capture = { orderId: string; status: string };
+type Capture = { orderId: string; status: string; refundedCents: number };
 type Ctx = {
   list: List;
   setList: (list: List | ((current: List) => List)) => void;
@@ -70,7 +70,9 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       .then(
         (result) =>
           setStatus(
-            result.status === "COMPLETED" ? "Paid. Those items are checked off." : result.status === "PENDING"
+            result.status === "COMPLETED"
+              ? `Paid. Those items are checked off.${refundNote(result.refundedCents)}`
+              : result.status === "PENDING"
                 ? "PayPal is still processing this payment. The items are held as pending until it goes through."
                 : `Payment is ${result.status.toLowerCase()}; items stay unchecked for now.`,
           ),

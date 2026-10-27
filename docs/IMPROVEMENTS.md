@@ -16,9 +16,9 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 
 - **Three states, visible.** Needed / Payment pending at PayPal / verified ("Paid with PayPal", "On a receipt"), plus "Marked bought by hand" for a tick with no evidence. Shown on Progress and Items, with who paid (`proofLabel()` in `app/api.ts`).
 - **Pending is real now.** A `PENDING` capture is stored, holds its items, and has a **Check again** button (`POST /api/orders/{id}/refresh`, `paypal.get_order()`). Decision 40, issue 36.
-- **Overlap bug fixed.** A PayPal charge for an item a receipt covered first now counts toward the buyer in the split and is flagged on Money. Decision 39, issue 37.
+- **Overlap bug fixed.** When a PayPal payment goes through for an item a receipt or hand tick covered first: the extra purchase is refunded to the PayPal buyer, for any quantity; a failed refund counts in the split and is flagged on Money. Decision 39, issue 37. Needs `supabase/schema.sql` run again (`orders.capture_id`, `orders.refunds`).
 - **Estimates marked** with `~` on Progress.
-- **Tests:** 61 pass (4 new: pending holds items, pending then completed, pending then declined, get_order; the overlap test now checks the split). `tsc` and `eslint` are clean.
+- **Tests:** 64 pass (new: pending holds items, pending then completed, pending then declined, get_order, refund request, single item refunded once, every unit of a multi-unit item refunded, failed refund still counted). `tsc` and `eslint` are clean.
 - **Not checked live:** the new UI was not run against Supabase or the PayPal sandbox in this phase. A sandbox capture rarely comes back `PENDING`, so that path is covered by unit tests only.
 
 ## Summary
