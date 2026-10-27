@@ -31,21 +31,22 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = ()) -> 
     """Who paid what for the list's items, each member's equal share, and the transfers that settle it.
     Only bought items count (price_cents is what was paid for all of them). Receipt extras are personal and not split.
     orders are the list's captured PayPal orders: a charge for an item that something else checked off first
-    (a receipt, a hand tick) is still money the buyer spent, so it counts too and is listed in boughtTwice."""
-    paid = dict.fromkeys(member_ids, 0)
+    (a receipt, a hand tick) is still money the buyer spent, so it counts too and is listed in boughtTwice.
+    Each member's purchases are the lines their paidCents adds up from, so every balance can be traced."""
+    purchases: dict[str, list[dict]] = {member_id: [] for member_id in member_ids}
     unattributed = 0
 
-    def credit(member_id, cents: int):
+    def credit(member_id, item_id: str, cents: int, twice: bool = False):
         nonlocal unattributed
-        if member_id in paid:
-            paid[member_id] += cents
+        if member_id in purchases:
+            purchases[member_id].append({"itemId": item_id, "cents": cents, "boughtTwice": twice})
         else:
             # A price but no buyer: nobody to pay back, so it stays out of the split.
             unattributed += cents
 
     for item in items:
         if item["price_cents"] is not None:
-            credit(item["bought_by"], item["price_cents"])
+            credit(item["bought_by"], item["id"], item["price_cents"])
 
     proof = {item["id"]: item["order_id"] for item in items}
     bought_twice = []
@@ -53,9 +54,10 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = ()) -> 
         for item_id in order["item_ids"]:
             # The item's proof is another order, a receipt, a hand tick, or the item was deleted since.
             if proof.get(item_id) != order["id"] and order["prices"].get(item_id):
-                credit(order["member_id"], order["prices"][item_id])
+                credit(order["member_id"], item_id, order["prices"][item_id], twice=True)
                 bought_twice.append({"orderId": order["id"], "itemId": item_id, "cents": order["prices"][item_id]})
 
+    paid = {member_id: sum(line["cents"] for line in lines) for member_id, lines in purchases.items()}
     total = sum(paid.values())
     # Equal shares in whole cents; the leftover cents go to the first members, so the shares add up to the total.
     base, extra = divmod(total, len(member_ids)) if member_ids else (0, 0)
@@ -66,7 +68,8 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = ()) -> 
         "unattributedCents": unattributed,
         "boughtTwice": bought_twice,
         "members": [
-            {"memberId": m, "paidCents": paid[m], "shareCents": share[m], "balanceCents": balance[m]} for m in member_ids
+            {"memberId": m, "paidCents": paid[m], "shareCents": share[m], "balanceCents": balance[m], "purchases": purchases[m]}
+            for m in member_ids
         ],
         "transfers": settle(balance),
     }

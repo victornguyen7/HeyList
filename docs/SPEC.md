@@ -77,7 +77,7 @@ Three ways to work with a list (type, voice, photo) are the heart of the app; ev
 | Money | Spent vs budget, extras, per-person totals on shared lists | A dashboard of money spent on items compared with the total budget, with each person's spending |
 | Receipts | Gallery of scans and PayPal orders for this list | Linked directly with the Items page. Stores all receipts and any proof of purchase along with item names, organised per checklist folder (trip, grocery, move-in, …) |
 | History | Spending by list type and by month (groceries vs trips vs home) | Buy again: start a new list from a past one. This is the retention hook. Price memory: "Last time you paid $4.29 for this." |
-| Settle-up | Who owes whom, PayPal invoice status | Uses invoices to split the money between people in a group purchase |
+| Settle-up | Who owes whom, how each balance was worked out (each person's purchases, share, balance), PayPal invoice status | Uses invoices to split the money between people in a group purchase |
 
 ## Who does what
 

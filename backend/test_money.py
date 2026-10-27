@@ -54,6 +54,13 @@ class SplitTest(unittest.TestCase):
             [{"from": "cat", "to": "ann", "amountCents": 4000}, {"from": "bob", "to": "ann", "amountCents": 1000}],
         )
 
+    def test_every_balance_adds_up_from_its_purchases(self):
+        items = [item("tent", price_cents=9000, bought_by="ann"), item("gas", price_cents=1234, bought_by="ann"), item("food", price_cents=3001, bought_by="bob")]
+
+        for member in money.split(items, ["ann", "bob", "cat"])["members"]:
+            self.assertEqual(sum(line["cents"] for line in member["purchases"]), member["paidCents"])
+            self.assertEqual(member["paidCents"] - member["shareCents"], member["balanceCents"])
+
     def test_odd_cents_still_add_up(self):
         result = money.split([item("x", price_cents=1000, bought_by="ann")], ["ann", "bob", "cat"])
 
@@ -76,6 +83,14 @@ class SplitTest(unittest.TestCase):
 
         # ann paid 90 + 25 + 1 (an item since deleted) by PayPal, bob 30 by receipt.
         self.assertEqual([m["paidCents"] for m in result["members"]], [11600, 3000])
+        self.assertEqual(
+            result["members"][0]["purchases"],
+            [
+                {"itemId": "tent", "cents": 9000, "boughtTwice": False},
+                {"itemId": "food", "cents": 2500, "boughtTwice": True},
+                {"itemId": "gone", "cents": 100, "boughtTwice": True},
+            ],
+        )
         self.assertEqual(result["totalCents"], 14600)
         self.assertEqual([b["itemId"] for b in result["boughtTwice"]], ["food", "gone"])
 

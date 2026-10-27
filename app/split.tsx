@@ -8,7 +8,14 @@ export type Split = {
   unattributedCents: number;
   // PayPal charges for items something else had already checked off; they count toward the payer anyway.
   boughtTwice: { orderId: string; itemId: string; cents: number }[];
-  members: { memberId: string; paidCents: number; shareCents: number; balanceCents: number }[];
+  // purchases are the lines paidCents adds up from; boughtTwice marks a PayPal charge kept after a failed refund.
+  members: {
+    memberId: string;
+    paidCents: number;
+    shareCents: number;
+    balanceCents: number;
+    purchases: { itemId: string; cents: number; boughtTwice: boolean }[];
+  }[];
   transfers: { from: string; to: string; amountCents: number }[];
 };
 

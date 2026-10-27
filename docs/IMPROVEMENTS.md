@@ -9,7 +9,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 1 | 3. Trustworthy purchase verification | Done 2026-10-27 (see below) |
 | 2 | 1. Core promise | Done 2026-10-27 (see below) |
 | 3 | 2. AI reliability (narrow) | Done 2026-10-27, evaluated (see below) |
-| 4 | 5. Group accounting (narrow) | Not started |
+| 4 | 5. Group accounting (narrow) | Done 2026-10-27 (see below) |
 | 5 | 4. Less effort (narrow) | Not started |
 
 ### Phase 1 — purchase verification (done)
@@ -56,6 +56,23 @@ The five improvement areas suggested for HeyList, each weighed against the code 
   The two misses: "a dozen eggs" became eggs × 12 (the label expected one carton, which is debatable), and the kids' party list left out candles. The full replies are in `backend/eval/eval_report.json`. One run of 20 cases labelled by the team: indicative, not proof (issue 38).
 - **Tests:** 69 pass (new: notes kept and cleaned, repeats vs different amounts, note stored and length-checked, the scorer, the case file's shape).
 - **Not done:** photo-of-a-list input and voice are still unbuilt; the "photo list" case is a typed transcript.
+
+### Phase 4 — group accounting, narrow (done)
+
+The questions from area 5, and where Settle up now answers them:
+
+| Question | Answer on the page |
+|---|---|
+| Which items are covered, which are still open? | Items tab (status and proof per item); Money's "Still to buy" |
+| Who actually paid for each item? | "How this was worked out": each person's purchases, with the proof of each |
+| How was each share calculated? | "$X spent on list items, shared equally by N people: $Y each", plus a note when odd cents don't divide evenly |
+| Can everyone trace the balance to the purchases? | Per person: paid − share = gets back / owes, and the items that make up "paid" |
+
+- Built in `money.split()` (`purchases` per member), so the lines on screen are the same numbers the transfers are computed from (decision 44). New test: every member's purchases add up to their paid amount, and paid − share = balance.
+- Says what isn't counted: receipt extras (personal) and anything checked off without a name.
+- One collapsed box per person (`<details>`), so the page stays short until someone wants the detail (decision 7).
+- **Tests:** 70 pass. `tsc` and `eslint` clean. Not checked in a browser.
+- **Not done:** PayPal invoices for the transfers (the bigger PayPal-prize item) and weighted shares (issue 18).
 
 ## Summary
 
