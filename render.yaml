@@ -12,7 +12,7 @@ services:
       - key: PYTHON_VERSION
         value: "3.14.0"
       - key: APP_URL # the heylist-web URL, for PayPal return links
-        value: https://frontend-6kqa.onrender.com
+        value: https://heylist-web.onrender.com
       - key: PAYPAL_CLIENT_ID
         sync: false
       - key: PAYPAL_CLIENT_SECRET
@@ -40,4 +40,4 @@ services:
     startCommand: npm start
     envVars:
       - key: BACKEND_URL # the heylist-api public URL; read at build time, so a change needs a redeploy
-        value: https://backend-vw6a.onrender.com
+        value: https://heylist-api.onrender.com
