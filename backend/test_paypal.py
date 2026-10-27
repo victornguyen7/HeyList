@@ -91,6 +91,14 @@ class PayPalTest(unittest.TestCase):
 
         self.assertEqual(paypal.capture_order("ORDER1")["status"], "PENDING")
 
+    def test_get_order_reads_the_capture_status_without_capturing_again(self):
+        self.fake_paypal((200, captured("COMPLETED")), (200, {"id": "ORDER1", "status": "APPROVED", "purchase_units": [{}]}))
+
+        self.assertEqual(paypal.get_order("ORDER1"), {"orderId": "ORDER1", "status": "COMPLETED"})
+        self.assertEqual(paypal.get_order("ORDER1")["status"], "NOT_CAPTURED")
+        self.assertEqual([r.method for r in self.fake.requests[1:]], ["GET", "GET"])
+        self.assertEqual(self.fake.requests[1].path_url, "/v2/checkout/orders/ORDER1")
+
     def test_one_429_is_retried(self):
         self.fake_paypal((429, {"name": "RATE_LIMIT_REACHED"}), (201, captured("COMPLETED")))
 

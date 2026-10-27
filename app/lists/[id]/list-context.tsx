@@ -70,7 +70,9 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       .then(
         (result) =>
           setStatus(
-            result.status === "COMPLETED" ? "Paid. Those items are checked off." : `Payment is ${result.status.toLowerCase()}; items stay unchecked for now.`,
+            result.status === "COMPLETED" ? "Paid. Those items are checked off." : result.status === "PENDING"
+                ? "PayPal is still processing this payment. The items are held as pending until it goes through."
+                : `Payment is ${result.status.toLowerCase()}; items stay unchecked for now.`,
           ),
         (e) => setStatus(`Payment could not be confirmed: ${e.message}`),
       )

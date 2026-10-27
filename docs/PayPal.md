@@ -35,6 +35,7 @@ How HeyList meets them:
 | Orders API v2: create order | `paypal.create_order()`, route `POST /api/lists/{id}/orders` | One order for the items a person chose, with each item's name, quantity and unit price |
 | PayPal wallet experience context | same | `return_url` and `cancel_url` send the buyer back to the list page after PayPal |
 | Orders API v2: capture order | `paypal.capture_order()`, route `POST /api/orders/{id}/capture` | Takes the payment after the buyer approves, then checks the items off |
+| Orders API v2: show order details | `paypal.get_order()`, route `POST /api/orders/{id}/refresh` | Asks again about a capture that came back `PENDING` |
 | Idempotency (`PayPal-Request-Id`) | both calls | A new UUID on create; the order ID on capture, so a repeated capture returns the first result instead of charging again (decision 26) |
 | `Prefer: return=representation` | capture | Gets the full order back, including the capture inside `purchase_units[0].payments.captures[0]` |
 | Error details (`debug_id`, `issue`) | `paypal._to_error()` | Logs PayPal's `debug_id` (what PayPal support asks for) and keeps the `issue`, such as `INSTRUMENT_DECLINED` |
@@ -54,6 +55,7 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 4. **Return.** PayPal sends the buyer to `APP_URL/lists/<id>?token=<order ID>&PayerID=...` after approval, or with only `?token=` after a cancel ("Payment cancelled." is shown). `app/lists/[id]/list-context.tsx` handles both on every list tab.
 5. **Capture.** The page posts to `POST /api/orders/{token}/capture`. The backend checks the ID's format (`400 INVALID_ORDER_ID`), that the order is one it created (`404 ORDER_NOT_FOUND`), then captures.
 6. **Check off.** Only when the **capture's** status is `COMPLETED` — not the order's, since an order can be `COMPLETED` while its payment is `PENDING` or `DECLINED` (decision 25) — the backend marks the order `COMPLETED` with `captured_at`, and for each item sets `checked_at`, `bought_by` (the buyer), `price_cents` (the price stored at create time, so a change made while the buyer was on PayPal doesn't alter what is recorded as paid) and `order_id`.
+   If the capture's status is `PENDING`, the order is stored as `PENDING`: Progress shows it with a **Check again** button and holds its items (decision 40). The button posts to `POST /api/orders/{id}/refresh`, which reads the order (`paypal.get_order()`, `GET /v2/checkout/orders/{id}`) and checks the items off if it has completed; any other status (declined, no capture) releases them.
 7. **Clean up.** The page shows the result ("Paid. Those items are checked off.", or "Payment is pending; items stay unchecked for now."), then removes `?token=&PayerID=` from the address so a reload or a shared link can't capture again after PayPal's idempotency window.
 
 ## 4. Safety and edge cases
@@ -63,6 +65,8 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 - **Rate limits.** One retry on `429`, waiting for `Retry-After` but at most 5 seconds. The SDK's own retries are off (`max_retries=0`) so the wait stays capped. Calls time out after 30 seconds.
 - **Errors.** PayPal errors become `PayPalError(status, issue)`. Capture answers `422 INSTRUMENT_DECLINED` when the buyer's funding source is declined (they can go back and pick another) and `502 PAYPAL_ERROR` for everything else, including network failures. Creating an order answers `502 PAYPAL_ERROR` on any failure.
 - **One proof per item.** An item is proven bought by a PayPal order or by a receipt, never both (`items_one_proof` in `supabase/schema.sql`). If a receipt is confirmed while the buyer is on PayPal, the receipt keeps the item and the overlap is logged. Every check-off is a conditional update (`checked_at` still empty), so a capture and a receipt confirmed at the same moment can't overwrite each other.
+- **Paid twice.** If a receipt or a hand tick got to an item first, the PayPal charge for it still counts toward the buyer in the split and is listed in `boughtTwice` (decision 39), so no money drops out of who-owes-whom.
+- **Pending payments hold their items.** Items in a `PENDING` order can't be put in another order (`409 PAYMENT_PENDING`).
 - **Paid items are locked.** An item with a PayPal order can't be unticked, re-priced, have its quantity changed, or be deleted (`409 ITEM_PAID`).
 - **Old links.** Orders created when list pages lived at `/?list=<id>` still return there; `next.config.ts` redirects to `/lists/<id>` and keeps PayPal's query, so the capture still runs.
 - **Credentials.** `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` are read only by the backend, from `.env.local` locally and from Render's secret variables when deployed. Missing credentials fail before any request is sent. See [RULES.md](RULES.md).
@@ -72,6 +76,7 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 | Page | What it shows |
 |---|---|
 | Progress | The Pay with PayPal button for the ticked items; the result after returning from PayPal |
+| Progress, Items | What each item's status rests on: "Paid with PayPal", "On a receipt", "Marked bought by hand", "Payment pending at PayPal", plus who paid |
 | Items | Each paid item's proof: "PayPal order <ID>" |
 | Receipts | Every PayPal order on the list: ID, total, date, who paid, and the items it covered |
 | Money | PayPal orders count toward what each person paid and the total spent |

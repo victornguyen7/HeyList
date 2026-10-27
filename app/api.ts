@@ -21,7 +21,8 @@ export type Receipt = {
   confirmedAt: string | null;
   createdAt: string;
 };
-export type Order = { id: string; memberId: string | null; itemIds: string[]; totalCents: number; createdAt: string };
+// COMPLETED is proof of purchase; PENDING means PayPal hasn't settled the payment yet (its items are held).
+export type Order = { id: string; memberId: string | null; itemIds: string[]; totalCents: number; status: "COMPLETED" | "PENDING"; createdAt: string };
 export type Invoice = { id: string; debtorId: string | null; creditorId: string | null; amountCents: number; status: string; payUrl: string | null };
 export type List = {
   id: string;
@@ -52,6 +53,16 @@ export function rememberList(id: string) {
   } catch {}
 }
 
+// What an item's status rests on. Each label says only what that evidence shows: a PayPal capture proves the
+// payment, not that the item arrived; a hand tick is someone's word.
+export function proofLabel(item: Item, orders: Order[]): string | null {
+  if (item.orderId) return "Paid with PayPal";
+  if (item.receiptId) return "On a receipt";
+  if (item.checkedAt) return "Marked bought by hand";
+  if (orders.some((order) => order.status === "PENDING" && order.itemIds.includes(item.id))) return "Payment pending at PayPal";
+  return null;
+}
+
 export const usd = (cents: number) => `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
 
 // Readable messages for the backend's error codes; anything else shows the code itself.
@@ -64,6 +75,8 @@ const MESSAGES: Record<string, string> = {
   NO_MEMBERS: "Add at least one person first.",
   TOO_MANY_REQUESTS: "That was done a lot just now. Please wait a while and try again.",
   RECEIPT_TOO_LONG: "That receipt is too long to match in one go.",
+  PAYMENT_PENDING: "A payment for one of those items is still pending at PayPal.",
+  ORDER_NOT_PENDING: "That payment is no longer pending. Reload the page to see it.",
 };
 
 /** JSON in, JSON out. A Blob body is sent as-is with its own type (receipt photos). */

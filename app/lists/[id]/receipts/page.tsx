@@ -46,7 +46,10 @@ export default function ReceiptsPage() {
         {list.orders.map((order) => (
           <article key={order.id} className={`${card} flex flex-col gap-1`}>
             <span className="flex justify-between tabular-nums">
-              <span>Order {order.id}</span>
+              <span>
+                Order {order.id}
+                {order.status === "PENDING" && <span className="text-amber-700"> · pending</span>}
+              </span>
               <span>{usd(order.totalCents)}</span>
             </span>
             <span className="opacity-70">

@@ -200,6 +200,11 @@ class CheckoutTest(RoutesTest):
         adapter = self.db.select("items", id=self.adapter["id"])[0]
         self.assertEqual((adapter["receipt_id"], adapter["order_id"], adapter["price_cents"]), ("R1", None, 500))
         self.assertEqual(self.db.select("items", id=self.sunscreen["id"])[0]["order_id"], "ORDER1")
+        # The buyer paid PayPal for the adapter too, and the split counts it (decision 39). No one joined in
+        # this test, so it all shows as unattributed.
+        split = self.client.get(f"/api/lists/{self.list['id']}/split").json()
+        self.assertEqual(split["unattributedCents"], 899 * 2 + 1499 + 500)
+        self.assertEqual(split["boughtTwice"], [{"orderId": "ORDER1", "itemId": self.adapter["id"], "cents": 1499}])
 
     def test_a_receipt_confirmed_while_capture_runs_keeps_its_item(self):
         self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
@@ -228,7 +233,33 @@ class CheckoutTest(RoutesTest):
 
         self.assertEqual(response.json()["status"], "PENDING")
         self.assertTrue(all(item["checkedAt"] is None for item in items.values()))
-        self.assertEqual(self.db.tables["orders"][0]["status"], "CREATED")
+        self.assertEqual(self.db.tables["orders"][0]["status"], "PENDING")
+        # The list shows it as pending, and its items can't be paid for again until PayPal decides.
+        orders = self.client.get(f"/api/lists/{self.list['id']}").json()["orders"]
+        self.assertEqual([(o["id"], o["status"]) for o in orders], [("ORDER1", "PENDING")])
+        create = self.mock_paypal("create_order")
+        self.assertEqual(self.order(self.adapter).json(), {"error": "PAYMENT_PENDING"})
+        create.assert_not_called()
+
+    def test_a_pending_payment_that_completes_later_checks_the_items_off(self):
+        self.capture("PENDING")
+        self.mock_paypal("get_order", return_value={"orderId": "ORDER1", "status": "COMPLETED"})
+
+        self.assertEqual(self.client.post("/api/orders/ORDER1/refresh").json()["status"], "COMPLETED")
+        items = self.db.select("items", order_id="ORDER1")
+        self.assertEqual(sorted(i["name"] for i in items), ["Adapter", "Sunscreen"])
+        # Only a pending order is asked about again.
+        self.assertEqual(self.client.post("/api/orders/ORDER1/refresh").json(), {"error": "ORDER_NOT_PENDING"})
+        self.assertEqual(self.client.post("/api/orders/NOPE1/refresh").status_code, 404)
+
+    def test_a_pending_payment_that_is_declined_releases_its_items(self):
+        self.capture("PENDING")
+        self.mock_paypal("get_order", return_value={"orderId": "ORDER1", "status": "DECLINED"})
+        self.client.post("/api/orders/ORDER1/refresh")
+
+        self.assertEqual(self.client.get(f"/api/lists/{self.list['id']}").json()["orders"], [])
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER2", "approveUrl": "https://pay"})
+        self.assertEqual(self.order(self.adapter).status_code, 200)
 
     def test_paypal_errors_map_to_status_codes(self):
         self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})

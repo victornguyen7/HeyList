@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usd } from "../../../api";
+import { proofLabel, usd } from "../../../api";
 import { card, useList } from "../list-context";
 
 // Items: each item's status, price, who bought it, and its proof of purchase.
@@ -11,7 +11,9 @@ export default function ItemsPage() {
   return (
     <ul className="flex flex-col gap-2">
       {list.items.map((item) => {
-        const status = item.checkedAt ? `Bought${memberName(item.boughtBy) ? ` by ${memberName(item.boughtBy)}` : ""}` : item.claimedBy ? `${memberName(item.claimedBy)} buys it` : "Open";
+        const proof = proofLabel(item, list.orders);
+        const by = memberName(item.boughtBy);
+        const status = item.checkedAt ? `${proof}${by ? ` · ${by}` : ""}` : (proof ?? (item.claimedBy ? `${memberName(item.claimedBy)} buys it` : "Needed"));
         return (
           <li key={item.id} className={`${card} flex flex-col gap-1`}>
             <span className="flex justify-between gap-2 text-xl">

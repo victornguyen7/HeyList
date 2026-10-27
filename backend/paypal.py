@@ -136,3 +136,13 @@ def capture_order(order_id: str) -> dict:
         {"id": order_id, "paypal_request_id": order_id, "prefer": "return=representation"},
     )
     return {"orderId": order.id, "status": order.purchase_units[0].payments.captures[0].status}
+
+
+def get_order(order_id: str) -> dict:
+    """The capture's current status, for an order whose capture came back PENDING. Capturing again would only
+    replay the first answer (same PayPal-Request-Id), so this reads the order instead."""
+    order = _call("get_order", {"id": order_id})
+    # The SDK leaves absent fields off the model rather than setting them to None.
+    captures = getattr(getattr(order.purchase_units[0], "payments", None), "captures", None)
+    # No capture yet means nothing was paid, whatever the order's own status says.
+    return {"orderId": order.id, "status": captures[0].status if captures else "NOT_CAPTURED"}

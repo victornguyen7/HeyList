@@ -6,6 +6,8 @@ import { api, usd, type List } from "./api";
 export type Split = {
   totalCents: number;
   unattributedCents: number;
+  // PayPal charges for items something else had already checked off; they count toward the payer anyway.
+  boughtTwice: { orderId: string; itemId: string; cents: number }[];
   members: { memberId: string; paidCents: number; shareCents: number; balanceCents: number }[];
   transfers: { from: string; to: string; amountCents: number }[];
 };
@@ -47,6 +49,12 @@ export function SplitPanel({ list }: { list: List }) {
           </li>
         ))}
       </ul>
+      {split.boughtTwice.map((twice) => (
+        <p key={twice.orderId + twice.itemId} className="text-base text-amber-700">
+          {list.items.find((item) => item.id === twice.itemId)?.name ?? "An item"} was paid for with PayPal ({usd(twice.cents)}) after it was already
+          checked off. Both purchases count.
+        </p>
+      ))}
       {split.unattributedCents > 0 && (
         <p className="text-base opacity-70">{usd(split.unattributedCents)} was checked off without a name, so it is not split.</p>
       )}

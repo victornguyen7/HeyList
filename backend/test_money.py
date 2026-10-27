@@ -3,7 +3,7 @@ import unittest
 import money
 
 
-def item(item_id, cents=None, quantity=1, claimed_by=None, checked_at=None, price_cents=None, bought_by=None):
+def item(item_id, cents=None, quantity=1, claimed_by=None, checked_at=None, price_cents=None, bought_by=None, order_id=None):
     return {
         "id": item_id,
         "est_price_cents": cents,
@@ -12,6 +12,7 @@ def item(item_id, cents=None, quantity=1, claimed_by=None, checked_at=None, pric
         "checked_at": checked_at,
         "price_cents": price_cents,
         "bought_by": bought_by,
+        "order_id": order_id,
     }
 
 
@@ -63,6 +64,20 @@ class SplitTest(unittest.TestCase):
         result = money.split([item("x", price_cents=700)], ["ann"])
 
         self.assertEqual((result["totalCents"], result["unattributedCents"], result["transfers"]), (0, 700, []))
+
+    def test_a_paypal_charge_for_an_item_a_receipt_covered_still_counts(self):
+        items = [
+            item("tent", price_cents=9000, bought_by="ann", order_id="O1"),
+            item("food", price_cents=3000, bought_by="bob"),  # bob's receipt landed while ann was on PayPal
+        ]
+        orders = [{"id": "O1", "member_id": "ann", "item_ids": ["tent", "food", "gone"], "prices": {"tent": 9000, "food": 2500, "gone": 100}}]
+
+        result = money.split(items, ["ann", "bob"], orders)
+
+        # ann paid 90 + 25 + 1 (an item since deleted) by PayPal, bob 30 by receipt.
+        self.assertEqual([m["paidCents"] for m in result["members"]], [11600, 3000])
+        self.assertEqual(result["totalCents"], 14600)
+        self.assertEqual([b["itemId"] for b in result["boughtTwice"]], ["food", "gone"])
 
     def test_no_members_is_not_a_crash(self):
         self.assertEqual(money.split([], [])["members"], [])

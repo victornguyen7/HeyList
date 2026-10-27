@@ -1,5 +1,19 @@
 # HeyList — Changelog
 
+## 2026-10-27
+
+Phase 1 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification.
+
+### Added
+
+- **Pending payments.** A capture that comes back `PENDING` is now stored on the order. Progress shows the payment as pending, holds its items (they can't be ticked, re-quantified or paid for again: `409 PAYMENT_PENDING`), and offers **Check again**. That calls the new `POST /api/orders/{id}/refresh`, which reads the order with `paypal.get_order()` and checks the items off if the payment has completed, or releases them if it was declined.
+- **Proof labels.** Every item on Progress and Items says what its status rests on: "Paid with PayPal", "On a receipt", "Marked bought by hand" or "Payment pending at PayPal", and who paid. An open item is "Needed".
+- **Estimates marked.** Open items' prices on Progress show as `~$4.00`, as on Items; a bought item shows what was paid.
+
+### Fixed
+
+- **A PayPal payment could drop out of the split.** When a receipt checked an item off while its buyer was on PayPal, the PayPal charge was only logged. `money.split()` now counts it toward the buyer and lists it in `boughtTwice`; Money shows a note for each one (decision 39).
+
 ## 2026-10-24
 
 ### Fixed

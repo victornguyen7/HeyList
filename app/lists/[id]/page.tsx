@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api, usd, type Item, type List } from "../../api";
+import { api, proofLabel, usd, type Item, type List } from "../../api";
 import { button, outline, useList } from "./list-context";
 
 // Progress: the checklist itself. Tick open items to pay for them with PayPal; claim who buys what.
@@ -36,6 +36,19 @@ export default function ProgressPage() {
     }
   }
 
+  // A pending capture can settle later; PayPal doesn't call back, so the person asks again.
+  async function checkAgain(orderId: string) {
+    setBusy(true);
+    try {
+      const { status } = await api<{ status: string }>(`/api/orders/${orderId}/refresh`, { method: "POST" });
+      setStatus(status === "COMPLETED" ? "Paid. Those items are checked off." : status === "PENDING" ? "Still pending at PayPal." : "That payment did not go through. The items are open again.");
+      setList(await api<List>(`/api/lists/${list.id}`));
+    } catch (err) {
+      setStatus((err as Error).message);
+    }
+    setBusy(false);
+  }
+
   function toggle(id: string) {
     const next = new Set(selected);
     if (!next.delete(id)) next.add(id);
@@ -58,6 +71,7 @@ export default function ProgressPage() {
   }
 
   const done = items.filter((item) => item.checkedAt).length;
+  const pending = list.orders.filter((order) => order.status === "PENDING");
   const total = items.filter((item) => selected.has(item.id) && !item.checkedAt).reduce((sum, item) => sum + (item.estPriceCents ?? 0) * item.quantity, 0);
 
   return (
@@ -73,14 +87,16 @@ export default function ProgressPage() {
         {items.map((item) => {
           const isDone = Boolean(item.checkedAt);
           const priced = item.estPriceCents !== null;
+          const proof = proofLabel(item, list.orders);
+          const held = !isDone && proof !== null;
           return (
             <li key={item.id} className="flex flex-col gap-2 rounded-3xl glass px-4 py-3 text-xl">
               <div className="flex min-h-12 items-center gap-4">
                 <label className="flex flex-1 cursor-pointer items-center gap-4">
-                  <input type="checkbox" className="size-6" checked={isDone || selected.has(item.id)} disabled={isDone || !priced || busy} onChange={() => toggle(item.id)} />
+                  <input type="checkbox" className="size-6" checked={isDone || selected.has(item.id)} disabled={isDone || held || !priced || busy} onChange={() => toggle(item.id)} />
                   <span className={isDone ? "line-through opacity-60" : ""}>{item.name}</span>
                 </label>
-                {!isDone && (
+                {!isDone && !held && (
                   <span className="flex items-center gap-2">
                     <button
                       type="button"
@@ -105,9 +121,9 @@ export default function ProgressPage() {
                     </button>
                   </span>
                 )}
-                <span className="tabular-nums">{isDone ? usd(item.priceCents ?? 0) : priced ? usd(item.estPriceCents! * item.quantity) : "—"}</span>
+                <span className="tabular-nums">{isDone ? usd(item.priceCents ?? 0) : priced ? `~${usd(item.estPriceCents! * item.quantity)}` : "—"}</span>
               </div>
-              {!isDone && members.length > 0 && (
+              {!isDone && !held && members.length > 0 && (
                 <select
                   aria-label={`Who buys ${item.name}`}
                   className="h-11 rounded-3xl glass px-2 text-lg"
@@ -122,11 +138,28 @@ export default function ProgressPage() {
                   ))}
                 </select>
               )}
-              {isDone && memberName(item.boughtBy) && <span className="text-base opacity-70">Bought by {memberName(item.boughtBy)}</span>}
+              {proof && (
+                <span className={`text-base ${held ? "text-amber-700" : "opacity-70"}`}>
+                  {proof}
+                  {isDone && memberName(item.boughtBy) && ` · ${memberName(item.boughtBy)}`}
+                </span>
+              )}
             </li>
           );
         })}
       </ul>
+
+      {pending.map((order) => (
+        <div key={order.id} className="flex flex-col gap-2 rounded-3xl glass p-4 text-lg">
+          <p>
+            {memberName(order.memberId) ?? "Someone"}&apos;s payment of {usd(order.totalCents)} is still pending at PayPal. Its items are held until it
+            goes through.
+          </p>
+          <button type="button" onClick={() => checkAgain(order.id)} disabled={busy} className={outline}>
+            Check again
+          </button>
+        </div>
+      ))}
 
       {members.length > 0 && items.some((item) => !item.checkedAt && !item.claimedBy) && (
         <button type="button" onClick={assign} className={outline}>

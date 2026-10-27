@@ -127,8 +127,9 @@ def list_state(list_id: str) -> dict:
         "members": rows("members"),
         "items": rows("items", "position"),
         "receipts": rows("receipts"),
-        # Only captured orders are proof; an order the buyer walked away from is not shown.
-        "orders": rows("orders", status="COMPLETED"),
+        # Captured orders are proof; pending ones hold their items until PayPal decides. An order the buyer
+        # walked away from (CREATED) or that was declined is not shown.
+        "orders": rows("orders", status=["COMPLETED", "PENDING"]),
         "invoices": rows("invoices"),
     }
 
@@ -307,6 +308,9 @@ def create_order(list_id: str, body=Depends(json_body)):
         member_id = member_of(list_id, body.get("memberId"))
     except BAD_INPUT:
         return error("INVALID_ITEMS", 400)
+    # An item whose payment is pending at PayPal may still go through, so it can't be paid for a second time yet.
+    if any(set(order["item_ids"]) & {item["id"] for item in items} for order in db.select("orders", list_id=list_id, status="PENDING")):
+        return error("PAYMENT_PENDING", 409)
 
     try:
         order = paypal.create_order(
@@ -352,32 +356,61 @@ def capture_order(order_id: str):
         if not isinstance(exc, paypal.PayPalError):
             log.exception("Capture order failed")
         return error("PAYPAL_ERROR", 502)
-
-    if result["status"] == "COMPLETED":
-        # The captured order is the proof: its items are checked off, priced, and tied to it.
-        order, captured_at = orders[0], now()
-        db.update("orders", {"status": "COMPLETED", "captured_at": captured_at}, id=order_id)
-        for item in db.select("items", id=order["item_ids"]):
-            # Already checked off: by this order on a repeated capture, or by a receipt while the buyer was on
-            # PayPal. An item has one proof (items_one_proof), so the receipt stays and the overlap is logged.
-            if item["checked_at"] and item["order_id"] == order_id:
-                continue
-            # checked_at=None makes the check and the write one step, so a receipt confirmed at the same moment
-            # can't be overwritten.
-            if not db.update(
-                "items",
-                {
-                    "checked_at": captured_at,
-                    "bought_by": order["member_id"],
-                    # What PayPal charged, not today's price; orders from before prices were stored fall back.
-                    "price_cents": order["prices"].get(item["id"], item["est_price_cents"] * item["quantity"]),
-                    "order_id": order_id,
-                },
-                id=item["id"],
-                checked_at=None,
-            ):
-                log.warning("Order %s paid for item %s, which was already checked off", order_id, item["id"])
+    record_capture(orders[0], result["status"])
     return result
+
+
+@app.post("/api/orders/{order_id}/refresh")
+def refresh_order(order_id: str):
+    """Asks PayPal again about an order whose capture came back PENDING, and checks its items off if it has
+    since COMPLETED."""
+    if not re.fullmatch(r"[A-Z0-9]{1,36}", order_id):
+        return error("INVALID_ORDER_ID", 400)
+    orders = db.select("orders", id=order_id)
+    if not orders:
+        return error("ORDER_NOT_FOUND", 404)
+    if orders[0]["status"] != "PENDING":
+        return error("ORDER_NOT_PENDING", 409)
+    try:
+        result = paypal.get_order(order_id)
+    except Exception as exc:
+        if not isinstance(exc, paypal.PayPalError):
+            log.exception("Get order failed")
+        return error("PAYPAL_ERROR", 502)
+    record_capture(orders[0], result["status"])
+    return result
+
+
+def record_capture(order: dict, status: str) -> None:
+    """Stores the capture's status on the order. PENDING keeps the order on the list page with its items held;
+    COMPLETED checks them off."""
+    if status != "COMPLETED":
+        db.update("orders", {"status": status}, id=order["id"])
+        return
+    # The captured order is the proof: its items are checked off, priced, and tied to it.
+    order_id, captured_at = order["id"], now()
+    db.update("orders", {"status": "COMPLETED", "captured_at": captured_at}, id=order_id)
+    for item in db.select("items", id=order["item_ids"]):
+        # Already checked off: by this order on a repeated capture, or by a receipt while the buyer was on
+        # PayPal. An item has one proof (items_one_proof), so the receipt stays; the PayPal charge still
+        # counts toward what the buyer paid (money.split, decision 39), and the overlap is logged.
+        if item["checked_at"] and item["order_id"] == order_id:
+            continue
+        # checked_at=None makes the check and the write one step, so a receipt confirmed at the same moment
+        # can't be overwritten.
+        if not db.update(
+            "items",
+            {
+                "checked_at": captured_at,
+                "bought_by": order["member_id"],
+                # What PayPal charged, not today's price; orders from before prices were stored fall back.
+                "price_cents": order["prices"].get(item["id"], item["est_price_cents"] * item["quantity"]),
+                "order_id": order_id,
+            },
+            id=item["id"],
+            checked_at=None,
+        ):
+            log.warning("Order %s paid for item %s, which was already checked off", order_id, item["id"])
 
 
 # AI starting lists
@@ -424,7 +457,7 @@ def split_list(list_id: str):
     if not find("lists", list_id):
         return error("LIST_NOT_FOUND", 404)
     members = [member["id"] for member in db.select("members", list_id=list_id)]
-    return money.split(db.select("items", list_id=list_id), members)
+    return money.split(db.select("items", list_id=list_id), members, db.select("orders", list_id=list_id, status="COMPLETED"))
 
 
 # Receipts
