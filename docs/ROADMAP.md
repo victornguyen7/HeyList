@@ -14,7 +14,7 @@ Flow, end to end:
 
 - [ ] Create a list by voice or typing; AI builds a smart starting list within the budget; user confirms or edits
   - [x] Typing: one sentence and an optional budget, AI suggestion reviewed before saving, over-budget shown
-  - [ ] Voice
+  - [x] Voice: the mic dictates the prompt with the browser's speech recognition (decision 47)
 - [ ] Share by link; people claim items they'll buy
   - [x] Join by name, claim items, share out unclaimed items evenly by estimated cost
   - [ ] Realtime updates when someone else changes the list
@@ -38,7 +38,7 @@ Flow, end to end:
 Core features:
 
 - [ ] Type
-- [ ] Voice
+- [x] Voice (browser speech recognition, decision 47)
 - [ ] Photo as proof
 - [ ] Photo recognition (spec in [SPEC.md](SPEC.md#photo-recognition-planned-spec-and-learning-plan-only))
   - [ ] Learn: send a photo plus item names to a vision model (the Ollama model, which already reads receipts; or Claude Haiku 5.5 later) and read back structured matches; try 20 real photos and note hits and misses
@@ -79,12 +79,13 @@ Validation:
 
 - [ ] Channel3
 
-## Next: dark redesign (design in progress, not planned yet)
+## Redesign ([Figma](https://www.figma.com/design/Wv3JGTqJewtLNMax2PWmSk))
 
-- [ ] Dark, Whoop-inspired look for Home, AI review, Progress, Money and Settle up. Draft in Figma: [HeyList — Dark redesign](https://www.figma.com/design/Wv3JGTqJewtLNMax2PWmSk). Colors so far: green for lists and progress, coral for money, light blue (#36B9F5, near PayPal's) for AI, people and PayPal pay buttons; slim headings and numbers in Geist; no emoji. Still being decided by the owner, so don't build from it yet
+- [x] Soft glass, mobile and web layouts (decision 46)
+- [ ] Dark ("Midnight") theme: the Figma file has mobile and web screens. Add its colours as a second set of the CSS variables in `app/globals.css`, with a switch
 
 ## Later
 
 - Native app
-- Light mode with a dark/light switch. The redesign ships dark only; keep its colors as CSS variables so a light set can be added later
+- Dark mode with a light/dark switch (soft glass is the light set; Midnight is in Figma)
 - Small-business restocking

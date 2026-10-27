@@ -1,58 +1,47 @@
 @import "tailwindcss";
 
-/* Soft frosted-glass look (ui/image.png): muted blue-to-mist backdrop, translucent cards, one dark accent. */
+/* Soft glass, from the Figma "HeyList — Soft glass" variables (mobile and web share them).
+   Kept as variables so the dark (Midnight) set can be added later as a second block. */
 :root {
-  --background: #e9ecf1;
-  --foreground: #1c1f26;
-  --card: rgb(255 255 255 / 0.55);
-  --line: rgb(255 255 255 / 0.7);
-  --chip: rgb(255 255 255 / 0.5);
-  --accent: #16181d;
+  --bg: #e9ecf1;
+  --text: #1c1f26;
+  --muted: #6a7180;
+  /* "list" is the main action colour: lists, progress, primary buttons. */
+  --list: #1c1f26;
+  --ai: #5a7a9c;
+  --money: #a8705e;
+  --on-accent: #ffffff;
+  --surface: #ffffff8c;
+  --surface-2: #ffffffcc;
+  --line: #ffffffb2;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
+  --color-bg: var(--bg);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-list: var(--list);
+  --color-ai: var(--ai);
+  --color-money: var(--money);
+  --color-on-accent: var(--on-accent);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-line: var(--line);
-  --color-chip: var(--chip);
-  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* A frosted card: the design's surface, white edge, 12px blur and soft shadow. */
 @utility glass {
-  background: var(--card);
+  background: var(--surface);
   border: 1px solid var(--line);
-  backdrop-filter: blur(24px) saturate(1.2);
-  box-shadow: 0 10px 30px -12px rgb(30 40 60 / 0.12);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px 0 rgb(30 40 60 / 0.08);
 }
 
 body {
-  background:
-    radial-gradient(90% 50% at 0% 40%, rgb(96 112 170 / 0.28), transparent 70%),
-    linear-gradient(180deg, #86a5b8 0%, #aec2cf 25%, #d8dee6 55%, var(--background) 100%) fixed;
-  background-attachment: fixed;
-  color: var(--foreground);
+  background: linear-gradient(180deg, #86a5b8 0%, #aec2cf 28%, #d8dee6 60%, var(--bg) 100%) fixed;
+  color: var(--text);
   font-family: var(--font-sans), system-ui, sans-serif;
-  accent-color: var(--accent);
-}
-
-progress {
-  appearance: none;
-  border: 0;
-  border-radius: 9999px;
-  overflow: hidden;
-  background: var(--chip);
-}
-progress::-webkit-progress-bar {
-  background: var(--chip);
-}
-progress::-webkit-progress-value {
-  background: var(--accent);
-  border-radius: 9999px;
-}
-progress::-moz-progress-bar {
-  background: var(--accent);
-  border-radius: 9999px;
+  accent-color: var(--list);
 }

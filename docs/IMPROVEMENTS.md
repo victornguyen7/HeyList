@@ -10,7 +10,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 2 | 1. Core promise | Done 2026-10-27 (see below) |
 | 3 | 2. AI reliability (narrow) | Done 2026-10-27, evaluated (see below) |
 | 4 | 5. Group accounting (narrow) | Done 2026-10-27 (see below) |
-| 5 | 4. Less effort (narrow) | Not started |
+| 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 
 ### Phase 1 — purchase verification (done)
 
@@ -73,6 +73,23 @@ The questions from area 5, and where Settle up now answers them:
 - One collapsed box per person (`<details>`), so the page stays short until someone wants the detail (decision 7).
 - **Tests:** 70 pass. `tsc` and `eslint` clean. Not checked in a browser.
 - **Not done:** PayPal invoices for the transfers (the bigger PayPal-prize item) and weighted shares (issue 18).
+
+### Phase 5 — less effort, narrow (done)
+
+| Moment (area 4) | Now |
+|---|---|
+| Opening the site | Unchanged: the starter is the home page, with no category, settings or onboarding. Phase 2 added one line saying what HeyList does |
+| Turning input into a list | The review screen is editable: untick, rename, change quantities, add missing items. Corrections happen before anything is saved |
+| Checking items off | The tick means "done" (it asks what you paid, and can be undone). PayPal is a separate mode, so the plain checklist shows no payment controls until someone asks to pay |
+
+- **Before:** there was no way to tick an item off by hand on Progress; the only checkbox meant "select to pay". The backend has always supported hand ticks (`PATCH /api/items/{id}` with `checked`, `memberId`, `priceCents`).
+- Items proven by PayPal or a receipt can't be unticked on Progress (the backend already refuses PayPal ones with `409 ITEM_PAID`).
+- **Checks:** `tsc` and `eslint` clean; 70 backend tests pass (no backend change in this phase). **Not checked in a browser**, and the frontend has no tests, so try the tick prompt and the pay mode on a phone before recording.
+- **Not done:** voice (the "one big talk button", decision 7), the join form on every tab (issue 34), and timing the three measures with real users. The dark redesign is still the owner's call.
+
+## All phases
+
+All five recommended areas are done in their narrow versions. Left for the deadline (12 November 2026): the `LICENSE` file, the hosted URL, one live sandbox payment (issue 25), running `supabase/schema.sql` on the live database (`orders.capture_id`, `orders.refunds`, `items.note`), and the demo video ([SUBMISSION.md](SUBMISSION.md)).
 
 ## Summary
 

@@ -13,21 +13,22 @@ One scenario from start to finish: **three friends planning a weekend camping tr
 | Time | Scene | On screen | Say (roughly) | Judging criterion |
 |---|---|---|---|---|
 | 0:00–0:15 | Problem | Home page | "Planning a trip with friends means a group chat, a list nobody updates, and arguing later about who paid. HeyList turns what you need into a shared list, and keeps track of what really got done." | Impact, Presentation |
-| 0:15–0:40 | **Need** | Type "Weekend camping trip for 3 friends, 2 nights" and a $150 budget, then tap **Make my list**. Show quantities, the `~` estimates and the estimated total; untick one item; **Create list** | "One sentence. The AI suggests what we need, with quantities and estimated prices, within our budget. Nothing is saved until I've checked it." | Technical (AI), Design |
+| 0:15–0:40 | **Need** | Tap the mic and say "Weekend camping trip for 3 friends, $150 budget" (or type it), then tap **Make my list**. Show quantities, the `~` estimates and the estimated total; untick one item, fix one amount, add one missing thing; **Create list** | "One sentence. The AI suggests what we need, with quantities and estimated prices, within our budget. Nothing is saved until I've checked it." | Technical (AI), Design |
 | 0:40–1:05 | **Coordinate** | Join as Ann. In a second browser, open the link and join as Ben. Claim the tent; tap **Share out the rest evenly** | "I share the link. No accounts. Ben joins by name. We claim what we're buying, and HeyList shares out the rest so the cost is even." | Design, Impact |
-| 1:05–1:45 | **Verify: PayPal** | As Ann, tick three items; **Pay $X with PayPal**; approve on the PayPal sandbox page; back on the list, "Paid. Those items are checked off." Each one shows "Paid with PayPal · Ann" | "Ann pays for her share with PayPal. The server sets the price from the list, not the browser. Only when PayPal confirms the payment is captured do the items get checked off, with Ann as the payer and the price she paid." | Technical (PayPal), Best Use of PayPal + AI |
+| 1:05–1:45 | **Verify: PayPal** | As Ann, tap **Pay for items with PayPal**, choose three items, **Pay $X with PayPal**; approve on the PayPal sandbox page; back on the list, "Paid. Those items are checked off." Each one shows "Paid with PayPal · Ann" | "Ann pays for her share with PayPal. The server sets the price from the list, not the browser. Only when PayPal confirms the payment is captured do the items get checked off, with Ann as the payer and the price she paid." | Technical (PayPal), Best Use of PayPal + AI |
 | 1:45–2:15 | **Verify: receipt** | As Ben, **Receipts** tab: photograph a real receipt. Show the proposed matches; fix one; confirm. Items now show "On a receipt · Ben" | "Ben bought his things in a shop. He snaps the receipt; the AI reads it and matches each line to our list. He checks the matches, and his items are done, at the prices on the receipt." | Technical (AI), Innovation |
 | 2:15–2:35 | **Settle** | **Items** tab (every item shows its proof), then **Settle up**: "Ben → Ann $X" | "Every item says how we know it's done. And because the prices are real, HeyList works out who owes whom, in code, not by guessing." | Impact, Design |
 | 2:35–2:45 | Close | Progress page, list finished | "Need, coordinate, verify. HeyList." | Presentation |
 
 Cut first if it runs long: the second browser joining (say it instead), then the receipt correction.
 
-Don't show: voice input or photo recognition (not built), or PayPal invoices (not built). If any of these are built before recording, add them to the scene where they fit.
+Don't show: photo recognition (not built), or PayPal invoices (not built). Voice works where the browser has speech recognition (Chrome, Safari); test it on the recording phone first. If any of these are built before recording, add them to the scene where they fit.
 
 ### Before recording
 
 - [ ] Deployed on Render, with the hosted URL working (`render.yaml`).
-- [ ] Run `supabase/schema.sql` again on the live database (phase 1 added `orders.capture_id`, `orders.refunds`).
+- [ ] Run `supabase/schema.sql` again on the live database (`orders.capture_id`, `orders.refunds`, `items.note`).
+- [ ] Record on a phone for the mobile layout; a laptop browser shows the website layout (decision 46).
 - [ ] A sandbox **personal** buyer account is logged in once, so the PayPal approval page is fast ([Sandbox accounts](https://developer.paypal.com/dashboard/accounts)).
 - [ ] One full sandbox payment has already been tested end to end (issue 25).
 - [ ] A clear, real receipt that matches two or three items on the generated list. Practise the suggestion first: the AI's list changes between runs, so record the list you practised with, or add the receipt's items by hand.

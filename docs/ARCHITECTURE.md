@@ -51,7 +51,10 @@ Currently installed:
 | `backend/money.py` | Split math: `assign_unclaimed()` shares out open items, `split()` works out paid (with the purchases it adds up from), share and balance per member, `settle()` the transfers |
 | `backend/receipts.py` | `read_receipt()` (AWS Textract `AnalyzeExpense` -> line items in cents with confidence; falls back to `read_with_ollama()`, the Ollama vision model) and `match_lines()` (Ollama, JSON schema -> list item per line) |
 | `backend/main.py` | FastAPI app. Lists (`POST /api/lists`, `GET`/`PATCH /api/lists/{id}`), members (`POST /api/lists/{id}/members`), items (`POST /api/lists/{id}/items`, `PATCH`/`DELETE /api/items/{id}`), checkout (`POST /api/lists/{id}/orders` with `{"itemIds": [...]}`, `POST /api/orders/{order_id}/capture`, `POST /api/orders/{order_id}/refresh` for a pending capture), starting lists (`POST /api/lists/suggest`), splitting (`POST /api/lists/{id}/assign`, `GET /api/lists/{id}/split`), receipts (`POST /api/lists/{id}/receipts` with the photo as the body, `POST /api/receipts/{id}/confirm`, `GET /api/receipts/{id}/image`). Errors are `{"error": CODE}` |
-| `app/page.tsx` | Home: the starter, and a link to History |
+| `app/ui.tsx` | Soft glass building blocks (decision 46): button, card, row and chip classes; `Ring`, `Avatar`, `Check`, `WebNav`, and `Shell` (background glows, web nav, page width) |
+| `app/recent.tsx` | `useSeenLists()` (lists this browser opened), `spent()`, `ListCard` |
+| `public/ui/` | Figma assets: logo dot, sparkle, mic, check, arrow, background glows |
+| `app/page.tsx` | Home: the starter, "Your lists", and on the web "Spent this month" |
 | `app/lists/[id]/list-context.tsx` | Loads a list once for all its pages; title, tabs, join by name; captures a PayPal order on return (`/lists/<id>?token=`) |
 | `app/lists/[id]/page.tsx` | Progress: progress bar, quantities, who buys each item, share out the rest, pay with PayPal, mark finished |
 | `app/lists/[id]/items/page.tsx` | Items: status, price, who bought it, proof (PayPal order or a link to the receipt) |

@@ -6,6 +6,17 @@ Phase 1 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification
 
 ### Added
 
+- **Soft glass redesign** (decision 46), from the Figma file's "Soft glass" (mobile) and "Web (soft glass)" screens. Phones get the mobile layout and laptops the website layout from the same link, by screen width:
+  - Shared pieces in `app/ui.tsx` (buttons, cards, item rows, progress ring, avatars, web nav, page frame with the background glows) and `app/recent.tsx` ("Your lists" cards). Design assets in `public/ui/`.
+  - Home: prompt card with idea chips (Trip, Party, Groceries, Move-in fill in an example), "Your lists" with progress rings, and on the web a "Spent this month" card. A mic button dictates the prompt where the browser supports it; the budget is read from the sentence (decision 47).
+  - AI review: "AI made N items in X seconds", budget card with a bar, editable rows, "+ Add an item", and "Looks good, create list" pinned to the bottom on phones.
+  - Progress: ring with done/total, stats (spent, still to get, receipts), Scan receipt and Pay buttons ("Pay $X" preselects the items you claimed), "Still to get" and "Done" lists. Tap an item's name to change its quantity or who buys it.
+  - Money: spent together, equal share, budget, "Who paid what" bars with the equal share marked, receipt extras. On the web, Settle up sits beside it.
+  - Settle up: "N payments and everyone's even", a card per payment (from → amount → to), then "How this was worked out".
+  - Items, Receipts and History restyled to match (no Figma screens for them).
+- **Less effort** (phase 5, decision 45):
+  - Progress: the tick now means "done". Ticking asks what you paid (estimate filled in; blank if you don't know) and can be undone; items proven by PayPal or a receipt stay locked. Paying is its own mode: **Pay for items with PayPal** → choose items → **Pay $X with PayPal**, or **Cancel**. Quantity steppers and "who buys it" are hidden while paying.
+  - AI review: rename any item, change its quantity, and **Add something missing**, before the list is created. An emptied name drops the item.
 - **How this was worked out** (phase 4): Settle up explains every balance. The total spent and the equal share; then, for each person, a tap-to-open line "paid $X − share $Y = gets back / owes $Z", with each item behind "paid", its price and its proof ("Paid with PayPal", "On a receipt", "Marked bought by hand", "bought again with PayPal"); and what isn't counted (receipt extras, anything checked off without a name). The lines come from `money.split()`'s new `purchases` (decision 44), so they always add up.
 - **Item notes** (phase 3): starting lists keep conditions and unclear amounts as a note on the item ("only if nobody has one"), shown in amber on the review screen, Progress and Items, and copied by Buy again. Named lists come back exactly as named, with their quantities; the same item listed twice with different amounts is kept twice and flagged (decision 42). **Schema:** `items.note`. Run `supabase/schema.sql` again.
 - **AI evaluation** (phase 3): `backend/eval_starter.py` scores starting lists against 20 labelled cases in `backend/eval/starter_cases.json` (typed lists, speech-style transcripts, a transcribed photo list, situation descriptions). Paid; runs only with `--yes` (decision 43). The scorer has its own tests (`test_eval_starter.py`). It writes `backend/eval/eval_report.json`, with every reply, the scores and the token usage. First run (`gemma4:31b`): recall 62/63, quantities 12/13, notes 8/8, nothing invented.

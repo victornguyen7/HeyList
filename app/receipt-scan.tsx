@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api, usd, type Item, type List, type Receipt } from "./api";
+import { button, buttonAi, card } from "./ui";
 
 // Phone photos are often larger than the backend's 5 MB limit; 2000 px is plenty for Textract to read a receipt.
 async function shrink(file: File): Promise<Blob> {
@@ -57,35 +58,33 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-2xl font-medium">Scan a receipt</h2>
-      {!memberId && <p className="text-lg">Add your name above first, so the receipt counts as yours.</p>}
-      <label
-        className={`flex h-14 cursor-pointer items-center justify-center rounded-full glass text-xl font-medium ${busy || !memberId ? "pointer-events-none opacity-40" : ""}`}
-      >
+      <h2 className="text-lg font-medium lg:text-xl">Scan a receipt</h2>
+      {!memberId && <p className="text-base text-muted">Join above first, so the receipt counts as yours.</p>}
+      <label className={`${buttonAi} cursor-pointer ${busy || !memberId ? "pointer-events-none opacity-40" : ""}`}>
         Take a photo of the receipt
         <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={scan} disabled={busy || !memberId} />
       </label>
 
       {status && (
-        <p role="status" className="glass rounded-3xl p-4 text-lg">
+        <p role="status" className={`${card} text-base`}>
           {status}
         </p>
       )}
 
       {receipt && (
         <>
-          <p className="text-lg">Check each line, change any that are wrong, then confirm.</p>
+          <p className="text-base text-muted">Check each line, change any that are wrong, then confirm.</p>
           <ul className="flex flex-col gap-2">
             {receipt.lines.map((line, index) => (
-              <li key={index} className="flex flex-col gap-2 rounded-3xl glass p-4 text-lg">
+              <li key={index} className={`${card} flex flex-col gap-2 text-base`}>
                 <span className="flex justify-between gap-2">
                   <span className="font-mono">{line.text}</span>
                   <span className="tabular-nums">{usd(line.priceCents)}</span>
                 </span>
-                {line.lowConfidence && <span className="text-base text-amber-700">Hard to read: check this line</span>}
+                {line.lowConfidence && <span className="text-[13px] text-money">Hard to read: check this line</span>}
                 <select
                   aria-label={`List item for ${line.text}`}
-                  className="h-12 rounded-3xl glass px-2"
+                  className="h-11 rounded-[20px] bg-surface-2 px-3"
                   value={choices[index] ?? ""}
                   onChange={(e) => setChoices(choices.map((c, i) => (i === index ? e.target.value || null : c)))}
                 >
@@ -103,7 +102,7 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
             type="button"
             onClick={confirm}
             disabled={busy}
-            className="h-14 rounded-full bg-accent text-xl font-medium text-white disabled:opacity-40"
+            className={button}
           >
             Confirm and check off
           </button>

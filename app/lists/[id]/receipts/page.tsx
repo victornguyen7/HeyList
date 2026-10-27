@@ -13,17 +13,17 @@ export default function ReceiptsPage() {
   const receipts = list.receipts.filter((r) => r.confirmedAt);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[760px]">
       <ReceiptScan list={list} memberId={me} onDone={setList} />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl font-medium">Scanned receipts</h2>
-        {receipts.length === 0 && <p className="text-lg opacity-70">None yet.</p>}
+        <h2 className="text-lg font-medium lg:text-xl">Scanned receipts</h2>
+        {receipts.length === 0 && <p className="text-base text-muted">None yet.</p>}
         {receipts.map((receipt) => (
-          <article key={receipt.id} id={receipt.id} className={`${card} flex flex-col gap-2`}>
+          <article key={receipt.id} id={receipt.id} className={`${card} flex flex-col gap-2 text-base`}>
             {/* eslint-disable-next-line @next/next/no-img-element -- private photo served by the backend */}
-            <img src={`/api/receipts/${receipt.id}/image`} alt="Receipt photo" loading="lazy" className="max-h-80 w-full rounded object-contain" />
-            <p className="opacity-70">
+            <img src={`/api/receipts/${receipt.id}/image`} alt="Receipt photo" loading="lazy" className="max-h-80 w-full rounded-[18px] object-contain" />
+            <p className="text-muted">
               {day(receipt.createdAt)}
               {memberName(receipt.memberId) && ` · paid by ${memberName(receipt.memberId)}`}
               {receipt.totalCents !== null && ` · ${usd(receipt.totalCents)}`}
@@ -31,7 +31,7 @@ export default function ReceiptsPage() {
             <ul className="flex flex-col gap-1">
               {receipt.lines.map((line, index) => (
                 <li key={index} className="flex justify-between gap-2 tabular-nums">
-                  <span>{itemName(line.itemId) ?? <span className="opacity-60">{line.text} (extra)</span>}</span>
+                  <span>{itemName(line.itemId) ?? <span className="text-muted">{line.text} (extra)</span>}</span>
                   <span>{usd(line.priceCents)}</span>
                 </li>
               ))}
@@ -41,24 +41,24 @@ export default function ReceiptsPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl font-medium">PayPal orders</h2>
-        {list.orders.length === 0 && <p className="text-lg opacity-70">None yet.</p>}
+        <h2 className="text-lg font-medium lg:text-xl">PayPal orders</h2>
+        {list.orders.length === 0 && <p className="text-base text-muted">None yet.</p>}
         {list.orders.map((order) => (
-          <article key={order.id} className={`${card} flex flex-col gap-1`}>
+          <article key={order.id} className={`${card} flex flex-col gap-1 text-base`}>
             <span className="flex justify-between tabular-nums">
               <span>
                 Order {order.id}
-                {order.status === "PENDING" && <span className="text-amber-700"> · pending</span>}
+                {order.status === "PENDING" && <span className="text-money"> · pending</span>}
               </span>
               <span>{usd(order.totalCents)}</span>
             </span>
-            <span className="opacity-70">
+            <span className="text-muted">
               {day(order.createdAt)}
               {memberName(order.memberId) && ` · paid by ${memberName(order.memberId)}`}
             </span>
             <span>{order.itemIds.map(itemName).filter(Boolean).join(", ")}</span>
             {Object.entries(order.refunds).map(([itemId, refund]) => (
-              <span key={itemId} className="opacity-70">
+              <span key={itemId} className="text-muted">
                 Refunded {usd(refund.cents)} for {itemName(itemId) ?? "an item"}: it had already been bought
                 {refund.status !== "COMPLETED" && ` (${refund.status.toLowerCase()})`}
               </span>

@@ -18,9 +18,9 @@ Every step keeps what the step before it established: the quantities and estimat
 
 | Step | Question it answers | How | Status |
 |---|---|---|---|
-| **Need** | What do we need? | Describe the situation in one sentence; the AI suggests a list with quantities and estimated prices within the budget; you untick what you don't need before anything is saved | Built (typing). Voice planned |
+| **Need** | What do we need? | Type or say one sentence ("…, $200 budget"); the AI suggests a list with quantities and estimated prices within the budget; you drop, rename, change or add items before anything is saved | Built |
 | **Coordinate** | Who handles it? | Share the link, join by name, claim items, or share out the rest evenly by estimated cost | Built. Realtime updates planned |
-| **Verify** | What got done? | Pay with PayPal (a completed capture is the proof) or scan a receipt (the AI reads it and matches lines to items, and you confirm). Each item says what its status rests on: "Paid with PayPal", "On a receipt", "Marked bought by hand", or "Payment pending at PayPal" | Built |
+| **Verify** | What got done? | Tick it off by hand (you say what you paid), pay with PayPal (a completed capture is the proof), or scan a receipt (the AI reads it and matches lines to items, and you confirm). Each item says what its status rests on: "Paid with PayPal", "On a receipt", "Marked bought by hand", or "Payment pending at PayPal" | Built |
 | **Settle** | Who owes whom? | Code (not AI) works out each person's share from the recorded prices and the fewest payments to even up | Built. PayPal invoices planned |
 
 Labels claim only what the evidence shows: a PayPal capture proves the payment, not that the item arrived. If an item is bought twice (a receipt and a PayPal payment at the same time), the PayPal charge is refunded to the person who paid it.
@@ -45,9 +45,10 @@ Built:
 - **Split and settle** — who paid what, equal shares, and who pays whom.
 - **History** — lists this browser has opened, spending by type and month, buy again.
 
+- **Voice** — tap the mic and say it; the words fill the prompt (where the browser supports speech recognition).
+
 Planned:
 
-- **Voice** — speak naturally; the app splits speech into clean items and shows them to confirm.
 - **Photo as proof** and **photo recognition** — see [docs/SPEC.md](docs/SPEC.md#photo-recognition-planned-spec-and-learning-plan-only).
 - **Reuse** — repeating lists reset with one tap.
 - **PayPal invoices** for settle-up.
@@ -123,5 +124,5 @@ When deploying, set `BACKEND_URL` before `next build`: Next resolves the `/api` 
 
 - [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/)
 - [PayPal developer dashboard](https://developer.paypal.com/dashboard/accounts)
-- [Dark redesign draft (Figma)](https://www.figma.com/design/Wv3JGTqJewtLNMax2PWmSk)
+- [Design (Figma)](https://www.figma.com/design/Wv3JGTqJewtLNMax2PWmSk): soft glass (built) and Midnight (dark, later), each with mobile and web screens
 - Sponsors: [APIMatic](https://paypalaihackathon.devpost.com/details/apimatic) · [Postman](https://paypalaihackathon.devpost.com/details/postman) · [Render](https://paypalaihackathon.devpost.com/details/render) · [Channel3](https://paypalaihackathon.devpost.com/details/channel3)

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, use, useEffect, useState } from "react";
 import { api, refundNote, rememberList, type List, type Member } from "../../api";
+import { Avatar, button, card } from "../../ui";
 
 type Capture = { orderId: string; status: string; refundedCents: number };
 type Ctx = {
@@ -17,17 +18,15 @@ type Ctx = {
 const ListContext = createContext<Ctx | null>(null);
 export const useList = () => use(ListContext)!;
 
-export const button = "h-14 rounded-full bg-accent text-xl font-medium text-white disabled:opacity-40";
-export const outline = "h-14 rounded-full glass text-xl font-medium disabled:opacity-40";
-export const field = "h-14 rounded-3xl glass px-4 text-xl";
-export const card = "rounded-3xl glass p-4 text-lg";
+export { button, buttonAi, buttonGlass as outline, card, field, row } from "../../ui";
 
+// Tabs, with the colour each one takes when active on the phone tab bar (Figma "Tab bar").
 const TABS = [
-  ["", "Progress"],
-  ["/items", "Items"],
-  ["/money", "Money"],
-  ["/receipts", "Receipts"],
-  ["/settle", "Settle up"],
+  ["", "Progress", "text-list"],
+  ["/items", "Items", "text-list"],
+  ["/money", "Money", "text-money"],
+  ["/receipts", "Receipts", "text-ai"],
+  ["/settle", "Settle up", "text-money"],
 ] as const;
 
 // Who "you" are on a list is remembered in this browser only; there are no accounts (decision 6).
@@ -103,47 +102,98 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
   const message = status ?? (orderId ? (approved ? "Confirming your payment…" : "Payment cancelled.") : null);
   const base = `/lists/${listId}`;
 
-  return (
-    <div className="flex w-full flex-col gap-6">
-      <Link href="/" className="text-lg underline-offset-4 hover:underline">
-        ← HeyList
-      </Link>
-      <h1 className="text-4xl font-medium tracking-tight">{list?.title ?? "Loading…"}</h1>
+  async function share() {
+    const url = `${window.location.origin}${base}`;
+    try {
+      if (navigator.share) await navigator.share({ title: list?.title, url });
+      else {
+        await navigator.clipboard.writeText(url);
+        setStatus("Link copied. Anyone with it can join this list.");
+      }
+    } catch {
+      // Closing the share sheet is not an error.
+    }
+  }
 
-      <nav className="flex flex-wrap gap-2" aria-label="List pages">
-        {TABS.map(([path, label]) => {
-          const active = pathname === base + path;
-          return (
-            <Link
-              key={path}
-              href={base + path}
-              aria-current={active ? "page" : undefined}
-              className={`shrink-0 rounded-full px-5 py-2 text-lg ${active ? "glass" : "opacity-60 hover:opacity-100"}`}
-            >
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
+  const tabs = TABS.map(([path, label, color]) => ({ href: base + path, label, color, active: pathname === base + path }));
+  const shareButton = (
+    <button type="button" onClick={share} className="glass rounded-[18px] bg-surface-2 px-3.5 py-2 text-sm font-medium lg:px-5 lg:py-[13px]">
+      Share link
+    </button>
+  );
+
+  return (
+    <div className="flex w-full flex-col gap-3.5 lg:gap-7">
+      <div className="flex items-center justify-between lg:hidden">
+        <Link href="/" className="text-base font-medium text-muted">
+          ← Lists
+        </Link>
+        {shareButton}
+      </div>
+
+      <header className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-2.5">
+          <Link href="/" className="hidden text-[15px] text-muted lg:block">
+            ← My lists
+          </Link>
+          <h1 className="text-[32px] tracking-[-0.015em] lg:text-[48px] lg:font-medium">{list?.title ?? "Loading…"}</h1>
+          {list && list.members.length > 0 && (
+            <div className="flex items-center gap-2.5">
+              <span className="flex pr-2.5">
+                {list.members.map((m) => (
+                  <Avatar key={m.id} name={m.name} ring />
+                ))}
+              </span>
+              <span className="text-sm font-medium text-muted">
+                {list.members.length} {list.members.length === 1 ? "person" : "people"}
+                {me && ` · you are ${list.members.find((m) => m.id === me)?.name}`}
+              </span>
+            </div>
+          )}
+        </div>
+        {/* Website tabs (Figma "Web tabs"): the active one is a raised frosted pill. */}
+        <div className="hidden items-center gap-3 lg:flex">
+          <nav className="glass flex gap-1 rounded-full p-[5px]" aria-label="List pages">
+            {tabs.map((tab) => (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                aria-current={tab.active ? "page" : undefined}
+                className={`rounded-full px-5 py-2.5 text-[15px] ${tab.active ? "bg-surface-2 font-medium shadow-[0_4px_14px_0_rgb(30_40_60/0.1)]" : "text-muted hover:text-text"}`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </nav>
+          {shareButton}
+        </div>
+      </header>
 
       {message && (
-        <p role="status" className="glass rounded-3xl p-4 text-lg">
+        <p role="status" className={`${card} text-base`}>
           {message}
         </p>
       )}
 
       {list && (
         <>
-          {me ? (
-            <p className="text-lg opacity-70">
-              You are {list.members.find((m) => m.id === me)?.name}. People: {list.members.map((m) => m.name).join(", ")}
-            </p>
-          ) : (
-            <form onSubmit={join} className="flex gap-2">
-              <input className={`${field} min-w-0 flex-1`} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" aria-label="Your name" maxLength={40} required />
-              <button type="submit" className={`${button} px-6`}>
-                Join
-              </button>
+          {!me && (
+            <form onSubmit={join} className={`${card} flex flex-col gap-3 sm:flex-row sm:items-center`}>
+              <span className="text-base font-medium sm:flex-1">Join to claim, tick off and pay for items</span>
+              <div className="flex gap-2">
+                <input
+                  className="h-12 min-w-0 flex-1 rounded-[20px] bg-bg px-4 text-base"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  aria-label="Your name"
+                  maxLength={40}
+                  required
+                />
+                <button type="submit" className={button}>
+                  Join
+                </button>
+              </div>
             </form>
           )}
           <ListContext
@@ -159,6 +209,19 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
           </ListContext>
         </>
       )}
+
+      {/* Phone tab bar (Figma "Tab bar"): floating at the bottom, a dot over the active tab. */}
+      <nav
+        className="glass fixed inset-x-4 bottom-4 z-10 flex h-[68px] items-center justify-between rounded-[34px] bg-surface-2 px-[18px] shadow-[0_10px_15px_rgb(30_40_60/0.1)] lg:hidden"
+        aria-label="List pages"
+      >
+        {tabs.map((tab) => (
+          <Link key={tab.href} href={tab.href} aria-current={tab.active ? "page" : undefined} className={`flex flex-col items-center gap-[5px] text-[13px] font-medium ${tab.active ? tab.color : "text-muted"}`}>
+            <span className={`size-1.5 rounded-full ${tab.active ? "bg-current" : ""}`} />
+            {tab.label === "Settle up" ? "Settle" : tab.label}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }
