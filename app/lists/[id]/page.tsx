@@ -74,7 +74,7 @@ export default function ProgressPage() {
           const isDone = Boolean(item.checkedAt);
           const priced = item.estPriceCents !== null;
           return (
-            <li key={item.id} className="flex flex-col gap-2 rounded-2xl border border-line bg-card px-4 py-3 text-xl">
+            <li key={item.id} className="flex flex-col gap-2 rounded-3xl glass px-4 py-3 text-xl">
               <div className="flex min-h-12 items-center gap-4">
                 <label className="flex flex-1 cursor-pointer items-center gap-4">
                   <input type="checkbox" className="size-6" checked={isDone || selected.has(item.id)} disabled={isDone || !priced || busy} onChange={() => toggle(item.id)} />
@@ -87,7 +87,7 @@ export default function ProgressPage() {
                       aria-label={`One fewer ${item.name}`}
                       disabled={busy || item.quantity <= 1}
                       onClick={() => patchItem(item, { quantity: item.quantity - 1 })}
-                      className="size-10 rounded-full border-2 border-line bg-card"
+                      className="size-10 rounded-full glass"
                     >
                       −
                     </button>
@@ -99,7 +99,7 @@ export default function ProgressPage() {
                       aria-label={`One more ${item.name}`}
                       disabled={busy || item.quantity >= 99}
                       onClick={() => patchItem(item, { quantity: item.quantity + 1 })}
-                      className="size-10 rounded-full border-2 border-line bg-card"
+                      className="size-10 rounded-full glass"
                     >
                       +
                     </button>
@@ -110,7 +110,7 @@ export default function ProgressPage() {
               {!isDone && members.length > 0 && (
                 <select
                   aria-label={`Who buys ${item.name}`}
-                  className="h-11 rounded-2xl border-2 border-line bg-card px-2 text-lg"
+                  className="h-11 rounded-3xl glass px-2 text-lg"
                   value={item.claimedBy ?? ""}
                   onChange={(e) => patchItem(item, { claimedBy: e.target.value || null })}
                 >

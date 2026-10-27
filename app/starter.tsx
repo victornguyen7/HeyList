@@ -5,8 +5,8 @@ import { api, usd, type List } from "./api";
 
 type Suggestion = { title: string; kind: string; items: { name: string; quantity: number; estPriceCents: number | null }[] };
 
-const button = "h-14 rounded-2xl bg-accent text-xl font-bold text-white disabled:opacity-40";
-const field = "h-14 rounded-2xl border-2 border-line bg-card px-4 text-xl";
+const button = "h-14 rounded-full bg-accent text-xl font-medium text-white disabled:opacity-40";
+const field = "h-14 rounded-3xl glass px-4 text-xl";
 
 // Describe the situation, review the AI's starting list, untick what you don't need, then create it.
 // Nothing is saved until "Create list" (decision 5).
@@ -73,19 +73,19 @@ export function Starter({ onCreated }: { onCreated: (list: List) => void }) {
       </form>
 
       {status && (
-        <p role="status" className="rounded-2xl bg-chip p-4 text-lg">
+        <p role="status" className="glass rounded-3xl p-4 text-lg">
           {status}
         </p>
       )}
 
       {suggestion && (
         <>
-          <h2 className="text-2xl font-bold">{suggestion.title}</h2>
+          <h2 className="text-2xl font-medium">{suggestion.title}</h2>
           <p className="text-lg">Untick anything you don&apos;t need.</p>
           <ul className="flex flex-col gap-2">
             {suggestion.items.map((item, index) => (
               <li key={index}>
-                <label className="flex min-h-14 cursor-pointer items-center gap-4 rounded-2xl border border-line bg-card px-4 text-xl">
+                <label className="flex min-h-14 cursor-pointer items-center gap-4 rounded-3xl glass px-4 text-xl">
                   <input
                     type="checkbox"
                     className="size-6"
@@ -108,7 +108,7 @@ export function Starter({ onCreated }: { onCreated: (list: List) => void }) {
           <p className="text-lg tabular-nums">Estimated total: {usd(total)}</p>
           {/* The AI is asked to stay within the budget but doesn't always; the check is done here, in code (decision 10). */}
           {Number(budget) > 0 && total > Math.round(Number(budget) * 100) && (
-            <p role="status" className="text-lg text-amber-700 dark:text-amber-400">
+            <p role="status" className="text-lg text-amber-700">
               That is {usd(total - Math.round(Number(budget) * 100))} over your budget. Untick a few items to fit.
             </p>
           )}

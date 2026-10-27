@@ -17,10 +17,10 @@ type Ctx = {
 const ListContext = createContext<Ctx | null>(null);
 export const useList = () => use(ListContext)!;
 
-export const button = "h-14 rounded-2xl bg-accent text-xl font-bold text-white disabled:opacity-40";
-export const outline = "h-14 rounded-2xl border-2 border-line bg-card text-xl font-bold disabled:opacity-40";
-export const field = "h-14 rounded-2xl border-2 border-line bg-card px-4 text-xl";
-export const card = "rounded-2xl border border-line bg-card p-4 text-lg";
+export const button = "h-14 rounded-full bg-accent text-xl font-medium text-white disabled:opacity-40";
+export const outline = "h-14 rounded-full glass text-xl font-medium disabled:opacity-40";
+export const field = "h-14 rounded-3xl glass px-4 text-xl";
+export const card = "rounded-3xl glass p-4 text-lg";
 
 const TABS = [
   ["", "Progress"],
@@ -104,7 +104,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       <Link href="/" className="text-lg underline-offset-4 hover:underline">
         ← HeyList
       </Link>
-      <h1 className="text-4xl font-bold">{list?.title ?? "Loading…"}</h1>
+      <h1 className="text-4xl font-medium tracking-tight">{list?.title ?? "Loading…"}</h1>
 
       <nav className="flex flex-wrap gap-2" aria-label="List pages">
         {TABS.map(([path, label]) => {
@@ -114,7 +114,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
               key={path}
               href={base + path}
               aria-current={active ? "page" : undefined}
-              className={`shrink-0 rounded-full px-5 py-2 text-lg font-bold ${active ? "bg-accent text-white" : "bg-chip hover:brightness-95"}`}
+              className={`shrink-0 rounded-full px-5 py-2 text-lg ${active ? "glass" : "opacity-60 hover:opacity-100"}`}
             >
               {label}
             </Link>
@@ -123,7 +123,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       </nav>
 
       {message && (
-        <p role="status" className="rounded-2xl bg-chip p-4 text-lg">
+        <p role="status" className="glass rounded-3xl p-4 text-lg">
           {message}
         </p>
       )}

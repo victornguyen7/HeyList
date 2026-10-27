@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
+/* Soft frosted-glass look (ui/image.png): muted blue-to-mist backdrop, translucent cards, one dark accent. */
 :root {
-  --background: #fafafa;
-  --foreground: #171717;
-  --card: #ffffff;
-  --line: #d9d9de;
-  --chip: #e6e6e9;
-  --accent: #2b7a5b;
+  --background: #e9ecf1;
+  --foreground: #1c1f26;
+  --card: rgb(255 255 255 / 0.55);
+  --line: rgb(255 255 255 / 0.7);
+  --chip: rgb(255 255 255 / 0.5);
+  --accent: #16181d;
 }
 
 @theme inline {
@@ -20,21 +21,20 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #18181b;
-    --line: #3f3f46;
-    --chip: #27272a;
-    --accent: #3a9a74;
-  }
+@utility glass {
+  background: var(--card);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 10px 30px -12px rgb(30 40 60 / 0.12);
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(90% 50% at 0% 40%, rgb(96 112 170 / 0.28), transparent 70%),
+    linear-gradient(180deg, #86a5b8 0%, #aec2cf 25%, #d8dee6 55%, var(--background) 100%) fixed;
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   accent-color: var(--accent);
 }
 

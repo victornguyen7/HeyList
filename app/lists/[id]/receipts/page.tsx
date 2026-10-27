@@ -17,7 +17,7 @@ export default function ReceiptsPage() {
       <ReceiptScan list={list} memberId={me} onDone={setList} />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl font-bold">Scanned receipts</h2>
+        <h2 className="text-2xl font-medium">Scanned receipts</h2>
         {receipts.length === 0 && <p className="text-lg opacity-70">None yet.</p>}
         {receipts.map((receipt) => (
           <article key={receipt.id} id={receipt.id} className={`${card} flex flex-col gap-2`}>
@@ -41,7 +41,7 @@ export default function ReceiptsPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl font-bold">PayPal orders</h2>
+        <h2 className="text-2xl font-medium">PayPal orders</h2>
         {list.orders.length === 0 && <p className="text-lg opacity-70">None yet.</p>}
         {list.orders.map((order) => (
           <article key={order.id} className={`${card} flex flex-col gap-1`}>

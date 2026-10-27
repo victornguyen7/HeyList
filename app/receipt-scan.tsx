@@ -57,17 +57,17 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-2xl font-bold">Scan a receipt</h2>
+      <h2 className="text-2xl font-medium">Scan a receipt</h2>
       {!memberId && <p className="text-lg">Add your name above first, so the receipt counts as yours.</p>}
       <label
-        className={`flex h-14 cursor-pointer items-center justify-center rounded-2xl border-2 border-line bg-card text-xl font-bold ${busy || !memberId ? "pointer-events-none opacity-40" : ""}`}
+        className={`flex h-14 cursor-pointer items-center justify-center rounded-full glass text-xl font-medium ${busy || !memberId ? "pointer-events-none opacity-40" : ""}`}
       >
         Take a photo of the receipt
         <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={scan} disabled={busy || !memberId} />
       </label>
 
       {status && (
-        <p role="status" className="rounded-2xl bg-chip p-4 text-lg">
+        <p role="status" className="glass rounded-3xl p-4 text-lg">
           {status}
         </p>
       )}
@@ -77,15 +77,15 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
           <p className="text-lg">Check each line, change any that are wrong, then confirm.</p>
           <ul className="flex flex-col gap-2">
             {receipt.lines.map((line, index) => (
-              <li key={index} className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4 text-lg">
+              <li key={index} className="flex flex-col gap-2 rounded-3xl glass p-4 text-lg">
                 <span className="flex justify-between gap-2">
                   <span className="font-mono">{line.text}</span>
                   <span className="tabular-nums">{usd(line.priceCents)}</span>
                 </span>
-                {line.lowConfidence && <span className="text-base text-amber-700 dark:text-amber-400">Hard to read: check this line</span>}
+                {line.lowConfidence && <span className="text-base text-amber-700">Hard to read: check this line</span>}
                 <select
                   aria-label={`List item for ${line.text}`}
-                  className="h-12 rounded-2xl border-2 border-line bg-card px-2"
+                  className="h-12 rounded-3xl glass px-2"
                   value={choices[index] ?? ""}
                   onChange={(e) => setChoices(choices.map((c, i) => (i === index ? e.target.value || null : c)))}
                 >
@@ -103,7 +103,7 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
             type="button"
             onClick={confirm}
             disabled={busy}
-            className="h-14 rounded-2xl bg-accent text-xl font-bold text-white disabled:opacity-40"
+            className="h-14 rounded-full bg-accent text-xl font-medium text-white disabled:opacity-40"
           >
             Confirm and check off
           </button>

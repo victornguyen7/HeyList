@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, seenLists, usd, type List } from "../api";
 
-const card = "rounded-2xl border border-line bg-card p-4 text-lg";
+const card = "rounded-3xl glass p-4 text-lg";
 const spent = (list: List) => list.items.reduce((sum, item) => sum + (item.checkedAt ? (item.priceCents ?? 0) : 0), 0);
 const month = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
@@ -18,7 +18,7 @@ function totalsBy(lists: List[], key: (list: List) => string) {
 function Totals({ heading, rows }: { heading: string; rows: [string, number][] }) {
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-xl font-bold">{heading}</h2>
+      <h2 className="text-xl font-medium">{heading}</h2>
       <ul className="flex flex-col gap-1 text-lg">
         {rows.map(([label, cents]) => (
           <li key={label} className="flex justify-between gap-2 tabular-nums">
@@ -63,10 +63,10 @@ export default function HistoryPage() {
       <Link href="/" className="text-lg underline-offset-4 hover:underline">
         ← HeyList
       </Link>
-      <h1 className="text-4xl font-bold">History</h1>
+      <h1 className="text-4xl font-medium tracking-tight">History</h1>
 
       {status && (
-        <p role="status" className="rounded-2xl bg-chip p-4 text-lg">
+        <p role="status" className="glass rounded-3xl p-4 text-lg">
           {status}
         </p>
       )}
@@ -93,7 +93,7 @@ export default function HistoryPage() {
                       {list.finishedAt ? "Finished" : `${done} of ${list.items.length} done`} · {usd(spent(list))}
                     </span>
                   </Link>
-                  <button type="button" onClick={() => again(list)} className="h-11 shrink-0 rounded-xl border border-line bg-card px-4">
+                  <button type="button" onClick={() => again(list)} className="h-11 shrink-0 rounded-full glass px-4">
                     Buy again
                   </button>
                 </li>
