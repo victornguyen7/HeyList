@@ -23,7 +23,7 @@ How HeyList meets them:
 | PayPal central to the project | Buying from a list goes through PayPal Checkout, and a captured order is the proof an item was bought (decision 8). Settle-up through PayPal invoices is planned (section 6) | Checkout built; invoices planned |
 | Meaningful AI | AI starting lists set the estimated prices that PayPal charges; AI receipt reading and matching check items off beside PayPal orders; both feed the who-owes-whom split | Built |
 | Working demo | Deployed on Render (`render.yaml`); local run steps in the README | Built; one live sandbox payment still to test (issue 25) |
-| Open source license file | No `LICENSE` file in the repo yet | **Missing** |
+| Open source license file | MIT, in `LICENSE` at the repo root (added 2026-10-27) | Added; the repo still has to be made public |
 | Demo video under 3 minutes | — | Not made |
 | Sponsor tools | APIMatic: the PayPal Server SDK is APIMatic-generated, and its Context Plugin skills were used (decision 23). Render hosts the app. Postman and Channel3 not used yet | Partly |
 
@@ -103,7 +103,7 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 
 ## 9. Before submitting
 
-- Add an open source `LICENSE` file (for example MIT) to the repo and make the repo public.
+- ~~Add an open source `LICENSE` file~~ MIT `LICENSE` added 2026-10-27. Make the repo public, and check GitHub shows "MIT license" in the About section.
 - Make one live sandbox payment end to end and close issue 25.
 - Record the demo video (under 3 minutes): an AI list → buy with PayPal → items checked off with the order as proof → who owes whom.
 - In the submission, name the AI used (Ollama models for lists, receipt reading and matching; AWS Textract for receipts when it is available) and how it ties into PayPal.

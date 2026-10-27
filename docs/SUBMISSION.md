@@ -70,7 +70,8 @@ Check this table against `.env.example` and `backend/` before submitting; remove
 
 From [HACKATHON.md](HACKATHON.md#what-to-submit) and [PayPal.md §9](PayPal.md):
 
-- [ ] Public repo with a `LICENSE` file shown in the About section (not added yet).
+- [x] `LICENSE` file (MIT, added 2026-10-27).
+- [ ] Repo made public, with "MIT license" shown in the About section (GitHub reads it from `LICENSE`).
 - [ ] README with setup and run steps (present), plus the hosted URL.
 - [ ] Text description (draft above).
 - [ ] Tools section (draft above).

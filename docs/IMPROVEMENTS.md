@@ -89,7 +89,7 @@ The questions from area 5, and where Settle up now answers them:
 
 ## All phases
 
-All five recommended areas are done in their narrow versions. Left for the deadline (12 November 2026): the `LICENSE` file, the hosted URL, one live sandbox payment (issue 25), running `supabase/schema.sql` on the live database (`orders.capture_id`, `orders.refunds`, `items.note`), and the demo video ([SUBMISSION.md](SUBMISSION.md)).
+All five recommended areas are done in their narrow versions. Left for the deadline (12 November 2026): the hosted URL, one live sandbox payment (issue 25), running `supabase/schema.sql` on the live database (`orders.capture_id`, `orders.refunds`, `items.note`), and the demo video ([SUBMISSION.md](SUBMISSION.md)).
 
 ## Summary
 

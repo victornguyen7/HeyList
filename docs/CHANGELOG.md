@@ -6,7 +6,8 @@ Phase 1 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification
 
 ### Added
 
-- **Soft glass redesign** (decision 46), from the Figma file's "Soft glass" (mobile) and "Web (soft glass)" screens. Phones get the mobile layout and laptops the website layout from the same link, by screen width:
+- **MIT license** in `LICENSE`, as the hackathon requires an open source license.
+- **Soft glass redesign** (decision 46; full write-up in [REDESIGN.md](REDESIGN.md)), from the Figma file's "Soft glass" (mobile) and "Web (soft glass)" screens. Phones get the mobile layout and laptops the website layout from the same link, by screen width:
   - Shared pieces in `app/ui.tsx` (buttons, cards, item rows, progress ring, avatars, web nav, page frame with the background glows) and `app/recent.tsx` ("Your lists" cards). Design assets in `public/ui/`.
   - Home: prompt card with idea chips (Trip, Party, Groceries, Move-in fill in an example), "Your lists" with progress rings, and on the web a "Spent this month" card. A mic button dictates the prompt where the browser supports it; the budget is read from the sentence (decision 47).
   - AI review: "AI made N items in X seconds", budget card with a bar, editable rows, "+ Add an item", and "Looks good, create list" pinned to the bottom on phones.

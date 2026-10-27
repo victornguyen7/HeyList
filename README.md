@@ -118,7 +118,12 @@ When deploying, set `BACKEND_URL` before `next build`: Next resolves the `/api` 
 - [Changelog](docs/CHANGELOG.md)
 - [Issues](docs/ISSUES.md)
 - [PayPal](docs/PayPal.md)
+- [Soft glass redesign](docs/REDESIGN.md)
 - [Hackathon rules](docs/HACKATHON.md) · [Submission and demo script](docs/SUBMISSION.md) · [Improvements](docs/IMPROVEMENTS.md)
+
+## License
+
+[MIT](LICENSE)
 
 ## Links
 
