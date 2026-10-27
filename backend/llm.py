@@ -49,6 +49,7 @@ STARTER_SCHEMA = {
                     "name": {"type": "string"},
                     "quantity": {"type": "integer"},
                     "estPriceCents": {"type": "integer"},
+                    "note": {"type": "string"},
                 },
                 "required": ["name", "quantity", "estPriceCents"],
             },
@@ -58,9 +59,16 @@ STARTER_SCHEMA = {
 }
 
 STARTER_PROMPT = """You write starting checklists for HeyList, a shared checklist app.
-The user describes a trip, occasion, or event. Reply with the list for it:
-- Include every item the group needs for that specific situation, and only those. No generic filler.
-- Shared items count once for the group, with the quantity the group needs (3 people, 2 nights: toothpaste 1, water bottles 3).
+The user either describes a trip, occasion, or event, or lists the things they need (often typed fast or spoken,
+so it can be messy). Reply with the list:
+- If the user lists things, the list is exactly those things: one item each, nothing added. If they describe a
+  situation, include every item the group needs for it, and only those. No generic filler.
+- Keep every quantity the user states ("two packs of water" is water, quantity 2). Otherwise shared items count once
+  for the group, with the quantity the group needs (3 people, 2 nights: toothpaste 1, water bottles 3).
+- note keeps what the name and quantity can't, in a few of the user's words; leave it out when there is nothing:
+  a condition ("only if nobody has one", for "maybe a flashlight if nobody has one already"), or an amount you
+  can't know ("how many? enough snacks for 4 people") - then set the quantity to your best guess. Never drop a
+  condition: a conditional item is still on the list, with its note.
 - Item names are short and plain, as a person would write them ("sunscreen", not "SPF 50 broad-spectrum sunscreen lotion").
 - estPriceCents is a typical US store price in cents for ONE unit, 0 if the item is usually already owned.
 - If a budget is given, keep the total of estPriceCents x quantity within it, dropping the least essential items first.
@@ -75,19 +83,29 @@ def starting_list(description: str, budget_cents: int | None = None) -> dict:
     request = description if budget_cents is None else f"{description}\nBudget: {budget_cents} cents"
     text = chat([{"role": "system", "content": STARTER_PROMPT}, {"role": "user", "content": request}], STARTER_SCHEMA)
     reply = json_reply(text)
-    items, seen = [], set()
+    items: list[dict] = []
     for item in reply.get("items", [])[:100]:
-        name = str(item.get("name", "")).strip()[:120]
-        if not name or name.lower() in seen:
+        name = " ".join(str(item.get("name", "")).split())[:120]
+        if not name:
             continue
-        seen.add(name.lower())
-        quantity, cents = item.get("quantity"), item.get("estPriceCents")
+        quantity, cents, note = item.get("quantity"), item.get("estPriceCents"), item.get("note")
+        quantity = min(max(quantity, 1), 99) if type(quantity) is int else 1
+        same = [kept for kept in items if kept["name"].lower() == name.lower()]
+        # The same item twice with the same quantity is a repeat. With a different quantity it isn't clear which
+        # is meant, so both stay, flagged, rather than being added up or one dropped.
+        if any(kept["quantity"] == quantity for kept in same):
+            continue
+        if same:
+            note = "listed twice with different amounts; check how many"
+            for kept in same:
+                kept["note"] = note
         items.append(
             {
                 "name": name,
-                "quantity": min(max(quantity, 1), 99) if type(quantity) is int else 1,
+                "quantity": quantity,
                 # 0 means "already owned", which is no price to pay; anything odd becomes no estimate.
                 "estPriceCents": cents if type(cents) is int and 0 < cents <= 10_000_000 else None,
+                "note": (" ".join(note.split())[:200] or None) if isinstance(note, str) else None,
             }
         )
     return {

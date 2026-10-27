@@ -94,7 +94,10 @@ export default function ProgressPage() {
               <div className="flex min-h-12 items-center gap-4">
                 <label className="flex flex-1 cursor-pointer items-center gap-4">
                   <input type="checkbox" className="size-6" checked={isDone || selected.has(item.id)} disabled={isDone || held || !priced || busy} onChange={() => toggle(item.id)} />
-                  <span className={isDone ? "line-through opacity-60" : ""}>{item.name}</span>
+                  <span className="flex flex-col">
+                    <span className={isDone ? "line-through opacity-60" : ""}>{item.name}</span>
+                    {item.note && !isDone && <span className="text-base text-amber-700">{item.note}</span>}
+                  </span>
                 </label>
                 {!isDone && !held && (
                   <span className="flex items-center gap-2">

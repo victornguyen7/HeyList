@@ -8,7 +8,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 |---|---|---|
 | 1 | 3. Trustworthy purchase verification | Done 2026-10-27 (see below) |
 | 2 | 1. Core promise | Done 2026-10-27 (see below) |
-| 3 | 2. AI reliability (narrow) | Not started |
+| 3 | 2. AI reliability (narrow) | Done 2026-10-27, evaluated (see below) |
 | 4 | 5. Group accounting (narrow) | Not started |
 | 5 | 4. Less effort (narrow) | Not started |
 
@@ -28,6 +28,34 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 - **[SUBMISSION.md](SUBMISSION.md):** the 2:40 camping-trip demo script, scene by scene, with timings and the judging criterion each scene serves; a pre-recording checklist; a draft of the Devpost text and the Tools section.
 - **Decision 41:** one loop, one demo scenario; the product stays general (decision 2).
 - **Not done:** the video itself, the `LICENSE` file, and the hosted URL. The script avoids voice and invoices, which aren't built.
+
+### Phase 3 — AI reliability, narrow (done)
+
+| Challenge (area 2 table) | Now |
+|---|---|
+| Quantities | Prompt: keep every stated quantity ("two packs of water" → water × 2) |
+| Duplicates | Same name and quantity: dropped as a repeat. Same name, different quantities: both kept, flagged "listed twice with different amounts; check how many" (not added up, not dropped) |
+| Ambiguity | Unknowable amounts get a best-guess quantity plus a note ("how many? enough snacks for 4 people") |
+| Conditions | Kept as a note ("only if nobody has one"); the item stays on the list |
+| Named lists | A list the person typed or said comes back exactly: nothing added |
+| Estimated prices | Already marked `~` (phase 1) |
+| Receipt matching | Not changed (issue 39) |
+
+- **Notes are shown** in amber on the review screen, Progress and Items, and carried by Buy again. `items.note` (≤ 200 characters); run `supabase/schema.sql` again.
+- **Evaluation:** `backend/eval_starter.py` and 20 labelled cases: 12 named lists (typed, speech-style with filler and self-corrections, a transcribed photo list, two sizes of one product) and 8 situation descriptions. It reports item recall, quantity accuracy, conditions and unclear amounts kept, and invented items (named lists only). **First run, 2026-10-27, model `gemma4:31b`, owner-approved:**
+
+  | Measure | Score |
+  |---|---|
+  | Item recall | 62/63 (98.4%) |
+  | Quantity accuracy | 12/13 (92.3%) |
+  | Conditions and unclear amounts kept as notes | 8/8 |
+  | Invented items on named lists | 0 |
+  | Failed or malformed replies | 0 of 20 |
+  | Cost | 20 calls, 11,007 input and 5,483 output tokens |
+
+  The two misses: "a dozen eggs" became eggs × 12 (the label expected one carton, which is debatable), and the kids' party list left out candles. The full replies are in `backend/eval/eval_report.json`. One run of 20 cases labelled by the team: indicative, not proof (issue 38).
+- **Tests:** 69 pass (new: notes kept and cleaned, repeats vs different amounts, note stored and length-checked, the scorer, the case file's shape).
+- **Not done:** photo-of-a-list input and voice are still unbuilt; the "photo list" case is a typed transcript.
 
 ## Summary
 

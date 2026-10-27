@@ -108,6 +108,7 @@ def new_items(list_id: str, items, start: int = 0) -> list[dict]:
         {
             "list_id": list_id,
             "name": text(item["name"]),
+            "note": text(item["note"], 200) if item.get("note") is not None else None,
             "est_price_cents": cents(item.get("estPriceCents")),
             "quantity": quantity(item.get("quantity", 1)),
             "position": start + index,

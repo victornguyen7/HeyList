@@ -48,6 +48,7 @@ Then HeyList keeps track of what actually got done. Pay for items with PayPal: t
 - **PayPal** (sandbox), through PayPal's official Python Server SDK: Orders API v2 (create, capture, show order details) and Payments API v2 (refund a captured payment). Idempotency keys on every call, capture status checked rather than order status, prices in integer cents, never from the browser.
 - **AI:** an Ollama-hosted model with vision for starting lists (structured JSON, every field validated in code) and for matching receipt lines to items; AWS Textract `AnalyzeExpense` reads receipts when available, with the Ollama vision model as fallback.
 - Split and settle-up are deterministic code, not AI.
+- **Measured, not assumed:** a 20-case evaluation (typed lists, speech-style transcripts, situations) scores the starting lists. First run: 62/63 items found, 12/13 quantities right, 8/8 conditions ("only if nobody has one") kept, 0 invented items (`backend/eval/eval_report.json`).
 
 **Tools used and how** (required field)
 

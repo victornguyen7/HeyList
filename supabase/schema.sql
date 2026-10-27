@@ -75,6 +75,9 @@ create table if not exists items (
   list_id uuid not null references lists (id) on delete cascade,
   name text not null,
   position integer not null default 0,
+  -- What the name and quantity can't say, from the AI or the person: a condition ("only if nobody has one")
+  -- or an amount to check ("how many? enough snacks for 4 people").
+  note text check (char_length(note) <= 200),
   -- How many to buy; PayPal Checkout charges est_price_cents x quantity.
   quantity integer not null default 1 check (quantity between 1 and 99),
   -- The estimate (from the LLM or typed in). This is what PayPal Checkout charges.
@@ -134,6 +137,7 @@ alter table lists add constraint lists_kind_check check (kind in ('groceries', '
 alter table receipts add column if not exists lines jsonb not null default '[]';
 alter table receipts add column if not exists confirmed_at timestamptz;
 alter table orders add column if not exists prices jsonb not null default '{}';
+alter table items add column if not exists note text check (char_length(note) <= 200);
 alter table orders add column if not exists capture_id text;
 alter table orders add column if not exists refunds jsonb not null default '{}';
 -- unique (list_id, name) already indexes members by list_id.

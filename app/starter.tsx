@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { api, usd, type List } from "./api";
 
-type Suggestion = { title: string; kind: string; items: { name: string; quantity: number; estPriceCents: number | null }[] };
+type Suggestion = { title: string; kind: string; items: { name: string; quantity: number; estPriceCents: number | null; note: string | null }[] };
 
 const button = "h-14 rounded-full bg-accent text-xl font-medium text-white disabled:opacity-40";
 const field = "h-14 rounded-3xl glass px-4 text-xl";
@@ -96,9 +96,12 @@ export function Starter({ onCreated }: { onCreated: (list: List) => void }) {
                       setDropped(next);
                     }}
                   />
-                  <span className="flex-1">
-                    {item.name}
-                    {item.quantity > 1 && <span className="opacity-60"> × {item.quantity}</span>}
+                  <span className="flex flex-1 flex-col">
+                    <span>
+                      {item.name}
+                      {item.quantity > 1 && <span className="opacity-60"> × {item.quantity}</span>}
+                    </span>
+                    {item.note && <span className="text-base text-amber-700">{item.note}</span>}
                   </span>
                   <span className="tabular-nums">{item.estPriceCents ? usd(item.estPriceCents * item.quantity) : "—"}</span>
                 </label>

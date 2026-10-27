@@ -1,0 +1,205 @@
+[
+  {
+    "id": "voice-camping",
+    "input": "Get two packs of water, some plates, enough snacks for four people, and maybe a flashlight if nobody has one already",
+    "explicit": true,
+    "expect": [
+      {"names": ["water"], "quantity": 2},
+      {"names": ["plate"]},
+      {"names": ["snack"], "note": true},
+      {"names": ["flashlight", "torch"], "note": true}
+    ]
+  },
+  {
+    "id": "typed-groceries-quantities",
+    "input": "3 avocados, a dozen eggs, 2 loaves of bread, milk",
+    "explicit": true,
+    "expect": [
+      {"names": ["avocado"], "quantity": 3},
+      {"names": ["egg"], "quantity": 1},
+      {"names": ["bread", "loaf"], "quantity": 2},
+      {"names": ["milk"]}
+    ]
+  },
+  {
+    "id": "voice-filler-words",
+    "input": "um ok so we need like paper towels, uh, dish soap, and oh yeah trash bags, the big ones",
+    "explicit": true,
+    "expect": [
+      {"names": ["paper towel"]},
+      {"names": ["dish soap", "soap"]},
+      {"names": ["trash bag", "bin bag", "garbage bag"], "note": true}
+    ]
+  },
+  {
+    "id": "voice-repeat",
+    "input": "batteries, sunscreen, batteries, bug spray",
+    "explicit": true,
+    "expect": [
+      {"names": ["batter"]},
+      {"names": ["sunscreen"]},
+      {"names": ["bug spray", "insect repellent", "repellent"]}
+    ]
+  },
+  {
+    "id": "different-sizes-not-merged",
+    "input": "one big bottle of olive oil and two small bottles of olive oil for the gift baskets",
+    "explicit": true,
+    "expect": [
+      {"names": ["olive oil"], "quantity": 1},
+      {"names": ["olive oil"], "quantity": 2}
+    ]
+  },
+  {
+    "id": "condition-only-if",
+    "input": "charcoal, lighter fluid only if we use the old grill, burgers for 6",
+    "explicit": true,
+    "expect": [
+      {"names": ["charcoal"]},
+      {"names": ["lighter fluid"], "note": true},
+      {"names": ["burger"], "quantity": 6}
+    ]
+  },
+  {
+    "id": "vague-amount",
+    "input": "some ice and enough drinks for the whole team",
+    "explicit": true,
+    "expect": [
+      {"names": ["ice"]},
+      {"names": ["drink", "beverage", "soda"], "note": true}
+    ]
+  },
+  {
+    "id": "number-words",
+    "input": "four rolls of tape, ten balloons, a couple of markers",
+    "explicit": true,
+    "expect": [
+      {"names": ["tape"], "quantity": 4},
+      {"names": ["balloon"], "quantity": 10},
+      {"names": ["marker"], "quantity": 2}
+    ]
+  },
+  {
+    "id": "pharmacy-list",
+    "input": "ibuprofen, band-aids, a thermometer if ours is still broken, cough drops",
+    "explicit": true,
+    "expect": [
+      {"names": ["ibuprofen", "advil"]},
+      {"names": ["band-aid", "bandage", "plaster"]},
+      {"names": ["thermometer"], "note": true},
+      {"names": ["cough drop", "lozenge"]}
+    ]
+  },
+  {
+    "id": "voice-run-on",
+    "input": "pick up cat food and also litter and then the dry cleaning ticket no wait skip that just the cat stuff",
+    "explicit": true,
+    "expect": [
+      {"names": ["cat food"]},
+      {"names": ["litter"]}
+    ]
+  },
+  {
+    "id": "photo-list-transcript",
+    "input": "Shopping list:\n- flour 2kg\n- sugar\n- butter x2\n- vanilla (check cupboard first)",
+    "explicit": true,
+    "expect": [
+      {"names": ["flour"]},
+      {"names": ["sugar"]},
+      {"names": ["butter"], "quantity": 2},
+      {"names": ["vanilla"], "note": true}
+    ]
+  },
+  {
+    "id": "move-in-explicit",
+    "input": "shower curtain, 2 pillows, a lamp for my desk, hangers maybe 20",
+    "explicit": true,
+    "expect": [
+      {"names": ["shower curtain"]},
+      {"names": ["pillow"], "quantity": 2},
+      {"names": ["lamp"]},
+      {"names": ["hanger"], "quantity": 20}
+    ]
+  },
+  {
+    "id": "situation-camping",
+    "input": "Weekend camping trip for 3 friends, 2 nights",
+    "explicit": false,
+    "expect": [
+      {"names": ["tent"]},
+      {"names": ["sleeping bag"]},
+      {"names": ["water"]},
+      {"names": ["flashlight", "headlamp", "lantern", "torch"]}
+    ]
+  },
+  {
+    "id": "situation-kids-party",
+    "input": "Birthday party for 10 kids at home",
+    "explicit": false,
+    "expect": [
+      {"names": ["cake"]},
+      {"names": ["plate"]},
+      {"names": ["candle"]},
+      {"names": ["juice", "drink"]}
+    ]
+  },
+  {
+    "id": "situation-beach-day",
+    "input": "Beach day for a family of 4",
+    "explicit": false,
+    "expect": [
+      {"names": ["sunscreen"]},
+      {"names": ["towel"]},
+      {"names": ["water"]},
+      {"names": ["snack"]}
+    ]
+  },
+  {
+    "id": "situation-flight",
+    "input": "Packing for a work flight, one night",
+    "explicit": false,
+    "expect": [
+      {"names": ["charger"]},
+      {"names": ["toothbrush", "toiletr"]},
+      {"names": ["laptop"]}
+    ]
+  },
+  {
+    "id": "situation-sick-day",
+    "input": "Partner has the flu, need to stock up",
+    "explicit": false,
+    "expect": [
+      {"names": ["tissue"]},
+      {"names": ["soup"]},
+      {"names": ["thermometer", "fever", "ibuprofen", "acetaminophen", "paracetamol"]}
+    ]
+  },
+  {
+    "id": "situation-new-baby",
+    "input": "Friends just had a baby, bringing a care package",
+    "explicit": false,
+    "expect": [
+      {"names": ["diaper", "nappy", "nappies"]},
+      {"names": ["wipe"]}
+    ]
+  },
+  {
+    "id": "situation-with-condition",
+    "input": "Picnic for 5 in the park, bring a speaker if Sam doesn't",
+    "explicit": false,
+    "expect": [
+      {"names": ["blanket"]},
+      {"names": ["speaker"], "note": true}
+    ]
+  },
+  {
+    "id": "situation-groceries-week",
+    "input": "Weekly groceries for 2 adults, vegetarian",
+    "explicit": false,
+    "expect": [
+      {"names": ["vegetable", "spinach", "broccoli", "carrot", "lettuce"]},
+      {"names": ["egg", "tofu", "bean", "lentil"]},
+      {"names": ["milk", "yogurt", "cheese"]}
+    ]
+  }
+]

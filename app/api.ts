@@ -2,6 +2,8 @@ export type Member = { id: string; name: string };
 export type Item = {
   id: string;
   name: string;
+  // A condition or an amount to check, kept from the request ("only if nobody has one").
+  note: string | null;
   quantity: number;
   estPriceCents: number | null;
   priceCents: number | null;

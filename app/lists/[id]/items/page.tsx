@@ -25,6 +25,7 @@ export default function ItemsPage() {
                 {item.checkedAt ? usd(item.priceCents ?? 0) : item.estPriceCents !== null ? `~${usd(item.estPriceCents * item.quantity)}` : "—"}
               </span>
             </span>
+            {item.note && <span className="text-amber-700">{item.note}</span>}
             <span className="self-start rounded-full bg-chip px-3 py-1">{status}</span>
             {item.orderId && <span className="opacity-70">Proof: PayPal order {item.orderId}</span>}
             {item.receiptId && (

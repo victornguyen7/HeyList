@@ -39,6 +39,7 @@ Sources, checked 2026-10-15:
 
 **What may spend money**
 
+- `backend/eval_starter.py` makes one Ollama call per evaluation case (20 a run). It refuses to run without `--yes`; run it only when the owner has agreed, and report the result.
 - Nothing calls Claude for now. Ollama does starting lists, receipt matching (`receipts.match_lines`) and, while Textract is unavailable, receipt reading (`receipts.read_with_ollama`).
 - When Claude comes back: `claude-haiku-5-5`, the cheapest current model ($0.10 per million input tokens, $0.50 per million output tokens, under 100K-token prompts), low effort, bounded `max_tokens`. Don't switch to a larger model without the owner's agreement.
 - A matching call takes at most 150 receipt lines and 300 list items, and is made only after lines were found and only when the list has open items.

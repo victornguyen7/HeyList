@@ -17,7 +17,8 @@ class StartingListTest(unittest.TestCase):
             "kind": "trip",
             "items": [
                 {"name": " Sunscreen ", "quantity": 2, "estPriceCents": 899},
-                {"name": "sunscreen", "quantity": 1, "estPriceCents": 899},  # duplicate
+                {"name": "sunscreen ", "quantity": 2, "estPriceCents": 899},  # a repeat
+                {"name": "Flashlight", "quantity": 1, "estPriceCents": 1200, "note": " only if  nobody has one "},
                 {"name": "Tent", "estPriceCents": 0},  # no quantity, already owned
                 {"name": "Firewood", "quantity": 500, "estPriceCents": "lots"},
                 {"name": "", "quantity": 1, "estPriceCents": 100},
@@ -33,15 +34,27 @@ class StartingListTest(unittest.TestCase):
                 "title": "Lake trip",
                 "kind": "trip",
                 "items": [
-                    {"name": "Sunscreen", "quantity": 2, "estPriceCents": 899},
-                    {"name": "Tent", "quantity": 1, "estPriceCents": None},
-                    {"name": "Firewood", "quantity": 99, "estPriceCents": None},
+                    {"name": "Sunscreen", "quantity": 2, "estPriceCents": 899, "note": None},
+                    {"name": "Flashlight", "quantity": 1, "estPriceCents": 1200, "note": "only if nobody has one"},
+                    {"name": "Tent", "quantity": 1, "estPriceCents": None, "note": None},
+                    {"name": "Firewood", "quantity": 99, "estPriceCents": None, "note": None},
                 ],
             },
         )
         messages, schema = chat.call_args.args
         self.assertIn("Budget: 15000 cents", messages[1]["content"])
         self.assertIs(schema, llm.STARTER_SCHEMA)
+
+    def test_the_same_item_with_different_amounts_is_kept_twice_and_flagged(self):
+        self.reply(json.dumps({"title": "Party", "kind": "party", "items": [
+            {"name": "Plates", "quantity": 20, "estPriceCents": 10},
+            {"name": "plates", "quantity": 10, "estPriceCents": 10, "note": 7},
+        ]}))
+
+        items = llm.starting_list("Party")["items"]
+
+        flag = "listed twice with different amounts; check how many"
+        self.assertEqual([(i["quantity"], i["note"]) for i in items], [(20, flag), (10, flag)])
 
     def test_an_unknown_kind_and_missing_title_fall_back(self):
         self.reply('{"kind": "picnic", "items": []}')

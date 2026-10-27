@@ -47,7 +47,7 @@ export default function HistoryPage() {
   // Buy again: a fresh copy of the list with the same items, all unchecked.
   async function again(list: List) {
     try {
-      const items = list.items.map(({ name, quantity, estPriceCents }) => ({ name, quantity, estPriceCents }));
+      const items = list.items.map(({ name, note, quantity, estPriceCents }) => ({ name, note, quantity, estPriceCents }));
       const created = await api<List>("/api/lists", {
         method: "POST",
         body: JSON.stringify({ title: list.title, kind: list.kind, budgetCents: list.budgetCents, items }),

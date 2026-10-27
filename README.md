@@ -102,6 +102,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Backend tests (from `backend/`): `../../.venv/bin/python -m unittest`
 
+AI evaluation (paid: 20 Ollama calls; see [docs/RULES.md](docs/RULES.md)): `../../.venv/bin/python eval_starter.py --yes` from `backend/`, with `.env.local` loaded.
+
 Other scripts: `npm run build`, `npm run start`, `npm run lint`.
 
 When deploying, set `BACKEND_URL` before `next build`: Next resolves the `/api` rewrite at build time.

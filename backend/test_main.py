@@ -106,6 +106,13 @@ class ListRoutesTest(RoutesTest):
         self.assertEqual([(i["name"], i["quantity"], i["position"]) for i in state["items"]], [("Sunscreen", 2, 0), ("Adapter", 1, 1)])
         self.assertEqual(self.client.get(f"/api/lists/{state['id']}").json(), state)
 
+    def test_an_item_keeps_its_note(self):
+        items = self.new_list([{"name": "Flashlight", "note": "only if nobody has one"}, {"name": "Tent", "note": None}])["items"]
+
+        self.assertEqual([item["note"] for item in items], ["only if nobody has one", None])
+        response = self.client.post("/api/lists", json={"title": "Trip", "items": [{"name": "Tent", "note": "x" * 201}]})
+        self.assertEqual(response.status_code, 400)
+
     def test_bad_input_is_400_and_saves_nothing(self):
         for body in (
             {"title": ""},
