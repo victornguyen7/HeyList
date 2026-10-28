@@ -19,7 +19,6 @@
 | 29 | "Spent" leaves out receipt extras | Money's "Spent on items" and History's totals add item prices only; extras are shown separately on Money and not counted in History. Decide whether History spending should include them |
 | 30 | Buy again copies the old estimates, not what was paid | The new list gets each item's `estPriceCents` and the old budget. Using the paid price is part of price memory (decision 19), not built yet |
 | 31 | List pages don't refresh while open | The list loads once when its pages are opened; switching tabs doesn't reload it, so changes made by someone else show only after a page reload. Fixed by realtime updates (ROADMAP) |
-| 32 | Unconfirmed receipt scans are invisible | The Receipts tab shows confirmed receipts only. A scan the person walked away from before confirming stays in the database, can't be finished later, and still counts toward the 10-scans-per-hour limit |
 | 33 | `next dev` reports "could not validate instant navigation" for the list pages | Each list page renders only after the list loads in the browser, so Next.js can't check it. Dev-only; tab switches are client-side and instant. Silencing it means rendering the pages before the list loads (a loading state in each page) |
 | 34 | The join form shows on every list tab | Useful on Progress and Receipts, where it's needed to claim, pay or scan; on Items, Money and Settle up it only takes space. Consider showing it only where it's needed |
 | 36 | A pending payment is only re-checked when someone presses Check again | No PayPal webhook yet (decision 40), so a payment that settles while nobody looks stays "pending" in the app until the button is used. The sandbox rarely returns `PENDING`, so this path is covered by unit tests only |
@@ -34,6 +33,7 @@
 
 | # | Issue | Resolution |
 |---|---|---|
+| 32 | Unconfirmed receipt scans were invisible | The scan section on Receipts lists scans not confirmed yet, with "Finish checking" to review and confirm them later; a line matched to an item checked off since starts as an extra. They still count toward the 10-scans-per-hour limit, since that caps the paid Textract/Ollama calls already made. There is no way to throw a wrong scan away yet |
 | 24 | Old `/?list=<id>` links landed on the home page | `next.config.ts` redirects `/?list=<id>` to `/lists/<id>` and passes the query through, so a PayPal return (`token`, `PayerID`) still captures. Checked with curl: both forms redirect (308); a `list` value that isn't an ID stays on the home page |
 | 16 | The live database needed the schema run again | Schema run 2026-10-15; a full scan through the running backend saved the receipt, its photo and its lines, and confirming checked the items off |
 | 4 | `backend/__pycache__/` was committed in `4a2b88f` | Untracked in `f1dc1f6`; `.gitignore` now ignores `__pycache__/` |

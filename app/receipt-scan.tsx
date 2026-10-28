@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { api, usd, type Item, type List, type Receipt } from "./api";
-import { button, buttonAi, card } from "./ui";
+import { button, buttonAi, buttonGlass, card } from "./ui";
 
 // Phone photos are often larger than the backend's 5 MB limit; 2000 px is plenty for Textract to read a receipt.
 async function shrink(file: File): Promise<Blob> {
@@ -25,6 +25,15 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const open: Item[] = list.items.filter((item) => !item.checkedAt);
+  // Scans someone walked away from before confirming; they can be finished here later.
+  const waiting = list.receipts.filter((r) => !r.confirmedAt && r.id !== receipt?.id);
+
+  function review(next: Receipt) {
+    setReceipt(next);
+    // An item checked off since the scan can't be chosen any more; its line starts as an extra.
+    setChoices(next.lines.map((line) => (open.some((item) => item.id === line.itemId) ? line.itemId : null)));
+    setStatus(null);
+  }
 
   async function scan(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -35,9 +44,7 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
     try {
       const query = memberId ? `?memberId=${memberId}` : "";
       const scanned = await api<Receipt>(`/api/lists/${list.id}/receipts${query}`, { method: "POST", body: await shrink(file) });
-      setReceipt(scanned);
-      setChoices(scanned.lines.map((line) => line.itemId));
-      setStatus(null);
+      review(scanned);
     } catch (err) {
       setStatus((err as Error).message);
     }
@@ -64,6 +71,23 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
         Take a photo of the receipt
         <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={scan} disabled={busy || !memberId} />
       </label>
+
+      {waiting.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-base text-muted">Scanned but not confirmed yet:</p>
+          {waiting.map((r) => (
+            <div key={r.id} className={`${card} flex items-center justify-between gap-3 text-base`}>
+              <span className="tabular-nums">
+                {new Date(r.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })} · {r.lines.length} lines
+                {r.totalCents !== null && ` · ${usd(r.totalCents)}`}
+              </span>
+              <button type="button" onClick={() => review(r)} disabled={busy} className={buttonGlass}>
+                Finish checking
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {status && (
         <p role="status" className={`${card} text-base`}>
