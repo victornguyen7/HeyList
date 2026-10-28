@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
   experimental: {
     agentFeedback: true,
     agentUpgrade: "security",
-    // A free Render backend sleeps after 15 idle minutes and can take over a minute to wake; at the default
-    // 30 s the first request after a break failed.
+    // The backend can take over a minute to answer while Render restarts or redeploys it (and to wake, on a
+    // free instance); at the default 30 s those requests failed.
     proxyTimeout: 120_000,
   },
   // Supabase Auth in the browser (app/auth.ts). The publishable key is meant to be public; the secret key stays in the backend.

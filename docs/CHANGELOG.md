@@ -6,6 +6,7 @@
 
 - **Stack documented** (issue 2, decision 56): [ARCHITECTURE.md](ARCHITECTURE.md#stack) now lists every framework, library, service, browser API and tool in use, with its pinned version and what it's for; the README's Stack section matches. The browser uses Supabase only for login, and checkout keeps PayPal's hosted page.
 - **PayPal tested live** (issues 25 and 37): on the sandbox, a payment approved on PayPal's page came back to the list page and was captured, and an item ticked by hand during checkout was refunded ($1.75, `COMPLETED`). The test showed that two captures at the same moment could lose a refund record (issue 45): a refund still in progress at PayPal is now asked for again, and refunds are merged into the order rather than overwritten.
+- **Render always on:** `render.yaml` moves off the free instances, which slept after 15 idle minutes: `heylist-api` on Standard ($25/month, 2 GB) and `heylist-web` on Starter ($7/month). The site stays up whether or not the owner's computer is on.
 - **Issue 3 closed**: no API key in any tracked file or in git history; every key is read from the environment.
 
 ## 2026-10-27

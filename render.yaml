@@ -4,7 +4,7 @@ services:
   - type: web
     name: heylist-api
     runtime: python
-    plan: free
+    plan: standard # $25/month, 2 GB RAM, always on (free instances sleep after 15 idle minutes)
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -37,7 +37,7 @@ services:
   - type: web
     name: heylist-web
     runtime: node
-    plan: free
+    plan: starter # $7/month, 512 MB RAM, always on
     buildCommand: npm ci && npm run build
     startCommand: npm start
     envVars:
