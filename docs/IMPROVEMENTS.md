@@ -163,7 +163,7 @@ One run each, labelled by the team: indicative, not proof (issue 38). Reports: `
 #### 6C — find real products with Channel3 and pay with PayPal (about 2–3 days)
 
 - **What Channel3 can and can't do today** (checked on [trychannel3.com/developers](https://trychannel3.com/developers), 2026-10-27): product search with prices, merchant offers and buy links; a free tier. Its own checkout is "coming soon", so HeyList can't place an order with the store.
-- `backend/market.py`: `search(name)` returns up to 5 products (title, brand, image, store, unit price in cents, link, product ID), using the `channel3_sdk` package and `CHANNEL3_API_KEY`. Check the SDK's method names once it's installed; the docs disagree.
+- `backend/market.py`: `search(name)` returns up to 5 products (title, brand, image, store, unit price in cents, link, product ID), calling the REST API with httpx and `CHANNEL3_API_KEY` (no SDK needed; checked live 2026-10-27).
 - `GET /api/items/{id}/products`: searches by the item's name. Capped with `allow()` like scans (30 searches per list per hour). Errors map to `502 MARKET_UNAVAILABLE`.
 - `POST /api/items/{id}/product` with `{productId}`: **the server fetches the price from Channel3 again** and never takes it from the browser (decision 21). It then saves `items.product` (a jsonb with title, store, link, image, price and when it was fetched) and sets `est_price_cents` to that price. It refuses an item that's already checked off or held by a payment. Choosing nothing keeps the AI estimate.
 - **Frontend:** a "Find in stores" button on an item opens up to 5 product cards (photo, name, store, price). "Choose" saves the product. The item then shows the product, "$3.29 at Target" and "View at Target ↗". "Pay with PayPal" works as it does now, at the store price.
@@ -179,7 +179,7 @@ One run each, labelled by the team: indicative, not proof (issue 38). Reports: `
 
 About 5 days in all, leaving about 10 for the hosted URL, the live sandbox payment (issue 25), the video and the write-up.
 
-- **Blocker:** `CHANNEL3_API_KEY` isn't in `.env.local` yet (variable names checked, not values). 6C can be built against a fake client first; the live test waits for the key.
+- **Key:** `CHANNEL3_API_KEY` is in `.env.local` and `render.yaml`. Live search and lookup checked 2026-10-27. The backend only reads its shell's environment, so load `.env.local` before starting it.
 - **Approvals needed:** the two eval runs (60 Ollama calls), and the first live Channel3 calls.
 - **Demo script:** [SUBMISSION.md](SUBMISSION.md) gets a "find it in a store" scene before the PayPal payment.
 

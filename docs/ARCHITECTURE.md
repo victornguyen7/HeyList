@@ -103,6 +103,7 @@ Listed in `.env.example`; copy it to `.env.local`. The backend reads it via `uvi
 | `BACKEND_URL` | `next.config.ts` — where `/api/*` goes; must be set at build time |
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | `backend/db.py` |
 | `OLLAMA_API_KEY`, `OLLAMA_MODEL` | `backend/llm.py`: starting lists, receipt matching, and receipt reading when Textract is unavailable (the model needs vision) |
+| `CHANNEL3_API_KEY` | `backend/market.py`: "Find in stores" product search and the server-side price check when a product is chosen |
 | `ANTHROPIC_API_KEY` | Not used for now (decision 38) |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | `backend/receipts.py`: Textract (region defaults to `us-east-1`) |
 | `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_JWKS_URL` | Not used: the browser never talks to Supabase |
