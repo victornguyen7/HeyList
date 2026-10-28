@@ -59,7 +59,7 @@ Pages (simple first versions built, at `/lists/<id>` and `/history`):
 - [x] Items
 - [x] Money
 - [x] Receipts
-- [ ] History (by type, by month, buy again built; price memory not yet)
+- [x] History (by type, by month, buy again, price memory; loads in one request and shows the saved copy at once)
 - [ ] Settle-up (who pays whom built; PayPal invoices not yet)
 
 Infrastructure:
@@ -68,7 +68,7 @@ Infrastructure:
 - [x] FastAPI backend, proxied under `/api` by Next.js
 - [ ] PayPal sandbox (Checkout JS SDK + Orders API, Invoicing API) — Orders API done via the PayPal Server SDK
 - [ ] LLM with vision via the Ollama API: starting lists and receipt matching done; receipt photos are read by Ollama vision when Textract is unavailable (decision 38)
-- [ ] Deploy on Render
+- [x] Deploy on Render (`render.yaml` Blueprint: heylist-api and heylist-web)
 - [ ] Sponsor tools: APIMatic Context Plugin, Postman — APIMatic in use (PayPal Server SDK and its Context Plugin skills)
 
 Validation:
@@ -77,7 +77,7 @@ Validation:
 
 ## Stretch
 
-- [ ] Channel3
+- [x] Channel3: "Find in stores" per item, results checked by the AI, the chosen price charged with PayPal (decisions 50, 51). No store order yet: Channel3's checkout isn't open
 
 ## Redesign ([Figma](https://www.figma.com/design/Wv3JGTqJewtLNMax2PWmSk))
 

@@ -2,9 +2,20 @@
 
 ## 2026-10-27
 
-Phase 1 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification.
+Phases 1 to 6 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification through real prices and real products.
 
 ### Added
+
+- **Find in stores** (phase 6C, decisions 50 and 51): on Items, an item can search real products through Channel3 (`backend/market.py`, `CHANNEL3_API_KEY`) and show up to 5 cards with photo, store and price. **Choose** reads the price from Channel3 again on the server and makes it the item's price, so "Pay with PayPal" charges it; "View at {store} ↗" links to the product. No order is placed with the store (Channel3's checkout isn't open yet). Routes `GET /api/items/{id}/products` and `POST /api/items/{id}/product`, capped at 100 searches an hour. **Schema:** `items.product`; run `supabase/schema.sql` again.
+- **Store results checked by the AI** (decision 51): Channel3 matches words and sells no food, so "milk" returned face cleansers and "eggs" toys. Each search now goes through `llm.store_matches()` (one Ollama call), which keeps only products that are the item. Groceries say "No online store we search sells this. Buy it in person and scan the receipt."
+- **Price memory** (phase 6B, decision 49): suggested prices on a new list come from the median of the last 10 prices really paid for that item name (PayPal or a receipt; hand ticks don't count), then a chosen store price, then the AI's guess. The review screen says which ("paid before", "store price", "AI guess"); only guesses get a `~`. Buy again uses the paid unit price. **Schema:** `items.name_key` (generated, indexed); run `supabase/schema.sql` again.
+- **64 example lists and a bigger eval** (phase 6A, decision 48): `backend/examples.json` holds 64 owner-written lists; the eval grew to 30 cases. Measured on `gemma4:31b`: without examples 96/98 items recalled, with the 3 closest examples 91/98 (and one empty list), so examples are **off** (`EXAMPLE_COUNT = 0`). `eval_starter.py --examples` repeats the comparison.
+- **Lists show at once** (decision 55): Home, History and a list's pages show the copy of each list saved in this browser, then the fresh one replaces it. Every list response now includes its `split`, so Money and Settle up no longer wait for a second request.
+- **`GET /api/lists?ids=`**: every list this browser remembers in one request (six queries run at the same time), used by Home and History (decision 54).
+
+### Changed
+
+- **Render:** `CHANNEL3_API_KEY` added to the backend in `render.yaml`; Python 3.14.9 (as in local development). The web proxy waits up to 2 minutes for a backend that is waking up (`experimental.proxyTimeout`), instead of 30 seconds.
 
 - **Optional email login** (decision 52): `/login` emails a magic link (Supabase Auth). Logged in, "Join as <name>" joins a list in one tap and you're the same person on every device; guests still type a name. New column `members.user_id`: run `supabase/schema.sql` again. New dependency `@supabase/supabase-js` 2.117.3; the web service now needs `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` at build time.
 - **Account lock** (decision 53): only the logged-in person can tick off, untick, pay or scan/confirm receipts as their member (`403 NOT_YOURS`); guest members work as before.
@@ -30,6 +41,8 @@ Phase 1 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification
 
 ### Fixed
 
+- **Old lists disappeared from Home and History** (issue 43). Nothing was lost: the backend shared one HTTP/2 connection to Supabase across threads, and lists loaded at the same time failed with a 500, so History hid them. The backend now uses HTTP/1.1 (`db.py`), History loads in one request, and if loading fails it says so instead of looking empty.
+- **Scanned but unconfirmed receipts were invisible** (issue 32). Receipts now lists them under "Scanned but not confirmed yet" with **Finish checking**.
 - **A PayPal payment could drop out of the split.** When a receipt or a hand tick checked an item off while its buyer was on PayPal, the PayPal charge was only logged. Now (decision 39) the extra purchase is **refunded** to the PayPal buyer, for any quantity (`paypal.refund()`, recorded in `orders.refunds`, shown on Receipts and in the payment message). If the refund fails, the charge counts toward the buyer in the split (`boughtTwice`, with a note on Money).
 - **Schema:** `orders.capture_id` and `orders.refunds`. Run `supabase/schema.sql` again in the Supabase SQL editor.
 

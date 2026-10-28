@@ -88,7 +88,7 @@ The questions from area 5, and where Settle up now answers them:
 - **Checks:** `tsc` and `eslint` clean; 70 backend tests pass (no backend change in this phase). **Not checked in a browser**, and the frontend has no tests, so try the tick prompt and the pay mode on a phone before recording.
 - **Not done:** voice (the "one big talk button", decision 7), the join form on every tab (issue 34), and timing the three measures with real users. The dark redesign is still the owner's call.
 
-### Phase 6 — real prices and real products (built, not yet checked live)
+### Phase 6 — real prices and real products (built; Channel3 checked live)
 
 **Goal:** the AI suggests what to buy, prices come from what people really paid through PayPal or from real stores, and a person can choose a real product and pay for it with PayPal. One story for judges: *Need → real product → PayPal → proof → settle*, each step feeding the next.
 
@@ -163,8 +163,9 @@ One run each, labelled by the team: indicative, not proof (issue 38). Reports: `
 #### 6C — find real products with Channel3 and pay with PayPal (about 2–3 days)
 
 - **What Channel3 can and can't do today** (checked on [trychannel3.com/developers](https://trychannel3.com/developers), 2026-10-27): product search with prices, merchant offers and buy links; a free tier. Its own checkout is "coming soon", so HeyList can't place an order with the store.
-- `backend/market.py`: `search(name)` returns up to 5 products (title, brand, image, store, unit price in cents, link, product ID), calling the REST API with httpx and `CHANNEL3_API_KEY` (no SDK needed; checked live 2026-10-27).
-- `GET /api/items/{id}/products`: searches by the item's name. Capped with `allow()` like scans (30 searches per list per hour). Errors map to `502 MARKET_UNAVAILABLE`.
+- `backend/market.py`: `search(name)` returns up to 10 products (title, image, store, unit price in cents, link, product ID, category), calling the REST API with httpx and `CHANNEL3_API_KEY` (no SDK needed; checked live 2026-10-27).
+- **Results are checked before they're shown** (added after live testing, decision 51): Channel3 matches words and sells no food, so "milk" returned face cleansers and "eggs" toys. `llm.store_matches()` (one Ollama call per search) keeps only the products that are the item; at most 5 are shown. Groceries now say no online store sells them. Live check: milk 0 kept, eggs 0, sunscreen 10 of 10, paper towels 10 of 10, toddler milk on a baby list kept.
+- `GET /api/items/{id}/products`: searches by the item's name. Capped with `allow()`: 100 searches an hour for everyone (a per-list cap is easy to get round). Errors map to `502 MARKET_UNAVAILABLE`.
 - `POST /api/items/{id}/product` with `{productId}`: **the server fetches the price from Channel3 again** and never takes it from the browser (decision 21). It then saves `items.product` (a jsonb with title, store, link, image, price and when it was fetched) and sets `est_price_cents` to that price. It refuses an item that's already checked off or held by a payment. Choosing nothing keeps the AI estimate.
 - **Frontend:** a "Find in stores" button on an item opens up to 5 product cards (photo, name, store, price). "Choose" saves the product. The item then shows the product, "$3.29 at Target" and "View at Target ↗". "Pay with PayPal" works as it does now, at the store price.
 - **Be honest in the demo and docs:** the PayPal sandbox payment goes to HeyList's sandbox merchant. No order is placed with the store. The pitch says: "When Channel3 checkout opens, HeyList places the order; today it gives the real price and the link." Channel3's affiliate links are a possible business model (Impact criterion).
@@ -180,12 +181,12 @@ One run each, labelled by the team: indicative, not proof (issue 38). Reports: `
 About 5 days in all, leaving about 10 for the hosted URL, the live sandbox payment (issue 25), the video and the write-up.
 
 - **Key:** `CHANNEL3_API_KEY` is in `.env.local` and `render.yaml`. Live search and lookup checked 2026-10-27. The backend only reads its shell's environment, so load `.env.local` before starting it.
-- **Approvals needed:** the two eval runs (60 Ollama calls), and the first live Channel3 calls.
+- **Approvals:** the two eval runs (60 Ollama calls) and the live Channel3 and store-match checks were approved and run on 2026-10-27.
 - **Demo script:** [SUBMISSION.md](SUBMISSION.md) gets a "find it in a store" scene before the PayPal payment.
 
 ## All phases
 
-All five recommended areas are done in their narrow versions; phase 6 is planned above. Left for the deadline (12 November 2026): the hosted URL, one live sandbox payment (issue 25), running `supabase/schema.sql` on the live database (`orders.capture_id`, `orders.refunds`, `items.note`), and the demo video ([SUBMISSION.md](SUBMISSION.md)).
+All five recommended areas are done in their narrow versions; phase 6 is built (above). Left for the deadline (12 November 2026): the hosted URL, one live sandbox payment (issue 25), running `supabase/schema.sql` on the live database (`orders.capture_id`, `orders.refunds`, `items.note`), and the demo video ([SUBMISSION.md](SUBMISSION.md)).
 
 ## Summary
 

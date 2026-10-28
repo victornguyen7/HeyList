@@ -13,12 +13,13 @@ Planned architecture, with what is built so far marked in [Built so far](#built-
 | AI | One LLM with vision for lists and receipts, served through the Ollama API |
 | Voice | Web Speech API |
 | Hosting | Render |
-| Sponsor tools | APIMatic Context Plugin, Postman, Render; Channel3 for the stretch |
+| Store products | Channel3 product search (`backend/market.py`), results checked by the LLM (decision 51) |
+| Sponsor tools | APIMatic Context Plugin, Postman, Render |
 
 Currently installed:
 
-- Frontend (`package.json`): Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5.
-- Backend (`backend/requirements.txt`): FastAPI, uvicorn, `paypal-server-sdk` 2.4.0 (pulls in `apimatic-core`), Supabase client, Ollama client.
+- Frontend (`package.json`): Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5, `@supabase/supabase-js` (login only).
+- Backend (`backend/requirements.txt`): FastAPI, uvicorn, `paypal-server-sdk` 2.4.0 (pulls in `apimatic-core`), Supabase client, Ollama client, `httpx` (Channel3, and the Supabase connection).
 
 ## Overview
 
@@ -44,18 +45,21 @@ Currently installed:
 | File | What it does |
 |---|---|
 | `supabase/schema.sql` | Tables and the private `receipts` bucket. Run in the Supabase SQL editor; safe to run again |
-| `backend/db.py` | Supabase client (secret key, server only) and the four calls the routes use: `select`, `insert`, `update`, `delete` |
+| `backend/db.py` | Supabase client (secret key, server only) and the calls the routes use: `select`, `insert`, `update`, `delete`, `upload`/`download` (receipt photos), `user()` (a login token's user). It talks to Supabase over HTTP/1.1, not the client's default HTTP/2: route handlers run on many threads, and one shared HTTP/2 connection failed when several used it at once (issue 43) |
 | `backend/paypal.py` | PayPal Server SDK client (sandbox, built on first use). `create_order()`, `capture_order()`, `get_order()` and `refund()` |
-| `backend/llm.py` | Ollama client, `chat()` (with an optional JSON schema), `json_reply()`, and `starting_list()`, which asks for a starting list (with an optional `note` per item for conditions and unclear amounts) and checks every field of the reply |
-| `backend/eval_starter.py`, `backend/eval/starter_cases.json` | Scores `starting_list()` on 20 labelled cases (recall, quantities, notes, invented items). Paid calls; runs only with `--yes` (decision 43) |
+| `backend/llm.py` | Ollama client, `chat()` (with an optional JSON schema), `json_reply()`, and `starting_list()`, which asks for a starting list (with an optional `note` per item for conditions and unclear amounts) and checks every field of the reply; and `store_matches()`, which keeps only the store products that are the item itself (decision 51). `examples.json` holds 64 example lists, off by default (`EXAMPLE_COUNT = 0`, decision 48) |
+| `backend/eval_starter.py`, `backend/eval/starter_cases.json` | Scores `starting_list()` on 30 labelled cases (recall, quantities, notes, invented items). Paid calls; runs only with `--yes` (decision 43). `--examples` measures it with the 3 closest examples; reports in `backend/eval/` |
+| `backend/market.py` | Channel3 over REST (`CHANNEL3_API_KEY`): `search(name)` returns up to 10 products (cheapest in-stock USD offer, store, link, image, category), `get(id)` reads one again so a price never comes from the browser (decision 50) |
 | `backend/money.py` | Split math: `assign_unclaimed()` shares out open items, `split()` works out paid (with the purchases it adds up from), share and balance per member, `settle()` the transfers |
 | `backend/receipts.py` | `read_receipt()` (AWS Textract `AnalyzeExpense` -> line items in cents with confidence; falls back to `read_with_ollama()`, the Ollama vision model) and `match_lines()` (Ollama, JSON schema -> list item per line) |
-| `backend/main.py` | FastAPI app. Lists (`POST /api/lists`, `GET`/`PATCH /api/lists/{id}`), members (`POST /api/lists/{id}/members`), items (`POST /api/lists/{id}/items`, `PATCH`/`DELETE /api/items/{id}`), checkout (`POST /api/lists/{id}/orders` with `{"itemIds": [...]}`, `POST /api/orders/{order_id}/capture`, `POST /api/orders/{order_id}/refresh` for a pending capture), starting lists (`POST /api/lists/suggest`), splitting (`POST /api/lists/{id}/assign`, `GET /api/lists/{id}/split`), receipts (`POST /api/lists/{id}/receipts` with the photo as the body, `POST /api/receipts/{id}/confirm`, `GET /api/receipts/{id}/image`). Errors are `{"error": CODE}` |
+| `backend/main.py` | FastAPI app. Lists (`POST /api/lists`, `GET /api/lists?ids=a,b,c` for Home and History in one request, `GET`/`PATCH /api/lists/{id}`; every list comes with its `split`), members (`POST /api/lists/{id}/members`), items (`POST /api/lists/{id}/items`, `PATCH`/`DELETE /api/items/{id}`), store products (`GET /api/items/{id}/products`, `POST /api/items/{id}/product`), checkout (`POST /api/lists/{id}/orders` with `{"itemIds": [...]}`, `POST /api/orders/{order_id}/capture`, `POST /api/orders/{order_id}/refresh` for a pending capture), starting lists (`POST /api/lists/suggest`), splitting (`POST /api/lists/{id}/assign`, `GET /api/lists/{id}/split`), receipts (`POST /api/lists/{id}/receipts` with the photo as the body, `POST /api/receipts/{id}/confirm`, `GET /api/receipts/{id}/image`). Errors are `{"error": CODE}` |
 | `app/ui.tsx` | Soft glass building blocks (decision 46): button, card, row and chip classes; `Ring`, `Avatar`, `Check`, `WebNav`, and `Shell` (background glows, web nav, page width) |
-| `app/recent.tsx` | `useSeenLists()` (lists this browser opened), `spent()`, `ListCard` |
+| `app/recent.tsx` | `useSeenLists()` (lists this browser opened, loaded in one request; the saved copy shows first), `spent()`, `ListCard` |
+| `app/auth.ts`, `app/login/page.tsx` | Optional email login (Supabase Auth magic link, decision 52): `useSession()`, `accountName()`, the login page |
+| `app/store-search.tsx` | "Find in stores" on Items: up to 5 checked products, choose one to make its price the item's price |
 | `public/ui/` | Figma assets: logo dot, sparkle, mic, check, arrow, background glows |
 | `app/page.tsx` | Home: the starter, "Your lists", and on the web "Spent this month" |
-| `app/lists/[id]/list-context.tsx` | Loads a list once for all its pages; title, tabs, join by name; captures a PayPal order on return (`/lists/<id>?token=`) |
+| `app/lists/[id]/list-context.tsx` | Loads a list once for all its pages, showing the saved copy first; title, tabs, join by name; captures a PayPal order on return (`/lists/<id>?token=`) |
 | `app/lists/[id]/page.tsx` | Progress: progress bar, quantities, who buys each item, share out the rest, pay with PayPal, mark finished |
 | `app/lists/[id]/items/page.tsx` | Items: status, price, who bought it, proof (PayPal order or a link to the receipt) |
 | `app/lists/[id]/money/page.tsx` | Money: spent vs budget, still to buy, extras, per person |
@@ -65,8 +69,8 @@ Currently installed:
 | `app/starter.tsx` | Describe the situation, review the AI's starting list and budget, create it |
 | `app/receipt-scan.tsx` | Camera capture, shrink, scan, review and correct matches, confirm |
 | `app/split.tsx` | `useSplit()` takes the split sent with the list (`split` on every list response) and fetches `/split` only after a change made on the page; `WhoPaid`, `SettleUp`, `EqualShare` show it |
-| `app/api.ts` | Shared types, `api()` fetch helper with readable error messages, `usd()` |
-| `next.config.ts` | Rewrites `/api/*` to `BACKEND_URL` (default `http://127.0.0.1:8000`) |
+| `app/api.ts` | Shared types, `api()` fetch helper (sends the login token if any; readable error messages, the code on `error.code`), `seenLists()`, the saved copy of each list (`cachedLists()`/`cacheLists()`, see [Loading](#loading)), `usd()` |
+| `next.config.ts` | Rewrites `/api/*` to `BACKEND_URL` (default `http://127.0.0.1:8000`), waiting up to 2 minutes (`proxyTimeout`) for a backend that is waking up; passes the Supabase URL and publishable key to the browser for login |
 
 `photo.py` is an empty placeholder.
 
@@ -74,13 +78,21 @@ Currently installed:
 
 1. The client sends **item IDs only**. The backend reads each item's estimated price and quantity from Supabase, so a buyer cannot change what they pay. Every item must be on the list, unchecked, and priced.
 2. `create_order()` sends the order to PayPal with the total (price × quantity) in USD, and the list page (`APP_URL/lists/<id>`) as the return and cancel URL. The order, its item IDs and total are stored in `orders`.
-3. The browser goes to the approval URL (PayPal's `payer-action` link). PayPal sends the buyer back with `?token=<order id>&PayerID=...`; `app/checklist.tsx` posts to the capture route.
+3. The browser goes to the approval URL (PayPal's `payer-action` link). PayPal sends the buyer back with `?token=<order id>&PayerID=...`; `app/lists/[id]/list-context.tsx` posts to the capture route.
 4. `capture_order()` captures with `Prefer: return=representation` and returns `{orderId, status}`. `status` is the **capture's** status, not the order's. Only when it is `COMPLETED` does the route mark the order captured and check its items off, with `price_cents` = price × quantity and `order_id` as proof.
 
 Safety details:
 
 - Every POST carries a `PayPal-Request-Id`; capture uses the order ID, so a repeated capture returns the first result instead of charging again. That makes the single retry on `429` (in `_call`, wait capped at 5 seconds) safe.
 - PayPal errors become `PayPalError(status, issue)`, with PayPal's `debug_id` logged. The capture route returns `422` for `INSTRUMENT_DECLINED` and `502` for everything else, including network failures and token errors.
+
+### Loading
+
+Pages show something at once and correct it within about half a second:
+
+1. **Saved copy.** Every list this browser loads is saved in `localStorage` (`heylist:lists-cache`, up to 50). Home, History and a list's own pages show that copy first, then replace it with the fresh one. It is a convenience only: it can be missing (first visit, private window, cleared storage) and is never sent anywhere.
+2. **One request.** Home and History load every remembered list with `GET /api/lists?ids=`: six Supabase queries, run at the same time, however many lists. A list the backend no longer has is left out; if the request fails, History says so instead of looking empty.
+3. **Split with the list.** Every list response carries `split`, so Money and Settle up don't wait for a second request. `/split` is asked for again only after a change made on the page.
 
 ### Receipt flow
 
@@ -101,12 +113,13 @@ Listed in `.env.example`; copy it to `.env.local`. The backend reads it via `uvi
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | `backend/paypal.py` |
 | `APP_URL` | `backend/main.py` — PayPal's return/cancel URL (default `http://localhost:3000`) |
 | `BACKEND_URL` | `next.config.ts` — where `/api/*` goes; must be set at build time |
-| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | `backend/db.py` |
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | `backend/db.py`. `SUPABASE_URL` is also passed to the browser for login |
 | `OLLAMA_API_KEY`, `OLLAMA_MODEL` | `backend/llm.py`: starting lists, receipt matching, and receipt reading when Textract is unavailable (the model needs vision) |
 | `CHANNEL3_API_KEY` | `backend/market.py`: "Find in stores" product search and the server-side price check when a product is chosen |
 | `ANTHROPIC_API_KEY` | Not used for now (decision 38) |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | `backend/receipts.py`: Textract (region defaults to `us-east-1`) |
-| `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_JWKS_URL` | Not used: the browser never talks to Supabase |
+| `SUPABASE_PUBLISHABLE_KEY` | `app/auth.ts` (via `next.config.ts`): login in the browser; read at build time |
+| `SUPABASE_JWKS_URL` | Not used |
 
 ## Responsibilities
 

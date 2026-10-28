@@ -43,7 +43,10 @@ Built:
 - **PayPal Checkout** — pay for chosen items; the captured order is the proof, and pending payments hold their items.
 - **Receipt scanning** — the AI reads a receipt photo and proposes a list item for each line; you confirm.
 - **Split and settle** — who paid what, equal shares, and who pays whom.
-- **History** — lists this browser has opened, spending by type and month, buy again.
+- **History** — lists this browser has opened, spending by type and month, buy again at the price really paid. Lists you've opened show at once from a saved copy, then refresh.
+- **Optional login** — an email link; logged in, you join a list in one tap and are the same person on every device. Guests still just type a name.
+- **Find in stores** — real products for an item from Channel3, checked by the AI so only real matches show; the chosen price is what PayPal charges.
+- **Price memory** — suggested prices come from what people really paid (PayPal or a receipt), then a chosen store price, then the AI's guess.
 
 - **Voice** — tap the mic and say it; the words fill the prompt (where the browser supports speech recognition).
 
@@ -74,7 +77,8 @@ Progress · Items · Money · Receipts · History · Settle-up — see [docs/SPE
 - **Payments:** PayPal sandbox — Orders API through the PayPal Server SDK (Python, APIMatic-generated); Checkout JS SDK and Invoicing API planned
 - **AI:** one LLM with vision for lists and receipts (Ollama API); Web Speech API for voice
 - **Hosting:** Render
-- **Sponsor tools:** APIMatic Context Plugin, Postman, Render; Channel3 for the stretch
+- **Store products:** Channel3 product search
+- **Sponsor tools:** APIMatic Context Plugin, Postman, Render, Channel3
 
 ## Getting started
 
