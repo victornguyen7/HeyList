@@ -1,4 +1,7 @@
-export type Member = { id: string; name: string };
+import { supabase } from "./auth";
+
+// userId is set for someone who joined logged in; null for a guest.
+export type Member = { id: string; name: string; userId: string | null };
 export type Item = {
   id: string;
   name: string;
@@ -93,12 +96,16 @@ const MESSAGES: Record<string, string> = {
   MARKET_UNAVAILABLE: "Store search is not available right now. Try again in a moment.",
   PRODUCT_NOT_FOUND: "That product is no longer available. Search again.",
   ITEM_CHECKED: "That item has already been bought.",
+  NOT_YOURS: "That person joined with an account. Only they can do this, logged in.",
+  NAME_TAKEN: "Someone with an account already uses that name on this list. Pick another, or log in if it's you.",
 };
 
 /** JSON in, JSON out. A Blob body is sent as-is with its own type (receipt photos). A failure throws an Error
  * with the readable message, and the backend's error code (or the HTTP status text) as `code`. */
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = init?.body instanceof Blob ? { "Content-Type": init.body.type } : init?.body ? { "Content-Type": "application/json" } : undefined;
+  const headers: Record<string, string> = init?.body instanceof Blob ? { "Content-Type": init.body.type } : init?.body ? { "Content-Type": "application/json" } : {};
+  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(path, { ...init, headers });
   if (!res.ok) {
     const code = (await res.json().catch(() => null))?.error ?? res.statusText;

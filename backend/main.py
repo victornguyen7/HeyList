@@ -103,6 +103,23 @@ def member_of(list_id: str, member_id) -> str | None:
     return member_id
 
 
+def account(request: Request) -> dict | None:
+    """The logged-in user from "Authorization: Bearer <Supabase access token>", or None for a guest."""
+    scheme, _, token = request.headers.get("authorization", "").partition(" ")
+    return db.user(token) if scheme.lower() == "bearer" and token else None
+
+
+def locked(member_id: str | None, request: Request) -> bool:
+    """True if the member joined logged in and this request isn't logged in as them (decision 53).
+    A guest member is never locked: anyone on the link can act for them, as before. The token is only
+    checked with Supabase when the member has an account."""
+    rows = db.select("members", id=member_id) if member_id else []
+    if not rows or not rows[0]["user_id"]:
+        return False
+    user = account(request)
+    return not user or user["id"] != rows[0]["user_id"]
+
+
 def new_items(list_id: str, items, start: int = 0) -> list[dict]:
     if not isinstance(items, list) or len(items) > 100:
         raise ValueError("bad items")
@@ -119,25 +136,37 @@ def new_items(list_id: str, items, start: int = 0) -> list[dict]:
     ]
 
 
+def lists_state(list_ids: list[str]) -> list[dict]:
+    """Everything a list page shows, for each of these lists that exists: six queries however many lists."""
+
+    def rows(table: str, order: str = "created_at", **filters) -> dict[str, list[dict]]:
+        by_list = defaultdict(list)
+        for row in db.select(table, order, list_id=list_ids, **filters):
+            by_list[row["list_id"]].append(camel(row))
+        return by_list
+
+    members, items, receipts = rows("members"), rows("items", "position"), rows("receipts")
+    # Captured orders are proof; pending ones hold their items until PayPal decides. An order the buyer
+    # walked away from (CREATED) or that was declined is not shown.
+    orders, invoices = rows("orders", status=["COMPLETED", "PENDING"]), rows("invoices")
+    return [
+        {
+            **camel(row),
+            "members": members[row["id"]],
+            "items": items[row["id"]],
+            "receipts": receipts[row["id"]],
+            "orders": orders[row["id"]],
+            "invoices": invoices[row["id"]],
+        }
+        for row in db.select("lists", id=list_ids)
+    ]
+
+
 def list_state(list_id: str) -> dict:
-    """Everything a list page shows, in one response."""
-
-    def rows(table: str, order: str = "created_at", **filters) -> list[dict]:
-        return [camel(row) for row in db.select(table, order, list_id=list_id, **filters)]
-
-    return {
-        **camel(db.select("lists", id=list_id)[0]),
-        "members": rows("members"),
-        "items": rows("items", "position"),
-        "receipts": rows("receipts"),
-        # Captured orders are proof; pending ones hold their items until PayPal decides. An order the buyer
-        # walked away from (CREATED) or that was declined is not shown.
-        "orders": rows("orders", status=["COMPLETED", "PENDING"]),
-        "invoices": rows("invoices"),
-    }
+    return lists_state([list_id])[0]
 
 
-# Paid calls: Ollama and Textract are billed to the owner (RULES.md). There are no accounts, so anyone with a
+# Paid calls: Ollama and Textract are billed to the owner (RULES.md). Accounts are optional, so anyone with a
 # link could repeat them; these caps bound what one list or one client can spend.
 # ponytail: in-memory, per process, reset on restart; move to the database if the app runs on several processes.
 _calls: dict[str, deque] = defaultdict(deque)
@@ -177,6 +206,19 @@ def create_list(body=Depends(json_body)):
     return list_state(list_id)
 
 
+@app.get("/api/lists")
+def get_lists(ids: str = ""):
+    """?ids=a,b,c: the lists this browser has opened, for Home and History, in one request. Unknown or deleted
+    lists are left out; malformed IDs are ignored."""
+    list_ids = []
+    for value in ids.split(",")[:50]:
+        try:
+            list_ids.append(an_id(value))
+        except ValueError:
+            pass
+    return {"lists": lists_state(list_ids)}
+
+
 @app.get("/api/lists/{list_id}")
 def get_list(list_id: str):
     if not find("lists", list_id):
@@ -206,19 +248,29 @@ def update_list(list_id: str, body=Depends(json_body)):
 
 
 @app.post("/api/lists/{list_id}/members")
-def join_list(list_id: str, body=Depends(json_body)):
-    """Adds a person by name, or returns the one already there. An email given here is saved either way."""
+def join_list(list_id: str, request: Request, body=Depends(json_body)):
+    """Adds a person by name, or returns the one already there. An email given here is saved either way.
+    Logged in, the name can be left out (the account's is used) and the same member comes back on every device.
+    A name taken by an account can't be joined by a guest or another account."""
     if not find("lists", list_id):
         return error("LIST_NOT_FOUND", 404)
+    user = account(request)
+    if user and (mine := db.select("members", list_id=list_id, user_id=user["id"])):
+        return camel(mine[0])
+    body = body or {}
     try:
-        name = text(body["name"], 40)
+        name = text(body.get("name") or (user and user["name"]), 40)
         values = {"email": email(body["email"])} if body.get("email") else {}
     except BAD_INPUT:
         return error("INVALID_BODY", 400)
+    if user:
+        values["user_id"] = user["id"]
 
     existing = db.select("members", list_id=list_id, name=name)
     if not existing:
         return camel(db.insert("members", [{"list_id": list_id, "name": name, **values}])[0])
+    if existing[0]["user_id"]:
+        return error("NAME_TAKEN", 409)
     if values:
         return camel(db.update("members", values, id=existing[0]["id"])[0])
     return camel(existing[0])
@@ -239,7 +291,7 @@ def add_items(list_id: str, body=Depends(json_body)):
 
 
 @app.patch("/api/items/{item_id}")
-def update_item(item_id: str, body=Depends(json_body)):
+def update_item(item_id: str, request: Request, body=Depends(json_body)):
     item = find("items", item_id)
     if not item:
         return error("ITEM_NOT_FOUND", 404)
@@ -269,6 +321,8 @@ def update_item(item_id: str, body=Depends(json_body)):
             raise ValueError("nothing to change")
     except BAD_INPUT:
         return error("INVALID_BODY", 400)
+    if "checked" in body and locked(values.get("bought_by") or item["bought_by"], request):
+        return error("NOT_YOURS", 403)
 
     # A captured PayPal order is proof of purchase; it cannot be unticked or re-priced.
     paid_fields = "checked" in body or "estPriceCents" in body or "quantity" in body
@@ -348,7 +402,7 @@ def choose_product(item_id: str, body=Depends(json_body)):
 
 
 @app.post("/api/lists/{list_id}/orders")
-def create_order(list_id: str, body=Depends(json_body)):
+def create_order(list_id: str, request: Request, body=Depends(json_body)):
     if not find("lists", list_id):
         return error("LIST_NOT_FOUND", 404)
     try:
@@ -363,6 +417,8 @@ def create_order(list_id: str, body=Depends(json_body)):
         member_id = member_of(list_id, body.get("memberId"))
     except BAD_INPUT:
         return error("INVALID_ITEMS", 400)
+    if locked(member_id, request):
+        return error("NOT_YOURS", 403)
     # An item whose payment is pending at PayPal may still go through, so it can't be paid for a second time yet.
     if any(set(order["item_ids"]) & {item["id"] for item in items} for order in db.select("orders", list_id=list_id, status="PENDING")):
         return error("PAYMENT_PENDING", 409)
@@ -582,16 +638,18 @@ async def scan_receipt(list_id: str, request: Request):
     if not image or len(image) > MAX_RECEIPT_BYTES:
         return error("IMAGE_TOO_LARGE" if image else "INVALID_BODY", 413 if image else 400)
     # Textract, Ollama and Supabase are blocking calls; keep them off the event loop.
-    return await run_in_threadpool(_scan, list_id, request.query_params.get("memberId"), image, content_type)
+    return await run_in_threadpool(_scan, list_id, request.query_params.get("memberId"), image, content_type, request)
 
 
-def _scan(list_id: str, member_id, image: bytes, content_type: str):
+def _scan(list_id: str, member_id, image: bytes, content_type: str, request: Request):
     if not find("lists", list_id):
         return error("LIST_NOT_FOUND", 404)
     try:
         member_id = member_of(list_id, member_id)
     except BAD_INPUT:
         return error("INVALID_MEMBER", 400)
+    if locked(member_id, request):
+        return error("NOT_YOURS", 403)
     # Checked after the list and member, so made-up IDs can't use up a real list's scans.
     if not allow(f"scan:{list_id}", 10, 3600):
         return error("TOO_MANY_REQUESTS", 429)
@@ -623,7 +681,7 @@ def _scan(list_id: str, member_id, image: bytes, content_type: str):
 
 
 @app.post("/api/receipts/{receipt_id}/confirm")
-def confirm_receipt(receipt_id: str, body=Depends(json_body)):
+def confirm_receipt(receipt_id: str, request: Request, body=Depends(json_body)):
     """Applies the matches the person confirmed or corrected: {"itemIds": [item ID or null, one per line]}.
     Matched items are checked off with the receipt's prices; the rest of the lines become extras."""
     receipt = find("receipts", receipt_id)
@@ -631,6 +689,8 @@ def confirm_receipt(receipt_id: str, body=Depends(json_body)):
         return error("RECEIPT_NOT_FOUND", 404)
     if receipt["confirmed_at"]:
         return error("RECEIPT_CONFIRMED", 409)
+    if locked(receipt["member_id"], request):
+        return error("NOT_YOURS", 403)
     lines = receipt["lines"]
     try:
         item_ids = body["itemIds"]

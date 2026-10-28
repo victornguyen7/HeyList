@@ -33,7 +33,7 @@ export default function Home() {
   const router = useRouter();
   const lists = useSeenLists();
 
-  const side = lists && lists.length > 0 && (
+  const side = Array.isArray(lists) && lists.length > 0 && (
     <>
       <div className="flex items-center justify-between font-medium">
         <h2 className="text-xl">Your lists</h2>

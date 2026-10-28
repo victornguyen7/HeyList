@@ -56,9 +56,14 @@ export function WebNav() {
       <Suspense fallback={<NavLinks path="" />}>
         <CurrentNavLinks />
       </Suspense>
-      <Link href="/" className={`${button} h-10 w-[120px] px-0 text-[15px]`}>
-        New list
-      </Link>
+      <div className="flex items-center gap-4">
+        <Link href="/login" className="text-[15px] text-muted hover:text-text">
+          Log in
+        </Link>
+        <Link href="/" className={`${button} h-10 w-[120px] px-0 text-[15px]`}>
+          New list
+        </Link>
+      </div>
     </nav>
   );
 }

@@ -70,6 +70,10 @@ export default function HistoryPage() {
 
       {!lists ? (
         <p className="text-base text-muted">Loading…</p>
+      ) : lists === "failed" ? (
+        <p role="status" className="text-base text-muted">
+          Your lists could not be loaded right now. They are still saved; reload the page to try again.
+        </p>
       ) : lists.length === 0 ? (
         <p className="text-base text-muted">No lists yet. Lists you make or open on this device show up here.</p>
       ) : (

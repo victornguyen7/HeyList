@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, use, useEffect, useState } from "react";
 import { api, refundNote, rememberList, type List, type Member } from "../../api";
+import { accountName, supabase, useSession } from "../../auth";
 import { Avatar, button, card } from "../../ui";
 
 type Capture = { orderId: string; status: string; refundedCents: number };
@@ -29,7 +30,7 @@ const TABS = [
   ["/settle", "Settle up", "text-money"],
 ] as const;
 
-// Who "you" are on a list is remembered in this browser only; there are no accounts (decision 6).
+// Who "you" are on a list: for a guest, remembered in this browser only; logged in, the member with your account.
 const memberKey = (listId: string) => `heylist:member:${listId}`;
 function storedMember(listId: string): string | null {
   try {
@@ -54,6 +55,8 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
   const [joined, setJoined] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const session = useSession();
+  const savedName = accountName(session);
 
   useEffect(() => {
     rememberList(listId);
@@ -82,10 +85,12 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       .then(() => router.replace(`/lists/${listId}`, { scroll: false }));
   }, [listId, orderId, approved, router]);
 
+  // Logged in with a saved name, the backend fills it in; otherwise the typed name is sent (and saved on the account).
   async function join(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const member = await api<Member>(`/api/lists/${list!.id}/members`, { method: "POST", body: JSON.stringify({ name }) });
+      const member = await api<Member>(`/api/lists/${list!.id}/members`, { method: "POST", body: JSON.stringify(savedName ? {} : { name }) });
+      if (session && !savedName) await supabase.auth.updateUser({ data: { name: member.name } });
       try {
         localStorage.setItem(memberKey(list!.id), member.id);
       } catch {}
@@ -98,7 +103,10 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
 
   // A remembered member who is no longer on the list doesn't count.
   const remembered = joined ?? (list ? storedMember(list.id) : null);
-  const me = list?.members.some((member) => member.id === remembered) ? remembered : null;
+  const me =
+    list?.members.find((member) => session && member.userId === session.user.id)?.id ??
+    // A remembered member who joined with an account only counts while logged in as it (found above).
+    (list?.members.some((member) => member.id === remembered && !member.userId) ? remembered : null);
   const message = status ?? (orderId ? (approved ? "Confirming your payment…" : "Payment cancelled.") : null);
   const base = `/lists/${listId}`;
 
@@ -180,20 +188,33 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
           {!me && (
             <form onSubmit={join} className={`${card} flex flex-col gap-3 sm:flex-row sm:items-center`}>
               <span className="text-base font-medium sm:flex-1">Join to claim, tick off and pay for items</span>
-              <div className="flex gap-2">
-                <input
-                  className="h-12 min-w-0 flex-1 rounded-[20px] bg-bg px-4 text-base"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  aria-label="Your name"
-                  maxLength={40}
-                  required
-                />
+              {savedName ? (
                 <button type="submit" className={button}>
-                  Join
+                  Join as {savedName}
                 </button>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <input
+                      className="h-12 min-w-0 flex-1 rounded-[20px] bg-bg px-4 text-base"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your name"
+                      aria-label="Your name"
+                      maxLength={40}
+                      required
+                    />
+                    <button type="submit" className={button}>
+                      Join
+                    </button>
+                  </div>
+                  {!session && (
+                    <Link href={`/login?next=${encodeURIComponent(base)}`} className="text-sm text-muted underline">
+                      Or log in with email, so you don&apos;t type your name next time
+                    </Link>
+                  )}
+                </div>
+              )}
             </form>
           )}
           <ListContext

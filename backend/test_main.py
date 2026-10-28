@@ -138,6 +138,15 @@ class ListRoutesTest(RoutesTest):
         for list_id in (str(uuid.uuid4()), "not-a-uuid"):
             self.assertEqual(self.client.get(f"/api/lists/{list_id}").status_code, 404)
 
+    def test_many_lists_load_in_one_request_each_with_only_its_own_rows(self):
+        one, two = self.new_list([{"name": "Tent"}]), self.new_list([{"name": "Milk"}, {"name": "Eggs"}])
+        ids = ",".join([two["id"], "not-a-uuid", str(uuid.uuid4()), one["id"]])
+
+        lists = self.client.get(f"/api/lists?ids={ids}").json()["lists"]
+
+        self.assertEqual(sorted(lists, key=lambda state: state["id"]), sorted([one, two], key=lambda state: state["id"]))
+        self.assertEqual(self.client.get("/api/lists").json(), {"lists": []})
+
     def test_a_quantity_must_be_a_whole_number_from_1_to_99(self):
         item = self.new_list([{"name": "Sunscreen"}])["items"][0]
         for bad in (0, 100, 2.5, "2", True):
@@ -145,6 +154,90 @@ class ListRoutesTest(RoutesTest):
                 self.assertEqual(self.client.patch(f"/api/items/{item['id']}", json={"quantity": bad}).status_code, 400)
 
         self.assertEqual(self.client.patch(f"/api/items/{item['id']}", json={"quantity": 3}).json()["quantity"], 3)
+
+
+class AccountTest(RoutesTest):
+    def setUp(self):
+        super().setUp()
+        self.list = self.new_list([])
+        # Two accounts by token; db.user stands in for Supabase Auth.
+        users = {"ann-token": {"id": str(uuid.uuid4()), "name": "Ann"}, "new-token": {"id": str(uuid.uuid4()), "name": None}}
+        patch = mock.patch.object(db, "user", users.get)
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def join(self, token=None, **body):
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        return self.client.post(f"/api/lists/{self.list['id']}/members", json=body, headers=headers)
+
+
+class JoinTest(AccountTest):
+    def test_logged_in_joins_without_a_name_and_gets_the_same_member_back(self):
+        first = self.join("ann-token").json()
+
+        self.assertEqual(first["name"], "Ann")
+        self.assertEqual(self.join("ann-token", name="Annie").json()["id"], first["id"])
+
+    def test_an_account_without_a_name_gives_one_the_first_time(self):
+        self.assertEqual(self.join("new-token").status_code, 400)
+        self.assertEqual(self.join("new-token", name="Bob").json()["name"], "Bob")
+
+    def test_a_guest_cannot_take_an_accounts_name_but_an_account_can_claim_a_guests(self):
+        self.join("ann-token")
+        guest = self.join(name="Bob").json()
+
+        self.assertEqual(self.join(name="Ann").status_code, 409)
+        self.assertEqual(self.join(name="Ann").json(), {"error": "NAME_TAKEN"})
+        self.assertEqual(self.join("new-token", name="Bob").json()["id"], guest["id"])
+
+    def test_a_bad_token_is_a_guest(self):
+        self.assertEqual(self.join("expired", name="Cat").json()["userId"], None)
+
+
+class LockTest(AccountTest):
+    """Acting as a member who joined logged in needs that login; a guest member stays open to anyone (decision 53)."""
+
+    def setUp(self):
+        super().setUp()
+        self.list = self.new_list([{"name": "Tent", "estPriceCents": 9000}, {"name": "Map", "estPriceCents": 500}])
+        self.tent, self.map = (item["id"] for item in self.list["items"])
+        self.ann = self.join("ann-token").json()["id"]
+        self.bob = self.join(name="Bob").json()["id"]
+
+    def tick(self, item, member, token=None, checked=True):
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        return self.client.patch(f"/api/items/{item}", json={"checked": checked, "memberId": member}, headers=headers)
+
+    def test_only_ann_can_tick_off_or_untick_as_ann(self):
+        self.assertEqual(self.tick(self.tent, self.ann).json(), {"error": "NOT_YOURS"})
+        self.assertEqual(self.tick(self.tent, self.ann, "new-token").status_code, 403)
+        self.assertEqual(self.tick(self.tent, self.ann, "ann-token").status_code, 200)
+
+        self.assertEqual(self.tick(self.tent, None, checked=False).status_code, 403)
+        self.assertEqual(self.tick(self.tent, None, "ann-token", checked=False).status_code, 200)
+
+    def test_a_guest_member_is_open_to_anyone(self):
+        self.assertEqual(self.tick(self.map, self.bob).status_code, 200)
+        self.assertEqual(self.tick(self.map, None, checked=False).status_code, 200)
+
+    def test_only_ann_can_pay_as_ann(self):
+        create = self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        order = lambda **headers: self.client.post(
+            f"/api/lists/{self.list['id']}/orders", json={"itemIds": [self.tent], "memberId": self.ann}, headers=headers
+        )
+
+        self.assertEqual(order().status_code, 403)
+        create.assert_not_called()
+        self.assertEqual(order(Authorization="Bearer ann-token").status_code, 200)
+
+    def test_only_ann_can_scan_or_confirm_a_receipt_as_ann(self):
+        scan = self.client.post(f"/api/lists/{self.list['id']}/receipts?memberId={self.ann}", content=b"photo", headers={"Content-Type": "image/jpeg"})
+        self.assertEqual(scan.status_code, 403)
+
+        receipt = self.db.insert("receipts", [{"list_id": self.list["id"], "member_id": self.ann, "lines": [], "image_path": "x"}])[0]
+        confirm = lambda **headers: self.client.post(f"/api/receipts/{receipt['id']}/confirm", json={"itemIds": []}, headers=headers)
+        self.assertEqual(confirm().status_code, 403)
+        self.assertEqual(confirm(Authorization="Bearer ann-token").status_code, 200)
 
 
 class CheckoutTest(RoutesTest):

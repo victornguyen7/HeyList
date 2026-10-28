@@ -2,7 +2,8 @@ import os
 from functools import cache
 from typing import Any
 
-from supabase import Client, create_client
+import httpx
+from supabase import Client, ClientOptions, create_client
 
 
 @cache
@@ -12,7 +13,9 @@ def client() -> Client:
     key = os.environ.get("SUPABASE_SECRET_KEY")
     if not url or not key:
         raise RuntimeError("SUPABASE_URL and SUPABASE_SECRET_KEY must be set")
-    return create_client(url, key)
+    # HTTP/1.1, not supabase's default HTTP/2: route handlers run on many threads, and one shared HTTP/2
+    # connection read from several at once failed with ReadError (EAGAIN), so lists loaded together came back 500.
+    return create_client(url, key, ClientOptions(httpx_client=httpx.Client(timeout=30)))
 
 
 def _where(query, filters: dict):
@@ -24,6 +27,17 @@ def _where(query, filters: dict):
         else:
             query = query.eq(column, value)
     return query
+
+
+def user(token: str) -> dict | None:
+    """The logged-in user for a Supabase access token ({"id", "name"}), or None if the token is bad or expired."""
+    try:
+        response = client().auth.get_user(token)
+    except AuthError:
+        return None
+    if not response or not response.user:
+        return None
+    return {"id": response.user.id, "name": (response.user.user_metadata or {}).get("name")}
 
 
 # Rows are list[Any]: supabase types .data as List[JSON], which Pylance won't accept as list[dict].

@@ -6,6 +6,8 @@ Phase 1 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification
 
 ### Added
 
+- **Optional email login** (decision 52): `/login` emails a magic link (Supabase Auth). Logged in, "Join as <name>" joins a list in one tap and you're the same person on every device; guests still type a name. New column `members.user_id`: run `supabase/schema.sql` again. New dependency `@supabase/supabase-js` 2.117.3; the web service now needs `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` at build time.
+- **Account lock** (decision 53): only the logged-in person can tick off, untick, pay or scan/confirm receipts as their member (`403 NOT_YOURS`); guest members work as before.
 - **MIT license** in `LICENSE`, as the hackathon requires an open source license.
 - **Soft glass redesign** (decision 46; full write-up in [REDESIGN.md](REDESIGN.md)), from the Figma file's "Soft glass" (mobile) and "Web (soft glass)" screens. Phones get the mobile layout and laptops the website layout from the same link, by screen width:
   - Shared pieces in `app/ui.tsx` (buttons, cards, item rows, progress ring, avatars, web nav, page frame with the background glows) and `app/recent.tsx` ("Your lists" cards). Design assets in `public/ui/`.

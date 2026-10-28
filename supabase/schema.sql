@@ -17,15 +17,18 @@ create table if not exists lists (
   finished_at timestamptz
 );
 
--- The people on a list. No accounts: a person is a name, plus an email once they settle up.
+-- The people on a list. A guest is a name, plus an email once they settle up; a logged-in person also has user_id.
 create table if not exists members (
   id uuid primary key default gen_random_uuid(),
   list_id uuid not null references lists (id) on delete cascade,
   name text not null,
   -- Where a PayPal invoice is sent. Only needed for settle-up.
   email text,
+  -- The Supabase Auth user, for someone who joined logged in. Null for a guest.
+  user_id uuid references auth.users (id) on delete set null,
   created_at timestamptz not null default now(),
-  unique (list_id, name)
+  unique (list_id, name),
+  unique (list_id, user_id)
 );
 
 -- A scanned receipt. The image is in the "receipts" storage bucket at image_path.
@@ -151,3 +154,5 @@ create index if not exists items_name_key on items (name_key);
 alter table items add column if not exists product jsonb;
 -- unique (list_id, name) already indexes members by list_id.
 drop index if exists members_list_id;
+alter table members add column if not exists user_id uuid references auth.users (id) on delete set null;
+create unique index if not exists members_list_id_user_id_key on members (list_id, user_id);

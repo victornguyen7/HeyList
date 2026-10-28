@@ -9,8 +9,8 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.14.0"
+      - key: PYTHON_VERSION # same as local development
+        value: "3.14.9"
       - key: APP_URL # the heylist-web URL, for PayPal return links
         value: https://heylist-web.onrender.com
       - key: PAYPAL_CLIENT_ID
@@ -43,3 +43,7 @@ services:
     envVars:
       - key: BACKEND_URL # the heylist-api public URL; read at build time, so a change needs a redeploy
         value: https://heylist-api.onrender.com
+      - key: SUPABASE_URL # for login (app/auth.ts); read at build time
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
