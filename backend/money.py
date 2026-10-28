@@ -117,3 +117,26 @@ def settle(balance: dict[str, int]) -> list[dict]:
         owes = sorted((pair for pair in owes if pair[0]), reverse=True)
         owed = sorted((pair for pair in owed if pair[0]), reverse=True)
     return transfers
+
+
+def fit_cart(lines: list[dict], budget: int | None) -> tuple[list[dict], list[str]]:
+    """The shopping agent's cart (decision 61). lines are [{"itemId", "quantity", "options": [product, ...]}]: each
+    item's checked store matches, closest first. Each item gets its closest match. Over budget, items move to their
+    cheapest match, biggest saving first; still over, the most expensive are left out until it fits, so as few items
+    as possible are dropped. Returns the cart (each line with its "product") and the IDs of the items left out.
+    ponytail: greedy; an item moved to its cheapest match stays there even when a later drop frees room."""
+    cost = lambda line, product: product["priceCents"] * line["quantity"]
+    pick = {line["itemId"]: line["options"][0] for line in lines}
+    total = lambda: sum(cost(line, pick[line["itemId"]]) for line in lines if line["itemId"] in pick)
+    if budget is not None:
+        cheapest = {line["itemId"]: min(line["options"], key=lambda p: p["priceCents"]) for line in lines}
+        for line in sorted(lines, key=lambda l: cost(l, pick[l["itemId"]]) - cost(l, cheapest[l["itemId"]]), reverse=True):
+            if total() <= budget:
+                break
+            pick[line["itemId"]] = cheapest[line["itemId"]]
+        for line in sorted(lines, key=lambda l: cost(l, pick[l["itemId"]]), reverse=True):
+            if total() <= budget:
+                break
+            del pick[line["itemId"]]
+    cart = [line | {"product": pick[line["itemId"]]} for line in lines if line["itemId"] in pick]
+    return cart, [line["itemId"] for line in lines if line["itemId"] not in pick]

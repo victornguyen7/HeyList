@@ -135,5 +135,35 @@ class SplitTest(unittest.TestCase):
         self.assertEqual(set(after.values()), {0})
 
 
+def offer(product_id, cents):
+    return {"productId": product_id, "priceCents": cents}
+
+
+class FitCartTest(unittest.TestCase):
+    LINES = [
+        {"itemId": "tent", "quantity": 1, "options": [offer("tent-a", 9000), offer("tent-b", 6000)]},
+        {"itemId": "lamp", "quantity": 2, "options": [offer("lamp-a", 1500), offer("lamp-b", 1000)]},
+        {"itemId": "map", "quantity": 1, "options": [offer("map-a", 500)]},
+    ]
+
+    def picks(self, budget):
+        cart, over = money.fit_cart(self.LINES, budget)
+        return [line["product"]["productId"] for line in cart], over
+
+    def test_with_room_or_no_budget_each_item_gets_its_closest_match(self):
+        self.assertEqual(self.picks(None), (["tent-a", "lamp-a", "map-a"], []))
+        self.assertEqual(self.picks(12500), (["tent-a", "lamp-a", "map-a"], []))
+
+    def test_over_budget_the_biggest_saving_is_taken_first(self):
+        # 12500 total; the tent's cheaper match saves 3000, which is enough.
+        self.assertEqual(self.picks(9500), (["tent-b", "lamp-a", "map-a"], []))
+        # Still over after the tent: the lamps move too (2 x 500 saved).
+        self.assertEqual(self.picks(8500), (["tent-b", "lamp-b", "map-a"], []))
+
+    def test_then_the_most_expensive_is_left_out_until_it_fits(self):
+        self.assertEqual(self.picks(3000), (["lamp-b", "map-a"], ["tent"]))
+        self.assertEqual(self.picks(0), ([], ["tent", "lamp", "map"]))
+
+
 if __name__ == "__main__":
     unittest.main()

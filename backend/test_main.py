@@ -655,6 +655,128 @@ class SplitTest(RoutesTest):
         self.assertEqual(split["transfers"], [{"from": self.bob, "to": self.ann, "amountCents": 3000}])
 
 
+class ShopTest(RoutesTest):
+    def setUp(self):
+        super().setUp()
+        response = self.client.post(
+            "/api/lists",
+            json={
+                "title": "Trip",
+                "budgetCents": 20000,
+                "items": [
+                    {"name": "Tent", "estPriceCents": 8000},
+                    {"name": "Lamp", "estPriceCents": 1000, "quantity": 2},
+                    {"name": "Milk", "estPriceCents": 400},
+                    {"name": "Gas", "estPriceCents": 3000},
+                ],
+            },
+        )
+        self.list = response.json()
+        self.tent, self.lamp, self.milk, self.gas = self.list["items"]
+        self.ann = self.client.post(f"/api/lists/{self.list['id']}/members", json={"name": "Ann"}).json()["id"]
+        self.products = {
+            "Tent": [ProductRoutesTest.PRODUCT | {"productId": "T1", "priceCents": 9000}, ProductRoutesTest.PRODUCT | {"productId": "T2", "priceCents": 7000}],
+            "Lamp": [ProductRoutesTest.PRODUCT | {"productId": "L1", "priceCents": 1200}],
+            "Milk": [],
+            "Gas": [ProductRoutesTest.PRODUCT | {"productId": "G1", "priceCents": 2500}],
+        }
+        self.search = mock.patch.object(market, "search", side_effect=lambda name: self.products[name]).start()
+        mock.patch.object(llm, "store_matches", side_effect=lambda name, note, title, found: found).start()
+        self.addCleanup(mock.patch.stopall)
+
+    def plan(self, **body):
+        return self.client.post(f"/api/lists/{self.list['id']}/shop", json=body).json()
+
+    def test_each_open_item_gets_a_checked_product_and_misses_say_why(self):
+        self.client.patch(f"/api/items/{self.gas['id']}", json={"checked": True, "priceCents": 3000})
+
+        plan = self.plan()
+
+        self.assertEqual([(l["itemId"], l["product"]["productId"]) for l in plan["cart"]], [(self.tent["id"], "T1"), (self.lamp["id"], "L1")])
+        self.assertEqual(plan["skipped"], [{"itemId": self.milk["id"], "reason": main.NOT_SOLD}])
+        self.assertEqual(plan["totalCents"], 9000 + 1200 * 2)
+        # 20000 budget, less 3000 spent on gas.
+        self.assertEqual(plan["budgetLeftCents"], 17000)
+        self.assertEqual(self.search.call_count, 3)
+        # Nothing is saved until the person pays.
+        self.assertTrue(all(row["product"] is None for row in self.db.tables["items"]))
+
+    def test_the_cart_fits_what_is_left_of_the_budget(self):
+        self.client.patch(f"/api/lists/{self.list['id']}", json={"budgetCents": 10000})
+        # Only the tent and the lamps are shopped; the milk and gas still need ~3400 of the budget.
+        self.client.patch(f"/api/items/{self.tent['id']}", json={"claimedBy": self.ann})
+        self.client.patch(f"/api/items/{self.lamp['id']}", json={"claimedBy": self.ann})
+
+        plan = self.plan(memberId=self.ann, mine=True)
+
+        self.assertEqual(plan["budgetLeftCents"], 10000 - 3400)
+        self.assertEqual([l["product"]["productId"] for l in plan["cart"]], ["L1"])
+        self.assertEqual(plan["skipped"], [{"itemId": self.tent["id"], "reason": "Left out to stay within the budget."}])
+
+    def test_a_failed_search_skips_only_that_item(self):
+        def search(name):
+            if name == "Lamp":
+                raise RuntimeError("Channel3 down")
+            return self.products[name]
+
+        self.search.side_effect = search
+        with self.assertLogs(main.log, "ERROR"):
+            plan = self.plan()
+
+        self.assertEqual(len(plan["cart"]), 2)
+        self.assertIn("didn't answer", next(s["reason"] for s in plan["skipped"] if s["itemId"] == self.lamp["id"]))
+
+    def test_bought_or_pending_items_are_left_out_and_a_run_takes_ten(self):
+        self.client.patch(f"/api/items/{self.tent['id']}", json={"checked": True})
+        self.db.insert("orders", [{"id": "O1", "list_id": self.list["id"], "item_ids": [self.lamp["id"]], "status": "PENDING"}])
+        self.client.post(f"/api/lists/{self.list['id']}/items", json={"items": [{"name": "Gas"}] * 12})
+
+        plan = self.plan()
+
+        shopped = {l["itemId"] for l in plan["cart"]} | {s["itemId"] for s in plan["skipped"]}
+        self.assertNotIn(self.tent["id"], shopped)
+        self.assertNotIn(self.lamp["id"], shopped)
+        self.assertEqual(len(shopped), 10)
+        self.assertEqual(plan["moreItems"], 4)
+
+    def checkout(self, picks, total, **body):
+        picks = [{"itemId": item["id"], "productId": product} for item, product in picks]
+        return self.client.post(f"/api/lists/{self.list['id']}/shop/checkout", json={"picks": picks, "totalCents": total, **body})
+
+    def test_checkout_reads_prices_from_channel3_and_opens_one_order(self):
+        fresh = {"T2": ProductRoutesTest.PRODUCT | {"productId": "T2", "priceCents": 7000}, "L1": ProductRoutesTest.PRODUCT | {"productId": "L1", "priceCents": 1200}}
+        get = mock.patch.object(market, "get", side_effect=fresh.get).start()
+        create = self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+
+        response = self.checkout([(self.tent, "T2"), (self.lamp, "L1")], 7000 + 2400, memberId=self.ann, priceCents=1)
+
+        self.assertEqual(response.json(), {"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.assertEqual(get.call_count, 2)
+        self.assertEqual(create.call_args.args[0], [{"name": "Tent", "priceCents": 7000, "quantity": 1}, {"name": "Lamp", "priceCents": 1200, "quantity": 2}])
+        order = self.db.tables["orders"][0]
+        self.assertEqual((order["member_id"], order["total_cents"]), (self.ann, 9400))
+        self.assertEqual(self.client.get(f"/api/lists/{self.list['id']}").json()["items"][0]["product"]["productId"], "T2")
+
+    def test_a_price_that_changed_since_the_plan_is_saved_and_no_order_is_made(self):
+        mock.patch.object(market, "get", return_value=ProductRoutesTest.PRODUCT | {"productId": "T2", "priceCents": 7500}).start()
+        create = self.mock_paypal("create_order")
+
+        self.assertEqual(self.checkout([(self.tent, "T2")], 7000).json(), {"error": "PRICE_CHANGED"})
+
+        create.assert_not_called()
+        self.assertEqual(self.db.tables["items"][0]["est_price_cents"], 7500)
+
+    def test_checkout_refuses_bought_items_and_gone_products(self):
+        mock.patch.object(market, "get", return_value=None).start()
+        create = self.mock_paypal("create_order")
+        self.assertEqual(self.checkout([(self.tent, "T2")], 7000).json(), {"error": "PRODUCT_NOT_FOUND"})
+
+        self.client.patch(f"/api/items/{self.tent['id']}", json={"checked": True})
+        self.assertEqual(self.checkout([(self.tent, "T2")], 7000).status_code, 400)
+        self.assertEqual(self.checkout([(self.lamp, "L1"), (self.lamp, "L2")], 2400).status_code, 400)
+        create.assert_not_called()
+
+
 class SettleUpTest(RoutesTest):
     def setUp(self):
         super().setUp()

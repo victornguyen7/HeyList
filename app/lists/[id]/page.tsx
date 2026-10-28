@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { api, proofLabel, refundNote, usd, type Item, type List } from "../../api";
+import { ShopAgent } from "../../shop-agent";
 import { Check, Ring } from "../../ui";
 import { buttonAi, card, outline, row, useList } from "./list-context";
 
@@ -240,6 +241,7 @@ export default function ProgressPage() {
                 </button>
               )}
             </div>
+            <ShopAgent />
             {members.length > 0 && open.some((item) => !item.claimedBy) && (
               <button type="button" onClick={assign} className={outline}>
                 Share out the rest evenly

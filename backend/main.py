@@ -455,7 +455,12 @@ def create_order(list_id: str, request: Request, body=Depends(json_body)):
         return error("PAYMENT_PENDING", 409)
     if store_prices_changed(items):
         return error("PRICE_CHANGED", 409)
+    return open_order(list_id, items, member_id)
 
+
+def open_order(list_id: str, items: list[dict], member_id: str | None):
+    """Creates the PayPal order for these items at their saved prices and stores it, so the capture knows what it
+    paid for. The caller checked the items can be bought."""
     try:
         order = paypal.create_order(
             [{"name": item["name"], "priceCents": item["est_price_cents"], "quantity": item["quantity"]} for item in items],
@@ -607,6 +612,130 @@ def record_capture(order: dict, result: dict) -> dict:
 
 # A refund in any other state (COMPLETED, PENDING) is money on its way back to the buyer.
 REFUND_FAILED = ("FAILED", "CANCELLED")
+
+
+# Shopping agent
+
+SHOP_RUN = 10  # items searched in one run, at the same time
+NOT_SOLD = "No online store we search sells this. Buy it in person and scan the receipt."
+
+
+@app.post("/api/lists/{list_id}/shop")
+def shop_list(list_id: str, body=Depends(json_body)):
+    """The shopping agent (decision 61), {memberId?, mine?}: finds a real product for each open item (the member's
+    claimed ones with mine), checks the matches, and proposes a cart that fits what is left of the budget. It never
+    pays and saves nothing: the person edits the cart, then pays for it with PayPal (POST .../shop/checkout).
+    Each item searched costs one Channel3 search and one Ollama call, so a run takes at most 10 items."""
+    found = find("lists", list_id)
+    if not found:
+        return error("LIST_NOT_FOUND", 404)
+    body = body or {}
+    try:
+        member_id = member_of(list_id, body.get("memberId"))
+        mine = body.get("mine") is True
+        if mine and not member_id:
+            raise ValueError("whose items?")
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+
+    items = db.select("items", "position", list_id=list_id)
+    held = {item_id for order in db.select("orders", list_id=list_id, status="PENDING") for item_id in order["item_ids"]}
+    wanted = [i for i in items if not i["checked_at"] and i["id"] not in held and (not mine or i["claimed_by"] == member_id)]
+    run = wanted[:SHOP_RUN]
+    run_ids = {item["id"] for item in run}
+    # The budget left for this run: the budget, less what was spent and what the rest of the list is expected to cost.
+    budget = None
+    if found["budget_cents"] is not None:
+        spent = sum(item["price_cents"] or 0 for item in items if item["checked_at"])
+        rest = sum(money.line_cents(item) for item in items if not item["checked_at"] and item["id"] not in run_ids)
+        budget = max(found["budget_cents"] - spent - rest, 0)
+
+    # The cap is counted here, one search per item, before the searches run at the same time.
+    allowed = [item for item in run if allow("market", 100, 3600)]
+
+    def options(item: dict) -> list[dict] | None:
+        try:
+            return llm.store_matches(item["name"], item["note"], found["title"], market.search(item["name"]))[:5]
+        except Exception:
+            log.exception("Shopping search failed for %s", item["id"])
+            return None
+
+    with ThreadPoolExecutor(SHOP_RUN) as pool:
+        results = dict(zip((item["id"] for item in allowed), pool.map(options, allowed)))
+
+    lines, skipped = [], []
+    for item in run:
+        result = results.get(item["id"], "limit")
+        if result == "limit":
+            skipped.append({"itemId": item["id"], "reason": "Store searches are used up for this hour. Try again later."})
+        elif result is None:
+            skipped.append({"itemId": item["id"], "reason": "The store search didn't answer for this one. Try Find in stores on Items."})
+        elif not result:
+            skipped.append({"itemId": item["id"], "reason": NOT_SOLD})
+        else:
+            lines.append({"itemId": item["id"], "quantity": item["quantity"], "options": result})
+    cart, over = money.fit_cart(lines, budget)
+    skipped += [{"itemId": item_id, "reason": "Left out to stay within the budget."} for item_id in over]
+    return {
+        "cart": cart,
+        "skipped": skipped,
+        "totalCents": sum(line["product"]["priceCents"] * line["quantity"] for line in cart),
+        "budgetLeftCents": budget,
+        # Open items beyond this run, for another one.
+        "moreItems": len(wanted) - len(run),
+    }
+
+
+@app.post("/api/lists/{list_id}/shop/checkout")
+def shop_checkout(list_id: str, request: Request, body=Depends(json_body)):
+    """{memberId, picks: [{itemId, productId}], totalCents}: the cart the person approved. Each product is read again
+    from Channel3 and saved on its item at today's price (decision 50), then one PayPal order is opened for all of them.
+    If the fresh total isn't the one the person saw, the new prices are saved but no order is made (409 PRICE_CHANGED),
+    so they see the new total first. Nothing is ordered from the stores."""
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        picks = body["picks"]
+        if not isinstance(picks, list) or not 1 <= len(picks) <= SHOP_RUN:
+            raise ValueError("bad picks")
+        chosen = {an_id(pick["itemId"]): pick["productId"] for pick in picks}
+        if len(chosen) != len(picks) or not all(isinstance(p, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,100}", p) for p in chosen.values()):
+            raise ValueError("each item once, with a product")
+        seen_total = cents(body["totalCents"])
+        member_id = member_of(list_id, body.get("memberId"))
+        items = db.select("items", "position", list_id=list_id, id=list(chosen))
+        if len(items) != len(chosen) or any(item["checked_at"] for item in items):
+            raise ValueError("an item cannot be bought")
+    except BAD_INPUT:
+        return error("INVALID_ITEMS", 400)
+    if locked(member_id, request):
+        return error("NOT_YOURS", 403)
+    if any(set(order["item_ids"]) & set(chosen) for order in db.select("orders", list_id=list_id, status="PENDING")):
+        return error("PAYMENT_PENDING", 409)
+    if not all(allow("market", 100, 3600) for _ in chosen):
+        return error("TOO_MANY_REQUESTS", 429)
+
+    try:
+        with ThreadPoolExecutor(SHOP_RUN) as pool:
+            fresh = dict(zip(chosen, pool.map(market.get, chosen.values())))
+    except Exception:
+        log.exception("Product lookup failed")
+        return error("MARKET_UNAVAILABLE", 502)
+    if not all(fresh.values()):
+        return error("PRODUCT_NOT_FOUND", 404)
+
+    saved = []
+    for item in items:
+        product = fresh[item["id"]]
+        values = {"product": product | {"fetchedAt": now()}, "est_price_cents": product["priceCents"]}
+        # checked_at=None: an item checked off meanwhile keeps the price it was bought at.
+        rows = db.update("items", values, id=item["id"], checked_at=None)
+        if not rows:
+            return error("ITEM_CHECKED", 409)
+        saved.append(rows[0])
+    if sum(item["est_price_cents"] * item["quantity"] for item in saved) != seen_total:
+        return error("PRICE_CHANGED", 409)
+    return open_order(list_id, saved, member_id)
 
 
 # Settle up

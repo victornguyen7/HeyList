@@ -12,7 +12,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 4 | 5. Group accounting (narrow) | Done 2026-10-27 (see below) |
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
-| 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A and 7B built 2026-10-28; 7C–7F planned (see below) |
+| 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7C built 2026-10-28; 7D–7F planned (see below) |
 
 ### Phase 1 — purchase verification (done)
 
@@ -255,6 +255,22 @@ Order: 7A, 7B, 7C, then 7D–7F as time allows. 7A–7C come to about 4–6 days
   - the split after a settlement is even.
 
 #### 7C — "Shop this list for me" agent
+
+**Built 2026-10-28** (decision 61).
+
+| Part | Built |
+|---|---|
+| Search | `POST /api/lists/{id}/shop` with `{memberId, mine}`: up to 10 open items (all, or the member's claimed ones), bought and pending items left out, searched at the same time (`market.search()` then `llm.store_matches()`, up to 5 matches each). One search counts against the 100-an-hour cap per item; nothing is saved |
+| Budget | `money.fit_cart()`: closest match each; over the budget left (budget − spent − the rest of the list's estimates), move to the cheapest match, biggest saving first, then leave out the most expensive |
+| Plan on screen | `app/shop-agent.tsx` on Progress: a card per product (photo, store, price × quantity, link), a menu to swap to another match, Remove / Add back; each skipped item with its reason; "N more open items weren't searched" past 10 |
+| Pay | `POST /api/lists/{id}/shop/checkout` with `{memberId, picks, totalCents}`: every product read again from Channel3 and saved on its item, then one PayPal order through the same code as Pay with PayPal (`open_order()`). A changed total is saved and refused with `409 PRICE_CHANGED`; the page reloads the list to show it |
+
+- **Differs from the plan:** the button is on Progress only, with "Only the items I claimed" as a second choice. The plan route needs no member; paying does, as for Pay with PayPal.
+- **Tests:** 136 backend tests pass (new: closest match with room or no budget, biggest saving first, most expensive left out, the plan's cart and reasons with nothing saved, the budget left after spending and the rest of the list, one failed search skips only its item, bought and pending items left out and 10 a run, prices read again from Channel3 and one order, a changed price saved with no order, gone products and bought items refused). `tsc` and `eslint` clean.
+- **Not done yet:**
+  - A live run: each one costs one Channel3 search and one Ollama call per item, so it needs the owner's approval.
+  - Trying it in a browser.
+  - The demo scene in [SUBMISSION.md](SUBMISSION.md) (after it works live).
 
 - **Problem:** finding real products is manual. Each item needs its own **Find in stores** and **Choose**. That's the strongest place to show agentic commerce, and today it isn't agentic.
 - **Plan:** one button on Progress or Items, **Shop this list for me**, for the person's claimed items or all open items.
