@@ -41,7 +41,7 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 | Supabase | Postgres tables, the private `receipts` bucket (`supabase/schema.sql`), Auth (magic link) | Built. Realtime planned |
 | PayPal sandbox | Orders API: create, capture, read, refund. The buyer approves on PayPal's hosted page and is sent back to `APP_URL` (decision 56) | Built. Checkout JS SDK and Invoicing API planned |
 | Ollama API (cloud) | One LLM with vision (`OLLAMA_MODEL`, measured on `gemma4:31b`) | Built |
-| AWS Textract | Reading receipts, with a confidence per line | Built; the IAM user still lacks permission (issue 15), so Ollama reads receipts for now |
+| AWS Textract | Reading receipts, with a confidence per line | Built and tested on 289 real receipts (issue 15); Ollama reads receipts only when Textract is unavailable |
 | Channel3 | Real store products and prices (`backend/market.py`), results checked by the LLM (decision 51) | Built |
 | Render | Hosting both services from `render.yaml`: `heylist-api` (Python) and `heylist-web` (Node) | Built |
 | Anthropic (Claude Haiku) | Not used for now (decision 38); the key stays in `.env.local` for when it comes back | Off |

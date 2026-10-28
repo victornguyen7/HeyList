@@ -491,6 +491,56 @@ class ProductRoutesTest(RoutesTest):
         self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": [self.item["id"]]})
         self.assertEqual(create.call_args.args[0], [{"name": "Sunscreen", "priceCents": 950, "quantity": 2}])
 
+    def chosen_long_ago(self):
+        """The item has the product, chosen at 950 more than 10 minutes ago."""
+        self.mock_market("get", return_value=self.PRODUCT)
+        self.choose({"productId": "P1"})
+        product = self.db.tables["items"][0]["product"] | {"fetchedAt": "2026-01-01T00:00:00+00:00"}
+        self.db.update("items", {"product": product}, id=self.item["id"])
+
+    def pay(self):
+        return self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": [self.item["id"]]})
+
+    def test_a_store_price_changed_since_it_was_chosen_is_shown_before_paypal_charges_it(self):
+        self.chosen_long_ago()
+        lookup = self.mock_market("get", return_value=self.PRODUCT | {"priceCents": 1200})
+        create = self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+
+        self.assertEqual(self.pay().json(), {"error": "PRICE_CHANGED"})
+        create.assert_not_called()
+        self.assertEqual(self.db.tables["items"][0]["est_price_cents"], 1200)
+        # Paying again charges the new price, without asking Channel3 a second time.
+        self.pay()
+        self.assertEqual(create.call_args.args[0], [{"name": "Sunscreen", "priceCents": 1200, "quantity": 2}])
+        lookup.assert_called_once_with("P1")
+
+    def test_an_unchanged_store_price_goes_straight_to_paypal(self):
+        self.chosen_long_ago()
+        lookup = self.mock_market("get", return_value=self.PRODUCT)
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+
+        self.assertEqual(self.pay().json()["orderId"], "ORDER1")
+        lookup.assert_called_once()
+        self.assertNotEqual(self.db.tables["items"][0]["product"]["fetchedAt"], "2026-01-01T00:00:00+00:00")
+
+    def test_a_product_the_store_stopped_selling_loses_its_store_label(self):
+        self.chosen_long_ago()
+        self.mock_market("get", return_value=None)
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+
+        self.assertEqual(self.pay().json(), {"error": "PRICE_CHANGED"})
+        item = self.db.tables["items"][0]
+        self.assertEqual((item["product"], item["est_price_cents"]), (None, 950))
+
+    def test_checkout_still_works_at_the_saved_price_when_channel3_is_down(self):
+        self.chosen_long_ago()
+        self.mock_market("get", side_effect=httpx.ConnectError("down"))
+        create = self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+
+        with self.assertLogs(main.log):
+            self.assertEqual(self.pay().json()["orderId"], "ORDER1")
+        self.assertEqual(create.call_args.args[0][0]["priceCents"], 950)
+
     def test_renaming_or_repricing_drops_the_product(self):
         self.mock_market("get", return_value=self.PRODUCT)
         for change in ({"name": "Sun cream"}, {"estPriceCents": 700}):

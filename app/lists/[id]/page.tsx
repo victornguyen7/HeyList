@@ -80,7 +80,10 @@ export default function ProgressPage() {
       });
       window.location.assign(approveUrl);
     } catch (e) {
-      setStatus(`Could not start checkout: ${(e as Error).message}`);
+      const err = e as Error & { code?: string };
+      // The backend saved the store's new price (issue 42): show the new total before they pay again.
+      if (err.code === "PRICE_CHANGED") setList(await api<List>(`/api/lists/${list.id}`).catch(() => list));
+      setStatus(err.code === "PRICE_CHANGED" ? err.message : `Could not start checkout: ${err.message}`);
       setBusy(false);
     }
   }

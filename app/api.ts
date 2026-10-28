@@ -124,6 +124,7 @@ const MESSAGES: Record<string, string> = {
   ORDER_NOT_PENDING: "That payment is no longer pending. Reload the page to see it.",
   MARKET_UNAVAILABLE: "Store search is not available right now. Try again in a moment.",
   PRODUCT_NOT_FOUND: "That product is no longer available. Search again.",
+  PRICE_CHANGED: "A store price changed since it was chosen, or the store stopped selling it. Check the new total, then pay again.",
   ITEM_CHECKED: "That item has already been bought.",
   NOT_YOURS: "That person joined with an account. Only they can do this, logged in.",
   NAME_TAKEN: "Someone with an account already uses that name on this list. Pick another, or log in if it's you.",

@@ -440,6 +440,8 @@ def create_order(list_id: str, request: Request, body=Depends(json_body)):
     # An item whose payment is pending at PayPal may still go through, so it can't be paid for a second time yet.
     if any(set(order["item_ids"]) & {item["id"] for item in items} for order in db.select("orders", list_id=list_id, status="PENDING")):
         return error("PAYMENT_PENDING", 409)
+    if store_prices_changed(items):
+        return error("PRICE_CHANGED", 409)
 
     try:
         order = paypal.create_order(
@@ -467,6 +469,32 @@ def create_order(list_id: str, request: Request, body=Depends(json_body)):
         ],
     )
     return order
+
+
+def store_prices_changed(items: list[dict]) -> bool:
+    """Reads each chosen store product again before checkout, so PayPal charges the store's price of today, not of
+    when it was chosen (issue 42). A new price, or a product the store no longer sells, is saved on the item and True
+    comes back, so the buyer sees the new total before paying. Read in the last 10 minutes, or Channel3 out of reach
+    or over its cap: the saved price is charged, since nothing is bought from the store."""
+    changed = False
+    for item in items:
+        product = item["product"]
+        try:
+            age = datetime.now(timezone.utc) - datetime.fromisoformat(product["fetchedAt"])
+        except (KeyError, TypeError, ValueError):  # no product, or one saved without a time
+            age = None
+        if not product or (age and age.total_seconds() < 600) or not allow("market", 100, 3600):
+            continue
+        try:
+            fresh = market.get(product["productId"])
+        except Exception:
+            log.exception("Store price check failed; charging the saved price")
+            continue
+        # Gone from the store: the last price seen stays, as an estimate without a store label.
+        values = {"product": fresh | {"fetchedAt": now()}, "est_price_cents": fresh["priceCents"]} if fresh else {"product": None}
+        db.update("items", values, id=item["id"], checked_at=None, order_id=None)
+        changed |= not fresh or fresh["priceCents"] != item["est_price_cents"]
+    return changed
 
 
 @app.post("/api/orders/{order_id}/capture")
