@@ -15,7 +15,8 @@ export type Split = {
     paidCents: number;
     shareCents: number;
     balanceCents: number;
-    purchases: { itemId: string; cents: number; boughtTwice: boolean }[];
+    // feesOf is set on a receipt's share of its tax, tip and fees (itemId is then null).
+    purchases: { itemId: string | null; cents: number; boughtTwice: boolean; feesOf: string | null }[];
   }[];
   transfers: { from: string; to: string; amountCents: number }[];
 };
@@ -170,7 +171,17 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
               ) : (
                 <ul className="mt-2 flex flex-col gap-1">
                   {m.purchases.map((line, index) => {
-                    const bought = item(line.itemId);
+                    const bought = line.itemId ? item(line.itemId) : undefined;
+                    if (line.feesOf) {
+                      return (
+                        <li key={index} className="flex justify-between gap-2 tabular-nums">
+                          <span>
+                            Tax, tip and fees<span className="text-muted"> · list items&apos; share, on a receipt</span>
+                          </span>
+                          <span>{usd(line.cents)}</span>
+                        </li>
+                      );
+                    }
                     return (
                       <li key={index} className="flex justify-between gap-2 tabular-nums">
                         <span>
@@ -189,7 +200,8 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
             </details>
           ))}
           <p className="text-[13px] text-muted">
-            Only list items count. Receipt lines that weren&apos;t on the list are personal and not shared
+            Only list items count, with their part of a receipt&apos;s tax, tip and fees. Receipt lines that weren&apos;t on the list,
+            and their part of the fees, are personal and not shared
             {split.unattributedCents > 0 && `, and ${usd(split.unattributedCents)} checked off without a name isn't counted`}.
           </p>
         </section>

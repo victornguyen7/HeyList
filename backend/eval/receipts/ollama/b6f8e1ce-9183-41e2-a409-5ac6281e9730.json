@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"LID/SS21/012 GREY\",\n      \"priceCents\": 44900\n    },\n    {\n      \"text\": \"LID/SS21/076 WHITE\",\n      \"priceCents\": 34900\n    },\n    {\n      \"text\": \"WAH/SS21/001 GREEN\",\n      \"priceCents\": 19900\n    }\n  ],\n  \"totalCents\": 64700\n}\n```"}

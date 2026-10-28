@@ -21,7 +21,12 @@ COLUMNS = {
     for table, body in re.findall(r"create table if not exists (\w+) \((.*?)\n\);", SCHEMA, re.S)
 }
 # Column defaults the routes read back.
-DEFAULTS = {"lists": {"kind": "other"}, "items": {"position": 0, "quantity": 1}, "orders": {"status": "CREATED", "prices": {}, "refunds": {}}}
+DEFAULTS = {
+    "lists": {"kind": "other"},
+    "items": {"position": 0, "quantity": 1, "price_typed": False},
+    "orders": {"status": "CREATED", "prices": {}, "refunds": {}},
+    "receipts": {"lines": [], "fees": [], "extras": []},
+}
 
 
 def generate(table, row):
@@ -605,6 +610,7 @@ class ReceiptTest(RoutesTest):
         {"text": "MILK 2%", "priceCents": 429, "confidence": 98.0, "lowConfidence": False},
         {"text": "GUM", "priceCents": 199, "confidence": 75.0, "lowConfidence": True},
     ]
+    FEES = [{"kind": "tax", "name": "TAX", "amountCents": 75}]
 
     def setUp(self):
         super().setUp()
@@ -613,7 +619,8 @@ class ReceiptTest(RoutesTest):
         self.member = self.client.post(f"/api/lists/{self.list['id']}/members", json={"name": "Ann"}).json()["id"]
 
     def scan(self, content_type="image/jpeg", body=b"photo", read=None, matches=None):
-        for name, value in (("read_receipt", read or {"lines": self.LINES, "totalCents": 1057}), ("match_lines", matches)):
+        read = read or {"lines": self.LINES, "fees": self.FEES, "totalCents": 1132}
+        for name, value in (("read_receipt", read), ("match_lines", matches)):
             patch = mock.patch.object(receipts, name, **({"side_effect": value} if isinstance(value, Exception) else {"return_value": value}))
             patch.start()
             self.addCleanup(patch.stop)
@@ -642,6 +649,51 @@ class ReceiptTest(RoutesTest):
         again = self.client.post(f"/api/receipts/{receipt['id']}/confirm", json={"itemIds": [None, None, None]})
         self.assertEqual(again.status_code, 409)
 
+    def test_fees_are_kept_and_shared_with_the_items_they_were_charged_on(self):
+        bob = self.client.post(f"/api/lists/{self.list['id']}/members", json={"name": "Bob"}).json()["id"]
+        receipt = self.scan(matches=[self.milk, self.milk, None]).json()
+        self.assertEqual(receipt["fees"], self.FEES)
+
+        state = self.client.post(f"/api/receipts/{receipt['id']}/confirm", json={"itemIds": [self.milk, self.milk, None]}).json()
+
+        # 75 cents of tax on 858 of milk for the list and 199 of gum for Ann: 61 is shared, 14 stays Ann's.
+        ann = next(m for m in state["split"]["members"] if m["memberId"] == self.member)
+        self.assertEqual(ann["purchases"][-1], {"itemId": None, "cents": 61, "boughtTwice": False, "feesOf": receipt["id"]})
+        self.assertEqual(state["split"]["totalCents"], 858 + 61)
+        self.assertEqual([m["shareCents"] for m in state["split"]["members"] if m["memberId"] in (self.member, bob)], [460, 459])
+
+    def test_a_price_the_photo_left_blank_is_typed_in_and_marked_typed(self):
+        lines = [self.LINES[0] | {"priceCents": None}, self.LINES[2]]
+        fees = [{"kind": "tax", "name": "TAX", "amountCents": None}, {"kind": "discount", "name": "COUPON", "amountCents": None}]
+        receipt = self.scan(read={"lines": lines, "fees": fees, "totalCents": 700}, matches=[self.milk, None]).json()
+
+        # A price the photo gave (gum) can't be changed from the browser.
+        state = self.client.post(
+            f"/api/receipts/{receipt['id']}/confirm", json={"itemIds": [self.milk, None], "prices": [450, 1], "feeAmounts": [60, 9]}
+        ).json()
+
+        milk = next(i for i in state["items"] if i["name"] == "Milk")
+        self.assertEqual((milk["priceCents"], milk["priceTyped"]), (450, True))
+        stored = state["receipts"][0]
+        self.assertEqual([(line["priceCents"], line.get("typed")) for line in stored["lines"]], [(450, True), (199, None)])
+        self.assertEqual([fee["amountCents"] for fee in stored["fees"]], [60, -9])
+        self.assertEqual(stored["extras"], [{"name": "GUM", "priceCents": 199}])
+        # A typed price is self-reported: price memory leaves it out.
+        self.assertEqual(main.remember_prices([{"name": "Milk", "estPriceCents": 300}])[0]["priceSource"], "estimate")
+
+    def test_a_price_left_blank_checks_the_item_off_without_a_price(self):
+        receipt = self.scan(read={"lines": [self.LINES[0] | {"priceCents": None}], "fees": [], "totalCents": None}, matches=[self.milk]).json()
+
+        state = self.client.post(f"/api/receipts/{receipt['id']}/confirm", json={"itemIds": [self.milk], "prices": [None]}).json()
+
+        milk = next(i for i in state["items"] if i["name"] == "Milk")
+        self.assertEqual((milk["priceCents"], milk["priceTyped"], milk["receiptId"]), (None, False, receipt["id"]))
+        for prices in ([1.5], [-1], [450, 450], "450"):
+            with self.subTest(prices=prices):
+                other = self.scan(read={"lines": [self.LINES[1] | {"priceCents": None}], "fees": [], "totalCents": None}, matches=[None]).json()
+                response = self.client.post(f"/api/receipts/{other['id']}/confirm", json={"itemIds": [None], "prices": prices})
+                self.assertEqual(response.status_code, 400)
+
     def test_confirm_racing_a_capture_or_another_confirm_checks_nothing_off_twice(self):
         receipt = self.scan(matches=[self.milk, None, None]).json()
         # Both happen after the route read the receipt and the items, as when two requests overlap.
@@ -669,7 +721,7 @@ class ReceiptTest(RoutesTest):
     def test_bad_uploads_and_scan_failures(self):
         self.assertEqual(self.scan(content_type="image/gif").status_code, 415)
         self.assertEqual(self.scan(body=b"x" * (main.MAX_RECEIPT_BYTES + 1)).status_code, 413)
-        self.assertEqual(self.scan(read={"lines": [], "totalCents": None}).status_code, 422)
+        self.assertEqual(self.scan(read={"lines": [], "fees": [], "totalCents": None}).status_code, 422)
         self.assertEqual(self.scan(read=receipts.ReceiptError("UNREADABLE_IMAGE")).json(), {"error": "UNREADABLE_IMAGE"})
         self.assertEqual(self.scan(read=receipts.ReceiptError("MATCHING_UNAVAILABLE")).status_code, 502)
         self.assertNotIn("receipts", self.db.tables)

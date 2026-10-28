@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"010100 Pay parking ticket\",\n      \"priceCents\": 2000\n    }\n  ],\n  \"totalCents\": 2000\n}\n```"}

@@ -163,13 +163,13 @@ def lists_state(list_ids: list[str]) -> list[dict]:
             "invoices": invoices.result()[list_id],
         }
         # Sent with the list, so Money and Settle up don't wait for a second request.
-        split = settled(parts["items"], parts["members"], parts["orders"])
+        split = settled(parts["items"], parts["members"], parts["orders"], parts["receipts"])
         return {**camel(row), **{key: [camel(r) for r in rs] for key, rs in parts.items()}, "split": split}
 
     return [state(row) for row in found.result()]
 
 
-def settled(items: list[dict], members: list[dict], orders: list[dict]) -> dict:
+def settled(items: list[dict], members: list[dict], orders: list[dict], receipts: list[dict] = ()) -> dict: # pyright: ignore[reportArgumentType]
     """What each member paid, their equal share, and who pays whom, from the list's rows."""
     paid = [
         # A refunded charge was given back, so it is not money the buyer spent.
@@ -177,7 +177,7 @@ def settled(items: list[dict], members: list[dict], orders: list[dict]) -> dict:
         for order in orders
         if order["status"] == "COMPLETED"
     ]
-    return money.split(items, [member["id"] for member in members], paid)
+    return money.split(items, [member["id"] for member in members], paid, receipts)
 
 
 def list_state(list_id: str) -> dict:
@@ -334,7 +334,7 @@ def update_item(item_id: str, request: Request, body=Depends(json_body)):
                 "price_cents": cents(body.get("priceCents")),
             }
         elif body.get("checked") is False:
-            values |= {"checked_at": None, "bought_by": None, "price_cents": None, "receipt_id": None}
+            values |= {"checked_at": None, "bought_by": None, "price_cents": None, "receipt_id": None, "price_typed": False}
         if not values:
             raise ValueError("nothing to change")
     except BAD_INPUT:
@@ -571,8 +571,9 @@ def remember_prices(items: list[dict]) -> list[dict]:
     keys = {item["name"].strip().lower() for item in items}
     paid, store = defaultdict(list), {}
     for row in db.select("items", "created_at", name_key=list(keys)):
-        # Proven only: a PayPal capture or a confirmed receipt. Prices typed in with a hand tick are self-reported.
-        if row["checked_at"] and row["price_cents"] and (row["order_id"] or row["receipt_id"]):
+        # Proven only: a PayPal capture or a price read from a confirmed receipt. Prices typed in, with a hand tick
+        # or for a receipt line that couldn't be read, are self-reported.
+        if row["checked_at"] and row["price_cents"] and (row["order_id"] or (row["receipt_id"] and not row.get("price_typed"))):
             paid[row["name_key"]].append(round(row["price_cents"] / row["quantity"]))
         if row["product"]:
             store[row["name_key"]] = row["product"]["priceCents"]
@@ -692,14 +693,27 @@ def _scan(list_id: str, member_id, image: bytes, content_type: str, request: Req
         "image_path": path,
         "total_cents": read["totalCents"],
         "lines": [line | {"itemId": item_id} for line, item_id in zip(read["lines"], proposed)],
+        "fees": read["fees"],
     }
     return camel(db.insert("receipts", [row])[0])
 
 
+def typed_amounts(values, rows: list[dict], key: str) -> list[int | None]:
+    """The amounts the person typed for rows the photo left blank: one entry per row, None where nothing was typed.
+    A row the photo gave an amount for keeps it, whatever is sent (decision 21)."""
+    if values is None:
+        return [None] * len(rows)
+    if not isinstance(values, list) or len(values) != len(rows):
+        raise ValueError("one amount or null per row")
+    return [cents(value) if row[key] is None else None for value, row in zip(values, rows)]
+
+
 @app.post("/api/receipts/{receipt_id}/confirm")
 def confirm_receipt(receipt_id: str, request: Request, body=Depends(json_body)):
-    """Applies the matches the person confirmed or corrected: {"itemIds": [item ID or null, one per line]}.
-    Matched items are checked off with the receipt's prices; the rest of the lines become extras."""
+    """Applies the matches the person confirmed or corrected: {"itemIds": [item ID or null, one per line]}, and
+    optionally what they typed where the photo gave no amount: "prices" (one per line) and "feeAmounts" (one per
+    fee), each in cents or null; a discount is typed as a positive amount. Matched items are checked off with
+    the receipt's prices; the rest of the lines become extras. Typed prices are marked typed (decision 57)."""
     receipt = find("receipts", receipt_id)
     if not receipt:
         return error("RECEIPT_NOT_FOUND", 404)
@@ -707,11 +721,13 @@ def confirm_receipt(receipt_id: str, request: Request, body=Depends(json_body)):
         return error("RECEIPT_CONFIRMED", 409)
     if locked(receipt["member_id"], request):
         return error("NOT_YOURS", 403)
-    lines = receipt["lines"]
+    lines, fees = receipt["lines"], receipt.get("fees") or []
     try:
         item_ids = body["itemIds"]
         if not isinstance(item_ids, list) or len(item_ids) != len(lines):
             raise ValueError("one item ID or null per line")
+        prices = typed_amounts(body.get("prices"), lines, "priceCents")
+        fee_amounts = typed_amounts(body.get("feeAmounts"), fees, "amountCents")
         chosen = {an_id(item_id) for item_id in item_ids if item_id is not None}
         items = {item["id"]: item for item in db.select("items", list_id=receipt["list_id"], id=list(chosen))}
         # Every chosen item must be on this list and still open.
@@ -725,7 +741,13 @@ def confirm_receipt(receipt_id: str, request: Request, body=Depends(json_body)):
     if not db.update("receipts", {"confirmed_at": checked_at}, id=receipt["id"], confirmed_at=None):
         return error("RECEIPT_CONFIRMED", 409)
 
-    # Prices come from the stored lines, never the browser (decision 21). Several lines can be one item.
+    # Prices come from the stored lines, never the browser (decision 21), except one the photo didn't give.
+    lines = [line | {"priceCents": price, "typed": True} if price is not None else line for line, price in zip(lines, prices)]
+    fees = [
+        fee | {"amountCents": -amount if fee["kind"] == "discount" else amount, "typed": True} if amount else fee
+        for fee, amount in zip(fees, fee_amounts)
+    ]
+    # Several lines can be one item.
     by_item: dict[str, list[dict]] = {item_id: [] for item_id in items}
     unmatched = []
     for line, item_id in zip(lines, item_ids):
@@ -735,10 +757,13 @@ def confirm_receipt(receipt_id: str, request: Request, body=Depends(json_body)):
             by_item[str(uuid.UUID(item_id))].append(line)
 
     for item_id, item_lines in by_item.items():
+        item_prices = [line["priceCents"] for line in item_lines]
         values = {
             "checked_at": checked_at,
             "bought_by": receipt["member_id"],
-            "price_cents": sum(line["priceCents"] for line in item_lines),
+            # Unknown when a line's price is still blank: part of a price would understate what was paid.
+            "price_cents": None if None in item_prices else sum(item_prices),
+            "price_typed": any(line.get("typed") for line in item_lines),
             "receipt_id": receipt["id"],
         }
         # checked_at=None: an item checked off since the check above (a PayPal capture, another receipt) keeps
@@ -746,7 +771,7 @@ def confirm_receipt(receipt_id: str, request: Request, body=Depends(json_body)):
         if not db.update("items", values, id=item_id, checked_at=None):
             unmatched += item_lines
     extras = [{"name": line["text"], "priceCents": line["priceCents"]} for line in unmatched]
-    db.update("receipts", {"extras": extras}, id=receipt["id"])
+    db.update("receipts", {"lines": lines, "fees": fees, "extras": extras}, id=receipt["id"])
     return list_state(receipt["list_id"])
 
 

@@ -9,10 +9,12 @@ import { card, useList } from "../list-context";
 export default function MoneyPage() {
   const { list, me } = useList();
   const split = useSplit(list);
-  const spent = list.items.reduce((sum, item) => sum + (item.checkedAt ? (item.priceCents ?? 0) : 0), 0);
+  // The list items' part of receipt tax, tip and fees counts as spent on the list, as it does in the split.
+  const fees = split?.members.flatMap((m) => m.purchases).reduce((sum, line) => sum + (line.feesOf ? line.cents : 0), 0) ?? 0;
+  const spent = list.items.reduce((sum, item) => sum + (item.checkedAt ? (item.priceCents ?? 0) : 0), fees);
   const left = list.items.reduce((sum, item) => sum + (item.checkedAt ? 0 : (item.estPriceCents ?? 0) * item.quantity), 0);
   const extras = list.receipts.filter((r) => r.confirmedAt).flatMap((r) => r.extras);
-  const extrasCents = extras.reduce((sum, extra) => sum + extra.priceCents, 0);
+  const extrasCents = extras.reduce((sum, extra) => sum + (extra.priceCents ?? 0), 0);
 
   return (
     <div className="flex flex-col gap-[18px] lg:flex-row lg:items-start lg:gap-10">

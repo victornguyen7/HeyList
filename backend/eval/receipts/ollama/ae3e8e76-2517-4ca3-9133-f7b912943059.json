@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Gourmet Cheese Cracke\",\n      \"priceCents\": 3900\n    },\n    {\n      \"text\": \"D's Candy Palmier 425g\",\n      \"priceCents\": 13000\n    },\n    {\n      \"text\": \"Danone Light Yogurt 170\",\n      \"priceCents\": 1000\n    }\n  ],\n  \"totalCents\": 17900\n}\n```"}

@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"beef barbecue\",\n      \"priceCents\": 110526\n    },\n    {\n      \"text\": \"fried noodles w\",\n      \"priceCents\": 47368\n    },\n    {\n      \"text\": \"vegetables\",\n      \"priceCents\": 60520\n    }\n  ],\n  \"totalCents\": 13499\n}\n```"}

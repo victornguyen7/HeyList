@@ -43,3 +43,8 @@ next-env.d.ts
 
 # python
 __pycache__/
+
+# receipt eval photos (downloaded from ReceiptQA by backend/eval_receipts.py prepare)
+/backend/eval/receipts/images/
+/backend/eval/receipts/english/*/*.jpg
+/backend/eval/receipts/english/*/*.png

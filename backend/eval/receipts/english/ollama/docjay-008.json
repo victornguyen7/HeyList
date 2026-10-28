@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "prompt": "e80db468af52", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Ribeye Steak Lunch 10\",\n      \"priceCents\": 1000\n    }\n  ],\n  \"fees\": [\n    {\n      \"kind\": \"tax\",\n      \"name\": \"Tax\",\n      \"amountCents\": 95\n    }\n  ],\n  \"totalCents\": 1095\n}\n```"}

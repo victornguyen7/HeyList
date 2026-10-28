@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "prompt": "e80db468af52", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"40 BONELESS WINGS SPEC\",\n      \"priceCents\": 1000\n    }\n  ],\n  \"fees\": [\n    {\n      \"kind\": \"tax\",\n      \"name\": \"Tax::\",\n      \"amountCents\": 70\n    }\n  ],\n  \"totalCents\": 1070\n}\n```"}

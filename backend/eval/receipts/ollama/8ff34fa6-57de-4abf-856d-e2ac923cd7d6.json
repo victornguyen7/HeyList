@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"SHORTY SWIM 100 BLUE BLUE*** RFID: 30610000\",\n      \"priceCents\": 39900\n    }\n  ],\n  \"totalCents\": 39900\n}\n```"}

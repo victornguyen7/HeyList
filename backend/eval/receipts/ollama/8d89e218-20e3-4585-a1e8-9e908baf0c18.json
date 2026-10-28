@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"HP Gam.N/B 15-DK0056WM C15 B1\",\n      \"priceCents\": 1529900\n    }\n  ],\n  \"totalCents\": 1529900\n}\n```"}

@@ -32,7 +32,19 @@ export default function ReceiptsPage() {
               {receipt.lines.map((line, index) => (
                 <li key={index} className="flex justify-between gap-2 tabular-nums">
                   <span>{itemName(line.itemId) ?? <span className="text-muted">{line.text} (extra)</span>}</span>
-                  <span>{usd(line.priceCents)}</span>
+                  <span>
+                    {line.priceCents !== null ? usd(line.priceCents) : "—"}
+                    {line.typed && <span className="text-muted"> (typed)</span>}
+                  </span>
+                </li>
+              ))}
+              {(receipt.fees ?? []).map((fee, index) => (
+                <li key={`fee${index}`} className="flex justify-between gap-2 text-muted tabular-nums">
+                  <span>{fee.name}</span>
+                  <span>
+                    {fee.amountCents !== null ? usd(fee.amountCents) : "—"}
+                    {fee.typed && " (typed)"}
+                  </span>
                 </li>
               ))}
             </ul>

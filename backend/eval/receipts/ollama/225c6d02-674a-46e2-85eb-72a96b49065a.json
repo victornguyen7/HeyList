@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Long Sleev\",\n      \"priceCents\": 49900\n    }\n  ],\n  \"totalCents\": 49900\n}\n```"}

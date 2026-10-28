@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Gourmet Mascarpone Ch\",\n      \"priceCents\": 360\n    },\n    {\n      \"text\": \"Cooks Cornstarch 240g\",\n      \"priceCents\": 1800\n    },\n    {\n      \"text\": \"Falcon L.AluminiumFoilP\",\n      \"priceCents\": 12190\n    }\n  ],\n  \"totalCents\": 14350\n}\n```"}

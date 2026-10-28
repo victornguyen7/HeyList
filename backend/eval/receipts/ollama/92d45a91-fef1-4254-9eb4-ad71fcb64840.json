@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Filtered Coffee merkan 250g\",\n      \"priceCents\": 9500\n    },\n    {\n      \"text\": \"Coffee Special Medium 250g\",\n      \"priceCents\": 9500\n    }\n  ],\n  \"totalCents\": 19000\n}\n```"}

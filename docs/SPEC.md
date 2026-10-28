@@ -103,16 +103,16 @@ Every item can have a person responsible for buying it, and the list keeps who p
 
 - **Responsibility:** anyone on the list picks "Ann buys it" on an item (`claimed_by`). "Share out the rest evenly" gives every open, unclaimed item to someone, most expensive first to whoever carries the least estimated cost so far (`POST /api/lists/{id}/assign`).
 - **Paying and price:** when an item is bought (PayPal order, receipt, or checked off with a price), the item records who paid (`bought_by`) and what was paid for all of it (`price_cents`).
-- **Settling up:** the Money panel shows what each person paid, their equal share of what was spent, and the fewest payments that even it out ("Cat pays Ann $20.00"), from `GET /api/lists/{id}/split`. Receipt extras are personal and not split; an item checked off without a name is reported, not split.
+- **Settling up:** the Money panel shows what each person paid, their equal share of what was spent, and the fewest payments that even it out ("Cat pays Ann $20.00"), from `GET /api/lists/{id}/split`. Receipt extras are personal and not split; a receipt's tax, tip and fees are split in proportion to the list items on it, and the part for its extras stays with the buyer (decision 57). An item checked off without a name is reported, not split.
 - Next: send those payments as PayPal invoices (Settle-up page).
 
 ### Receipt scanning (built)
 
 1. On the list, "Take a photo of the receipt" opens the phone's back camera (`<input type="file" capture="environment">`; a file picker on a computer). The photo is shrunk to 2000 px JPEG in the browser.
-2. **AWS Textract** (`AnalyzeExpense`) reads it into line items, each with its price and a confidence score; lines under 90% confidence are flagged "hard to read". While Textract is unavailable, the Ollama vision model reads the photo instead (no confidence scores).
+2. **AWS Textract** (`AnalyzeExpense`) reads it into line items, each with its price and a confidence score, and its fees (tax, tip, service, delivery, discounts). A price under 90% confidence is left blank for the person to type rather than guessed (decision 57); a line under 90% is flagged "hard to read". While Textract is unavailable, the Ollama vision model reads the photo instead (no confidence scores; it is told to leave a price it can't read blank).
 3. **The Ollama model** (one text-only call with a JSON schema; decision 38) matches each line to an open list item or to none. It sees item names and receipt text only, never IDs or prices.
-4. The person checks the proposals and corrects any line with a dropdown (decision 5), then confirms.
-5. Matched items are checked off with the receipt's prices (several lines can be one item) and the scanner as buyer; unmatched lines become extras. The photo is kept in the private `receipts` bucket as proof.
+4. The person checks the proposals and corrects any line with a dropdown (decision 5), types any blank price or fee (or leaves it blank), then confirms. The screen says whether the lines and fees add up to the receipt total.
+5. Matched items are checked off with the receipt's prices (several lines can be one item) and the scanner as buyer; unmatched lines become extras. A typed price is marked typed. The photo is kept in the private `receipts` bucket as proof.
 
 ### Photo recognition (planned: spec and learning plan only)
 

@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"1 Duo(ChocoHazeINut/Fruits)\",\n      \"priceCents\": 28571\n    }\n  ],\n  \"totalCents\": 30000\n}\n```"}

@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Waffarha 275 EGP Card #: 14935218\",\n      \"priceCents\": 27500\n    }\n  ],\n  \"totalCents\": 27500\n}\n```"}

@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Wadi Kalamata Black Oli\",\n      \"priceCents\": 7700\n    }\n  ],\n  \"totalCents\": 7700\n}\n```"}

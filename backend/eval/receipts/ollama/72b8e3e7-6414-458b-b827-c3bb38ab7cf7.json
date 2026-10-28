@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"LID/SS21/075 UN FUSHIA\",\n      \"priceCents\": 38900\n    },\n    {\n      \"text\": \"LUCKY\",\n      \"priceCents\": 38900\n    }\n  ],\n  \"totalCents\": 35010\n}\n```"}

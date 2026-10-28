@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "prompt": "e80db468af52", "reply": "```json\n{\"lines\": [], \"fees\": [{\"kind\": \"tax\", \"name\": \"TAX 1\", \"amountCents\": 49}], \"totalCents\": 743}\n```"}

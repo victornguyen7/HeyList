@@ -1,0 +1,2642 @@
+[
+ {
+  "id": "04c85f16-c99a-4c3c-b631-e2f5316c0a7d",
+  "items": [
+   {
+    "name": "12 Donuts",
+    "quantity": 1,
+    "priceCents": 13596
+   }
+  ],
+  "totalCents": 15500,
+  "subtotalCents": 13596,
+  "taxCents": 1903,
+  "merchant": "Dunkin' Egypt - Moon Valley"
+ },
+ {
+  "id": "3d9a82f0-1c00-47fa-8a74-c442ddda0d9f",
+  "items": [
+   {
+    "name": "Col.Me EDT Gold 90ml 2s P/0",
+    "quantity": 1,
+    "priceCents": 67075
+   },
+   {
+    "name": "PARKING FREE COUPON_",
+    "quantity": 1,
+    "priceCents": null
+   }
+  ],
+  "totalCents": 67075,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Lulu Hypermarket,"
+ },
+ {
+  "id": "8ff34fa6-57de-4abf-856d-e2ac923cd7d6",
+  "items": [
+   {
+    "name": "SHORTY SWIM 100 BLUE BLUE ***",
+    "quantity": 1,
+    "priceCents": 39900
+   }
+  ],
+  "totalCents": 39900,
+  "subtotalCents": null,
+  "taxCents": 4900,
+  "merchant": "Decathlon Mall Of Arabia"
+ },
+ {
+  "id": "e15537ef-7ff1-40e7-804d-b35c9a8fd2ff",
+  "items": [
+   {
+    "name": "InstaShop Delivery Charge",
+    "quantity": 1,
+    "priceCents": 2000
+   },
+   {
+    "name": "MeatKobebaW.PineNuts, 14pcs",
+    "quantity": 2,
+    "priceCents": 220
+   },
+   {
+    "name": "Vegetarian Vine Leaves 1Kg",
+    "quantity": 6,
+    "priceCents": 66000
+   },
+   {
+    "name": "Red Bull Energy Drink250ml",
+    "quantity": 2,
+    "priceCents": 5000
+   },
+   {
+    "name": "KinderBuenoChoc.HazelnutCr.2",
+    "quantity": 4,
+    "priceCents": 4800
+   }
+  ],
+  "totalCents": 99800,
+  "subtotalCents": null,
+  "taxCents": 614,
+  "merchant": "BGOURMET\nFOOD STORES"
+ },
+ {
+  "id": "38f05478-adb5-416e-8e7e-20962984e815",
+  "items": [
+   {
+    "name": "صينية مدورة روزانا رقم 2 ابيض",
+    "quantity": 1,
+    "priceCents": 5490
+   },
+   {
+    "name": "معلقة اكل مدهب 6ق Meridien",
+    "quantity": 1,
+    "priceCents": 18610
+   },
+   {
+    "name": "ملعقة شاى 6ق 130",
+    "quantity": 1,
+    "priceCents": 4990
+   },
+   {
+    "name": "صينية نادين مقاس 3 الوان",
+    "quantity": 1,
+    "priceCents": 10190
+   },
+   {
+    "name": "مدور حلة (18-20-24-28) + مقلاية",
+    "quantity": 1,
+    "priceCents": 13400
+   }
+  ],
+  "totalCents": 174395,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Al Morshedy Marts"
+ },
+ {
+  "id": "25e50069-999e-4a3b-91d9-13bebe981954",
+  "items": [
+   {
+    "name": "GREY",
+    "quantity": 1,
+    "priceCents": 6900
+   },
+   {
+    "name": "GREY",
+    "quantity": 1,
+    "priceCents": 8900
+   },
+   {
+    "name": "BLUE",
+    "quantity": 2,
+    "priceCents": 13800
+   },
+   {
+    "name": "BLUE",
+    "quantity": 2,
+    "priceCents": 17800
+   }
+  ],
+  "totalCents": 47400,
+  "subtotalCents": 47400,
+  "taxCents": null,
+  "merchant": "ACTIVA"
+ },
+ {
+  "id": "899f825d-f7db-4a7d-989f-a2e127ce66ec",
+  "items": [
+   {
+    "name": "U3045AZ\nShort",
+    "quantity": 1,
+    "priceCents": 16900
+   },
+   {
+    "name": "U3041AZ\nBermuda",
+    "quantity": 1,
+    "priceCents": 14900
+   },
+   {
+    "name": "U7504AZ\nShort Slee",
+    "quantity": 1,
+    "priceCents": 12900
+   },
+   {
+    "name": "V5245AZ\nShort Slee",
+    "quantity": 1,
+    "priceCents": 1690000
+   }
+  ],
+  "totalCents": 6160000,
+  "subtotalCents": null,
+  "taxCents": 756500,
+  "merchant": "DEFACTO EGYPT LTD"
+ },
+ {
+  "id": "1330ea62-099a-4e78-8dfa-b5b70d3b517b",
+  "items": [
+   {
+    "name": "LID/DJTT/068",
+    "quantity": 1,
+    "priceCents": 67900
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": 67900
+   },
+   {
+    "name": "LID/DJTT/068",
+    "quantity": 1,
+    "priceCents": 67900
+   },
+   {
+    "name": "BOGO",
+    "quantity": 1,
+    "priceCents": 33950
+   }
+  ],
+  "totalCents": 101850,
+  "subtotalCents": null,
+  "taxCents": 12508,
+  "merchant": "dejavu"
+ },
+ {
+  "id": "cc44f0e6-f600-492a-bf0f-788124cee56f",
+  "items": [
+   {
+    "name": "HEETS NOOR '20 pcs",
+    "quantity": 1,
+    "priceCents": 4500
+   },
+   {
+    "name": "SUN TOP MANGO 250ML pcs",
+    "quantity": 1,
+    "priceCents": 1000
+   },
+   {
+    "name": "SUN TOP ORANGE 250ML pcs",
+    "quantity": 1,
+    "priceCents": 1000
+   }
+  ],
+  "totalCents": 6500,
+  "subtotalCents": null,
+  "taxCents": 246,
+  "merchant": "João Üllol"
+ },
+ {
+  "id": "69c2e744-4465-472d-ae7b-eab6e58a0f25",
+  "items": [
+   {
+    "name": "001/S23/M102087",
+    "quantity": 1,
+    "priceCents": 65100
+   },
+   {
+    "name": "033/GEN/1995/M",
+    "quantity": 1,
+    "priceCents": 1
+   }
+  ],
+  "totalCents": 65101,
+  "subtotalCents": 93001,
+  "taxCents": null,
+  "merchant": "MC\nMEN'S CLUB"
+ },
+ {
+  "id": "37da1a7e-fa94-4111-bbcf-045e0eaf8db1",
+  "items": [
+   {
+    "name": "12 Donuts",
+    "quantity": 1,
+    "priceCents": 13596
+   }
+  ],
+  "totalCents": 15500,
+  "subtotalCents": 13596,
+  "taxCents": 1903,
+  "merchant": "Dunkin' Egypt - Mesaha Square"
+ },
+ {
+  "id": "25ffe234-207b-4b61-bcff-db6703873536",
+  "items": [
+   {
+    "name": "Long Chips 75 GR",
+    "quantity": 1,
+    "priceCents": 2900
+   }
+  ],
+  "totalCents": 2900,
+  "subtotalCents": null,
+  "taxCents": 356,
+  "merchant": "IKEA\nNall of Arabia"
+ },
+ {
+  "id": "d3c8ec94-6a51-4f14-be0c-e2324b762530",
+  "items": [
+   {
+    "name": "FIBAGKIPOCKET40 SPOR",
+    "quantity": 1,
+    "priceCents": 29900
+   },
+   {
+    "name": "Xbase Print S ???? ?",
+    "quantity": 1,
+    "priceCents": 14900
+   }
+  ],
+  "totalCents": 44800,
+  "subtotalCents": null,
+  "taxCents": 5502,
+  "merchant": "DECATHLON"
+ },
+ {
+  "id": "7d1a4f38-ee47-4e02-a31d-7859c1a03948",
+  "items": [
+   {
+    "name": "L&M BOX",
+    "quantity": 20,
+    "priceCents": 70000
+   },
+   {
+    "name": "L&M LIGHT BOX",
+    "quantity": 10,
+    "priceCents": 35000
+   }
+  ],
+  "totalCents": 105000,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "امارات مصر"
+ },
+ {
+  "id": "7973e924-8a79-4286-9116-67462beeeb54",
+  "items": [
+   {
+    "name": "PMAISS21/004",
+    "quantity": 1,
+    "priceCents": null
+   }
+  ],
+  "totalCents": 33210,
+  "subtotalCents": null,
+  "taxCents": 4078,
+  "merchant": "DeJAV"
+ },
+ {
+  "id": "063fbf50-1853-4eb6-baa5-03032f5b191a",
+  "items": [
+   {
+    "name": "PINK",
+    "quantity": 32,
+    "priceCents": 43110
+   }
+  ],
+  "totalCents": 43110,
+  "subtotalCents": 47900,
+  "taxCents": null,
+  "merchant": "ACTIVA\nكارفور"
+ },
+ {
+  "id": "4ea5ae2a-1d07-4744-941b-05effa804013",
+  "items": [
+   {
+    "name": "MONGINI MULTI BOX\n950 GM",
+    "quantity": 1,
+    "priceCents": 20000
+   }
+  ],
+  "totalCents": 20000,
+  "subtotalCents": null,
+  "taxCents": 0,
+  "merchant": "Elwahat"
+ },
+ {
+  "id": "16dbe310-4e02-49c3-b5bc-3ef7248cd921",
+  "items": [
+   {
+    "name": "Greek Salad",
+    "quantity": 1,
+    "priceCents": 2900
+   },
+   {
+    "name": "Teyhana",
+    "quantity": 1,
+    "priceCents": 2300
+   },
+   {
+    "name": "Bab Ghanog",
+    "quantity": 1,
+    "priceCents": 2300
+   },
+   {
+    "name": "Shish Taook",
+    "quantity": 1,
+    "priceCents": 9700
+   },
+   {
+    "name": "Chicken Breast",
+    "quantity": 2,
+    "priceCents": 19400
+   },
+   {
+    "name": "Veal Picatta",
+    "quantity": 1,
+    "priceCents": 13100
+   },
+   {
+    "name": "Coca Cola",
+    "quantity": 2,
+    "priceCents": 1200
+   }
+  ],
+  "totalCents": 50900,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Heliopolis Sporting Club"
+ },
+ {
+  "id": "aee8588e-8445-45db-8f74-794a779c099b",
+  "items": [
+   {
+    "name": "| oniino | eroin ril\nBASIC JOGGER",
+    "quantity": 1,
+    "priceCents": 19000000
+   },
+   {
+    "name": "BASIC JOGGER",
+    "quantity": 1,
+    "priceCents": 19000
+   },
+   {
+    "name": "BASIC JOGGER",
+    "quantity": 1,
+    "priceCents": 19000
+   },
+   {
+    "name": "BASIC JOGGER",
+    "quantity": 1,
+    "priceCents": 19000
+   },
+   {
+    "name": "mas.noirtestxem",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "neckles",
+    "quantity": 1,
+    "priceCents": 7000
+   }
+  ],
+  "totalCents": 83000,
+  "subtotalCents": null,
+  "taxCents": 10100,
+  "merchant": "شركة الشرق الدولية للتجارة"
+ },
+ {
+  "id": "442665d3-9b9a-463d-b2e4-c525bcacb84e",
+  "items": [
+   {
+    "name": "Floride Orange juice 600 G",
+    "quantity": null,
+    "priceCents": null
+   },
+   {
+    "name": "Floride Orange juice 600 G",
+    "quantity": null,
+    "priceCents": 7000
+   },
+   {
+    "name": "Floride Orange juice 600 G",
+    "quantity": null,
+    "priceCents": 7000
+   },
+   {
+    "name": "Delicious Mix 400 g",
+    "quantity": 1,
+    "priceCents": 46200
+   },
+   {
+    "name": "Floride Apple juice 600 G",
+    "quantity": null,
+    "priceCents": 14000
+   },
+   {
+    "name": "Tamarind 400 gram",
+    "quantity": null,
+    "priceCents": 18000
+   },
+   {
+    "name": "Kamar al din samo 400 g",
+    "quantity": null,
+    "priceCents": 31992
+   },
+   {
+    "name": "Sobia Cans 500g",
+    "quantity": null,
+    "priceCents": 36000
+   },
+   {
+    "name": "Coconut 250 gram",
+    "quantity": null,
+    "priceCents": 14400
+   },
+   {
+    "name": "Kamar al din abu auf Powder 600 G",
+    "quantity": null,
+    "priceCents": 21000
+   },
+   {
+    "name": "Turkey Figs 300g",
+    "quantity": null,
+    "priceCents": 27000
+   },
+   {
+    "name": "Raisins 250 gram",
+    "quantity": null,
+    "priceCents": 21000
+   },
+   {
+    "name": "Maamoul date (Box)",
+    "quantity": null,
+    "priceCents": 3900
+   },
+   {
+    "name": "Maamoul & Chocolate Mix offers",
+    "quantity": null,
+    "priceCents": 8800
+   },
+   {
+    "name": "Tamarind 400 gram",
+    "quantity": null,
+    "priceCents": 3000
+   },
+   {
+    "name": "Floride pineapple juice 600 G",
+    "quantity": null,
+    "priceCents": 3500
+   },
+   {
+    "name": "Rio Pretzels Cheese 300g",
+    "quantity": null,
+    "priceCents": 3500
+   },
+   {
+    "name": "Rio Pretzels BBQ 300g",
+    "quantity": null,
+    "priceCents": 3500
+   },
+   {
+    "name": "Sobla Cans 500g",
+    "quantity": null,
+    "priceCents": 6000
+   },
+   {
+    "name": "Maamoul Cinnamon offers",
+    "quantity": null,
+    "priceCents": 6600
+   },
+   {
+    "name": "Floride Apple juice 600 G",
+    "quantity": null,
+    "priceCents": null
+   }
+  ],
+  "totalCents": 282392,
+  "subtotalCents": 255697,
+  "taxCents": 26695,
+  "merchant": "Sheraton Hurghada"
+ },
+ {
+  "id": "1c0c9a40-f7d4-4035-8b4a-abd42dfda626",
+  "items": [
+   {
+    "name": "cosmatic tool",
+    "quantity": 1,
+    "priceCents": 3500
+   }
+  ],
+  "totalCents": 3500,
+  "subtotalCents": 3070,
+  "taxCents": 429,
+  "merchant": "Orient International Trading LTD\nMax"
+ },
+ {
+  "id": "8f07a375-7208-4a6f-8c93-5504f4fd04a5",
+  "items": [
+   {
+    "name": "Coffee Abu Auf Medium KG",
+    "quantity": 1,
+    "priceCents": 5980
+   }
+  ],
+  "totalCents": 5980,
+  "subtotalCents": 5980,
+  "taxCents": 0,
+  "merchant": "Abufut"
+ },
+ {
+  "id": "244d5b74-7c94-48f8-8325-761aad5cc5ee",
+  "items": [
+   {
+    "name": "Half Chicken Roasted",
+    "quantity": 1,
+    "priceCents": 17800
+   },
+   {
+    "name": "+ Vegetables",
+    "quantity": 1,
+    "priceCents": 0
+   },
+   {
+    "name": "Carrot Cake - Rest",
+    "quantity": 1,
+    "priceCents": 3900
+   },
+   {
+    "name": "Fattoush salad",
+    "quantity": 1,
+    "priceCents": 2500
+   },
+   {
+    "name": "Soup- Chicken Cream",
+    "quantity": 1,
+    "priceCents": 2500
+   },
+   {
+    "name": "Add-on Basmati\nRice",
+    "quantity": 1,
+    "priceCents": 1900
+   }
+  ],
+  "totalCents": 28600,
+  "subtotalCents": null,
+  "taxCents": 3512,
+  "merchant": "IKEA\nMall of Arabia"
+ },
+ {
+  "id": "225c6d02-674a-46e2-85eb-72a96b49065a",
+  "items": [
+   {
+    "name": "Long Sleev",
+    "quantity": 1,
+    "priceCents": 4990000
+   }
+  ],
+  "totalCents": 4990000,
+  "subtotalCents": null,
+  "taxCents": 612800,
+  "merchant": "Defacto"
+ },
+ {
+  "id": "68148542-ea5b-4c4c-8d39-74d8e66e65f8",
+  "items": [
+   {
+    "name": "WHITE",
+    "quantity": 1,
+    "priceCents": 42900
+   },
+   {
+    "name": "D.GREY\nFOO/AIRWAL/PORT202064",
+    "quantity": 1,
+    "priceCents": 39900
+   }
+  ],
+  "totalCents": 82800,
+  "subtotalCents": 82800,
+  "taxCents": null,
+  "merchant": "ACTIVE"
+ },
+ {
+  "id": "21912c6d-6578-405e-a1a3-983450e4c1a1",
+  "items": [
+   {
+    "name": "MARLBORO GOLD",
+    "quantity": 2,
+    "priceCents": 13800
+   }
+  ],
+  "totalCents": 13800,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "امارات مصر\nEmarat Misr"
+ },
+ {
+  "id": "bc159126-6ae3-467e-a02b-91ac0f06a78a",
+  "items": [
+   {
+    "name": "M/D Mixing Bowl Lrg.30677 Blu",
+    "quantity": 2,
+    "priceCents": 9600
+   },
+   {
+    "name": "Egyptian Pasta",
+    "quantity": 1,
+    "priceCents": 1087
+   },
+   {
+    "name": "Egyptian Pasta",
+    "quantity": 1,
+    "priceCents": 997
+   },
+   {
+    "name": "Egyptian Pasta",
+    "quantity": 1,
+    "priceCents": 1280
+   },
+   {
+    "name": "Lactel Natural Yogurt 105g 12",
+    "quantity": 1,
+    "priceCents": 3195
+   },
+   {
+    "name": "Arabic Bread 5's",
+    "quantity": 2,
+    "priceCents": 1790
+   },
+   {
+    "name": "Wafeer D/Wash.Lqd Ylw.Lemn 41",
+    "quantity": 1,
+    "priceCents": 3500
+   }
+  ],
+  "totalCents": 21449,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Lulu Hypermarket, The Park Mall"
+ },
+ {
+  "id": "5ca3a276-c1af-441d-ae88-e6b3de43a555",
+  "items": [
+   {
+    "name": "Popcorn Caramel & Cinnamon 100GR",
+    "quantity": null,
+    "priceCents": null
+   },
+   {
+    "name": "Salted Corn",
+    "quantity": null,
+    "priceCents": null
+   },
+   {
+    "name": "Coffee Single Cup",
+    "quantity": null,
+    "priceCents": null
+   },
+   {
+    "name": "Popcorn Salted & Caramel :00GR",
+    "quantity": null,
+    "priceCents": null
+   }
+  ],
+  "totalCents": 14500,
+  "subtotalCents": 12719,
+  "taxCents": 781,
+  "merchant": "of"
+ },
+ {
+  "id": "43dd107c-e9c2-456e-8468-6d5ca38b1c3f",
+  "items": [
+   {
+    "name": "Turkish Coffee Single Cup",
+    "quantity": null,
+    "priceCents": 3000
+   },
+   {
+    "name": "Not Available",
+    "quantity": null,
+    "priceCents": null
+   },
+   {
+    "name": "Coffee Brazilian Medium KG",
+    "quantity": 1,
+    "priceCents": 8184
+   }
+  ],
+  "totalCents": 11184,
+  "subtotalCents": 10816,
+  "taxCents": 368,
+  "merchant": "Abu Auf\n®"
+ },
+ {
+  "id": "53e7fbd8-a880-42ec-9f09-02eef23c69cd",
+  "items": [
+   {
+    "name": "MINT\nS",
+    "quantity": 1,
+    "priceCents": 37425
+   }
+  ],
+  "totalCents": 37425,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "TOWNTEAM"
+ },
+ {
+  "id": "07894642-c881-41ba-9ee7-83a89137d5d6",
+  "items": [
+   {
+    "name": "JERSEY TROUSERS",
+    "quantity": 1,
+    "priceCents": 14900
+   },
+   {
+    "name": "JERSEY TROUSERS",
+    "quantity": 1,
+    "priceCents": 12900
+   },
+   {
+    "name": "UNDERWEAR KEY PYJAMAS SET SHORT-SLEEVE",
+    "quantity": 1,
+    "priceCents": 11900
+   },
+   {
+    "name": "JERSEY BODY - T-SHIRT SHORT-SLEEVED",
+    "quantity": 1,
+    "priceCents": 12900
+   },
+   {
+    "name": "JERSEY BODY - T-SHIRT SHORT-SLEEVED",
+    "quantity": 1,
+    "priceCents": 9900
+   },
+   {
+    "name": "JERSEY BODY - T-SHIRT SHORT-SLEEVED",
+    "quantity": 1,
+    "priceCents": 8900
+   },
+   {
+    "name": "JERSEY TROUSERS",
+    "quantity": 1,
+    "priceCents": 19900
+   },
+   {
+    "name": "JERSEY TROUSERS - LEGGINGS",
+    "quantity": 1,
+    "priceCents": 6900
+   },
+   {
+    "name": "JERSEY BODY - T-SHIRT SHORT-SLEEVED",
+    "quantity": 1,
+    "priceCents": 12900
+   },
+   {
+    "name": "JERSEY TROUSERS - LEGGINGS",
+    "quantity": 1,
+    "priceCents": 3400
+   },
+   {
+    "name": "JERSEY TROUSERS - LEGGINGS",
+    "quantity": 1,
+    "priceCents": 7900
+   },
+   {
+    "name": "JERSEY TROUSERS - LEGGINGS",
+    "quantity": 1,
+    "priceCents": 5900
+   },
+   {
+    "name": "JERSEY TROUSERS - LEGGINGS",
+    "quantity": 1,
+    "priceCents": 3400
+   },
+   {
+    "name": "JERSEY TANKTOP",
+    "quantity": 1,
+    "priceCents": 6900
+   },
+   {
+    "name": "JERSEY BODY - T-SHIRT SHORT-SLEEVED",
+    "quantity": 1,
+    "priceCents": 4400
+   },
+   {
+    "name": "JERSEY BODY - T-SHIRT SHORT-SLEEVED",
+    "quantity": 7,
+    "priceCents": 6900
+   },
+   {
+    "name": "WOVEN TROUSERS",
+    "quantity": 1,
+    "priceCents": 4900
+   },
+   {
+    "name": "VOVEN TROUSERS",
+    "quantity": 1,
+    "priceCents": 9900
+   },
+   {
+    "name": "WOVEN TROUSERS",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": 6900
+   },
+   {
+    "name": "JERSEY SET - JUMPSUIT",
+    "quantity": 1,
+    "priceCents": 11900
+   },
+   {
+    "name": "JERSEY TROUSERS",
+    "quantity": 1,
+    "priceCents": 9900
+   }
+  ],
+  "totalCents": 193400,
+  "subtotalCents": 169650,
+  "taxCents": 23750,
+  "merchant": "TEMA RETAIL\nEG"
+ },
+ {
+  "id": "066e856e-4741-4832-bcb2-056b7c58f1dc",
+  "items": [
+   {
+    "name": "ess. lash princess sculpted volume m",
+    "quantity": 1,
+    "priceCents": 13200
+   },
+   {
+    "name": "NOTE PERFECTING PEN 02",
+    "quantity": 1,
+    "priceCents": 23400
+   }
+  ],
+  "totalCents": 36600,
+  "subtotalCents": 36600,
+  "taxCents": 0,
+  "merchant": "mazaya"
+ },
+ {
+  "id": "95ff7394-7d26-444f-9fbd-58be055fb1b9",
+  "items": [
+   {
+    "name": "Marlboro Crafted Gol",
+    "quantity": 2,
+    "priceCents": 8800
+   }
+  ],
+  "totalCents": 8800,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "امارات مصر."
+ },
+ {
+  "id": "7b5b7871-ef8c-4dce-9fc7-bef7dd6a74a7",
+  "items": [
+   {
+    "name": "Hazelnut Coffee",
+    "quantity": null,
+    "priceCents": 5500
+   }
+  ],
+  "totalCents": 5500,
+  "subtotalCents": 4825,
+  "taxCents": 675,
+  "merchant": "Abu Auf\""
+ },
+ {
+  "id": "72b8e3e7-6414-458b-b827-c3bb38ab7cf7",
+  "items": [
+   {
+    "name": "LUCKY",
+    "quantity": 1,
+    "priceCents": 38900
+   }
+  ],
+  "totalCents": 35010,
+  "subtotalCents": 30711,
+  "taxCents": 4299,
+  "merchant": "JejAvı\nC"
+ },
+ {
+  "id": "f2b666d2-0909-451e-9baf-e4efa978a3d4",
+  "items": [
+   {
+    "name": "SALE",
+    "quantity": 1,
+    "priceCents": 39900
+   }
+  ],
+  "totalCents": 19900,
+  "subtotalCents": 39900,
+  "taxCents": 2444,
+  "merchant": "CAIRO ALMAZA"
+ },
+ {
+  "id": "922cae20-5ab1-4fe1-87a6-30ce339bfe3d",
+  "items": [
+   {
+    "name": "JERSEY SHORTS",
+    "quantity": 1,
+    "priceCents": 49900
+   },
+   {
+    "name": "JERSEY BODY - T-SHIRT SHORT-SLEEVED ACTIVE SPORT",
+    "quantity": 1,
+    "priceCents": 19900
+   },
+   {
+    "name": "JERSEY BODY - T-SHIRT SHORT-SLEEVED ACTIVE SPORT",
+    "quantity": 1,
+    "priceCents": 14900
+   }
+  ],
+  "totalCents": 99600,
+  "subtotalCents": 87368,
+  "taxCents": 12232,
+  "merchant": "TUNA RETAIL EG"
+ },
+ {
+  "id": "223e3911-05d2-4ba7-ad5b-913f3148a67c",
+  "items": [
+   {
+    "name": "BREAD BASKET WELCOME",
+    "quantity": 1,
+    "priceCents": 0
+   },
+   {
+    "name": "grape leaves",
+    "quantity": 1,
+    "priceCents": 7000
+   },
+   {
+    "name": "chicken Dreams",
+    "quantity": 2,
+    "priceCents": 35800
+   },
+   {
+    "name": "TURKISH RICE",
+    "quantity": 2,
+    "priceCents": 0
+   },
+   {
+    "name": "PISTACHIO MILK CAKE",
+    "quantity": 1,
+    "priceCents": 9900
+   },
+   {
+    "name": "CAPPUCCINO",
+    "quantity": 2,
+    "priceCents": 10000
+   },
+   {
+    "name": "HOT CHOCOLATE",
+    "quantity": 2,
+    "priceCents": 13000
+   },
+   {
+    "name": "TURKISH COFFE",
+    "quantity": 3,
+    "priceCents": 12000
+   },
+   {
+    "name": "EXTRA MILK",
+    "quantity": 1,
+    "priceCents": 1000
+   },
+   {
+    "name": "ADD FLAVOR CARAMEL",
+    "quantity": 1,
+    "priceCents": 2000
+   },
+   {
+    "name": "PREMIUM MINERAL WATE",
+    "quantity": 2,
+    "priceCents": 5000
+   },
+   {
+    "name": "FRENSH FRIES",
+    "quantity": 1,
+    "priceCents": 5000
+   },
+   {
+    "name": "Shish Tavouk",
+    "quantity": 1,
+    "priceCents": 16500
+   },
+   {
+    "name": "BURGHUAL RICE",
+    "quantity": 1,
+    "priceCents": 0
+   },
+   {
+    "name": "MANGO JUICE",
+    "quantity": 5,
+    "priceCents": 22500
+   },
+   {
+    "name": "FRAPPE",
+    "quantity": 1,
+    "priceCents": 5500
+   },
+   {
+    "name": "Coca-Cola",
+    "quantity": 1,
+    "priceCents": 2900
+   }
+  ],
+  "totalCents": 189094,
+  "subtotalCents": 148100,
+  "taxCents": 23222,
+  "merchant": "ozel"
+ },
+ {
+  "id": "385dddfe-7175-47e0-af35-aef54ee5dcab",
+  "items": [
+   {
+    "name": "سليب داخلي رجالي",
+    "quantity": 4,
+    "priceCents": 41401
+   },
+   {
+    "name": "اسبور داخلي رجالي",
+    "quantity": 4,
+    "priceCents": 41401
+   }
+  ],
+  "totalCents": 82802,
+  "subtotalCents": null,
+  "taxCents": 10168,
+  "merchant": "Branch\nسبورتنج"
+ },
+ {
+  "id": "4cb09fcc-e4b9-4690-ac93-8c6d4adc1606",
+  "items": [
+   {
+    "name": "Turkish Coffee Single Cup",
+    "quantity": null,
+    "priceCents": 4500
+   }
+  ],
+  "totalCents": 4500,
+  "subtotalCents": 3947,
+  "taxCents": 553,
+  "merchant": "Chy Center Almaza"
+ },
+ {
+  "id": "72cd3d0c-aa67-47cc-ab4c-cee00ad70520",
+  "items": [
+   {
+    "name": "ALWAYS STUNNING AOP TABLE TEE LSL",
+    "quantity": 1,
+    "priceCents": 11000
+   },
+   {
+    "name": "MULTICOLOUR POLKA AOP LEGGING",
+    "quantity": 1,
+    "priceCents": 11000
+   }
+  ],
+  "totalCents": 22000,
+  "subtotalCents": 19298,
+  "taxCents": 2701,
+  "merchant": "Max\nOrient International Trading"
+ },
+ {
+  "id": "a82dbaca-0d13-4a09-8c30-1acb0aa69281",
+  "items": [
+   {
+    "name": "Marlboro Crafted Gol",
+    "quantity": 5,
+    "priceCents": 19000
+   }
+  ],
+  "totalCents": 19000,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Emarat Misr-El Rehab(2011)"
+ },
+ {
+  "id": "37c884a2-a015-41fd-abad-0418c7e52583",
+  "items": [
+   {
+    "name": "oked Turk",
+    "quantity": null,
+    "priceCents": null
+   },
+   {
+    "name": "Tostino",
+    "quantity": null,
+    "priceCents": 5940
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": 1913
+   },
+   {
+    "name": "Caesar S",
+    "quantity": 1,
+    "priceCents": 5000
+   },
+   {
+    "name": "Corn Flake",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": 2999
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "Cho",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": 325
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "Let",
+    "quantity": 1,
+    "priceCents": null
+   }
+  ],
+  "totalCents": 19825,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "METRO\nMANSOUR"
+ },
+ {
+  "id": "32dc231f-2021-4f43-9adf-8c251fef9cd9",
+  "items": [
+   {
+    "name": "Nutella Donuts",
+    "quantity": 2,
+    "priceCents": 4400
+   },
+   {
+    "name": "Cheese Croissant",
+    "quantity": 1,
+    "priceCents": 2600
+   },
+   {
+    "name": "Vanilla Muffin",
+    "quantity": 1,
+    "priceCents": 2200
+   },
+   {
+    "name": "Peanut Butter Brownies",
+    "quantity": 1,
+    "priceCents": 3400
+   }
+  ],
+  "totalCents": 12600,
+  "subtotalCents": 11053,
+  "taxCents": 1547,
+  "merchant": "Breadfast Coffee - Chill-Out Rehab"
+ },
+ {
+  "id": "a3c94a01-3058-4bfb-ba73-4e9c98add9c3",
+  "items": [
+   {
+    "name": "Unsalted Roasted Sun Flower",
+    "quantity": null,
+    "priceCents": 2200
+   },
+   {
+    "name": "MÊM Chocolate kg",
+    "quantity": null,
+    "priceCents": 4000
+   },
+   {
+    "name": "Chocolate Peanuts kg",
+    "quantity": null,
+    "priceCents": 3000
+   },
+   {
+    "name": "Maamoul Cinnamon offers",
+    "quantity": null,
+    "priceCents": 6000
+   },
+   {
+    "name": "Maamoul & Chocolate White offers",
+    "quantity": null,
+    "priceCents": 8000
+   },
+   {
+    "name": "Jiola Wafer 585 Gold Box",
+    "quantity": null,
+    "priceCents": 5500
+   },
+   {
+    "name": "Maamoul date (Piece)",
+    "quantity": null,
+    "priceCents": 300
+   }
+  ],
+  "totalCents": 29050,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Twin Tower Zayed"
+ },
+ {
+  "id": "55f3c2e1-baad-46b7-86d0-da3cce622325",
+  "items": [
+   {
+    "name": "RUI/SS21/002",
+    "quantity": 41,
+    "priceCents": 2900
+   }
+  ],
+  "totalCents": 19900,
+  "subtotalCents": null,
+  "taxCents": 2444,
+  "merchant": "dejAvl"
+ },
+ {
+  "id": "37a85a45-13be-4153-9e37-e04aadf24698",
+  "items": [
+   {
+    "name": "Chicken McMuffin",
+    "quantity": 4,
+    "priceCents": 7996
+   },
+   {
+    "name": "SPChkn Muffin",
+    "quantity": 1,
+    "priceCents": 2149
+   }
+  ],
+  "totalCents": 10145,
+  "subtotalCents": 10145,
+  "taxCents": 1491,
+  "merchant": "McDelivery."
+ },
+ {
+  "id": "4e636234-3ae1-43a0-bb25-9bb8c5b45968",
+  "items": [
+   {
+    "name": "Quinoa White400g",
+    "quantity": null,
+    "priceCents": 7500
+   },
+   {
+    "name": "Stone nutmeg 100g",
+    "quantity": null,
+    "priceCents": 7000
+   },
+   {
+    "name": "Stone Rosemary 25g",
+    "quantity": null,
+    "priceCents": 1200
+   }
+  ],
+  "totalCents": 15700,
+  "subtotalCents": 15700,
+  "taxCents": 0,
+  "merchant": "AbuA"
+ },
+ {
+  "id": "26a79a47-51b1-4a33-b8a4-ea6b6aa7e08d",
+  "items": [
+   {
+    "name": "DAVIDOFF GOLD",
+    "quantity": 2,
+    "priceCents": 9200
+   }
+  ],
+  "totalCents": 9200,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "On the Run"
+ },
+ {
+  "id": "b8b18e08-4d0f-433b-94bb-c79f29a2a3fc",
+  "items": [
+   {
+    "name": "Abu auf Cooking oats 450 g",
+    "quantity": null,
+    "priceCents": 2000
+   }
+  ],
+  "totalCents": 2000,
+  "subtotalCents": 2000,
+  "taxCents": 0,
+  "merchant": "Abu Auf®\n®"
+ },
+ {
+  "id": "5f59f24f-09ed-4d56-b3a5-e17c284113e2",
+  "items": [
+   {
+    "name": "Delicious Mix 400 g",
+    "quantity": null,
+    "priceCents": 14000
+   },
+   {
+    "name": "Chinese Crackers Cheese 225G",
+    "quantity": null,
+    "priceCents": 4000
+   },
+   {
+    "name": "Golden Raisins Iranian kg",
+    "quantity": null,
+    "priceCents": 6000
+   }
+  ],
+  "totalCents": 24000,
+  "subtotalCents": 23263,
+  "taxCents": 737,
+  "merchant": "ChillOut AlShouyfat"
+ },
+ {
+  "id": "ccd5d36b-ef08-4e57-9893-69054689b179",
+  "items": [
+   {
+    "name": "Lay's Gourmet\nMexican Fiery\n(60g)",
+    "quantity": 1,
+    "priceCents": 625
+   },
+   {
+    "name": "Knorr Tomato Sauce\n(360g)\nInstant Noodles",
+    "quantity": 1,
+    "priceCents": 1599
+   },
+   {
+    "name": "Indomie Superm\nVegetables Noodles\n(110g)",
+    "quantity": 1,
+    "priceCents": 400
+   }
+  ],
+  "totalCents": 3624,
+  "subtotalCents": 2624,
+  "taxCents": 200,
+  "merchant": "Breadfast."
+ },
+ {
+  "id": "44a4080f-e938-4603-b5d6-b17aff417f4e",
+  "items": [
+   {
+    "name": "Gourmet Chia Seeds 650g",
+    "quantity": 1,
+    "priceCents": 19500
+   },
+   {
+    "name": "Rosemary 100g, Gourmet Fresh",
+    "quantity": 1,
+    "priceCents": 2000
+   },
+   {
+    "name": "CarmencitaSmkdSpnshSwtPPrka75g",
+    "quantity": 2,
+    "priceCents": 11800
+   },
+   {
+    "name": "Pantufla WomenSlippr TeddyBear",
+    "quantity": 1,
+    "priceCents": 21000
+   },
+   {
+    "name": "Website Delivery Charges",
+    "quantity": 1,
+    "priceCents": 2500
+   }
+  ],
+  "totalCents": 56800,
+  "subtotalCents": null,
+  "taxCents": 2886,
+  "merchant": "Gourmet"
+ },
+ {
+  "id": "ae3e8e76-2517-4ca3-9133-f7b912943059",
+  "items": [
+   {
+    "name": "Gourmet Cheese Cracke",
+    "quantity": 1,
+    "priceCents": 3900
+   },
+   {
+    "name": "D's Candy Palmier 425g",
+    "quantity": 1,
+    "priceCents": 13000
+   },
+   {
+    "name": "Danone Light Yogurt 170",
+    "quantity": 1,
+    "priceCents": 1000
+   }
+  ],
+  "totalCents": 17900,
+  "subtotalCents": null,
+  "taxCents": 1596,
+  "merchant": "3GOURMET\nFOOD STORES"
+ },
+ {
+  "id": "51d09eba-6c44-4e34-a27b-a1550db31c97",
+  "items": [
+   {
+    "name": "DAVIDOFF GOLD pcs",
+    "quantity": 1,
+    "priceCents": 6400
+   }
+  ],
+  "totalCents": 6400,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "إمارات"
+ },
+ {
+  "id": "8d89e218-20e3-4585-a1e8-9e908baf0c18",
+  "items": [
+   {
+    "name": "HP Gam.N/B 15-DK0056WM C15 B1\nPARKING FREE COUPON",
+    "quantity": 1,
+    "priceCents": 1529900
+   }
+  ],
+  "totalCents": 152990000,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "LU ME"
+ },
+ {
+  "id": "36d0a8df-61ee-4cf1-8a2d-c67320f3c5b1",
+  "items": [
+   {
+    "name": "Duo(ChocoHazelnut/Fruits)",
+    "quantity": 1,
+    "priceCents": 28571
+   }
+  ],
+  "totalCents": 30000,
+  "subtotalCents": null,
+  "taxCents": 1429,
+  "merchant": "Sale Sucre"
+ },
+ {
+  "id": "052ab430-930b-4260-b44c-0419fa0dd1f4",
+  "items": [
+   {
+    "name": "Quattro Formaggi Regular",
+    "quantity": null,
+    "priceCents": 13000
+   },
+   {
+    "name": "Iced Caramel Macchiato",
+    "quantity": null,
+    "priceCents": 5000
+   },
+   {
+    "name": "Latte",
+    "quantity": null,
+    "priceCents": 7000
+   },
+   {
+    "name": "Mojito Raspberry",
+    "quantity": null,
+    "priceCents": 6500
+   },
+   {
+    "name": "Orange Juice",
+    "quantity": null,
+    "priceCents": 5000
+   }
+  ],
+  "totalCents": 42953,
+  "subtotalCents": 36500,
+  "taxCents": 5723,
+  "merchant": "Basilico"
+ },
+ {
+  "id": "c13ebd09-d639-4654-b178-d8ed27b082d2",
+  "items": [
+   {
+    "name": "RS 100 LOW X3 BLACK",
+    "quantity": 1,
+    "priceCents": 7900
+   },
+   {
+    "name": "FACIAL MASK EGYPT ??",
+    "quantity": 3,
+    "priceCents": 8700
+   }
+  ],
+  "totalCents": 16600,
+  "subtotalCents": null,
+  "taxCents": 2039,
+  "merchant": "DECATHLON EGYPT"
+ },
+ {
+  "id": "30d0002c-bd16-4350-a23a-6217d776f739",
+  "items": [
+   {
+    "name": "HELLO PRINTED TROUSERS",
+    "quantity": null,
+    "priceCents": 17600
+   },
+   {
+    "name": "DARK CLEAN ATHLETIC SKINNY:936-MEDIUM\nWASH:W31 L32",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "DARK CLEAN ATHLETIC SKINNY:936-\nMEDIUM WASH:W31 L32",
+    "quantity": null,
+    "priceCents": 0
+   },
+   {
+    "name": "GARMENT DYE GRAPHIC HOODIE 615 PINK",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "GARMENT DYE GRAPHIC\nHOODIE:615-PINK:SMALL",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "HOODIE",
+    "quantity": null,
+    "priceCents": 130000
+   },
+   {
+    "name": "IRON 6\nSWEAT PANT",
+    "quantity": null,
+    "priceCents": 20650
+   },
+   {
+    "name": "MUSTARD 6",
+    "quantity": null,
+    "priceCents": 17500
+   }
+  ],
+  "totalCents": 185750,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Alshaya Egypt L.L.C"
+ },
+ {
+  "id": "c7fc97fa-c4b8-47a2-a279-c27344d81f71",
+  "items": [
+   {
+    "name": "FOO/ACTIVN/PORT201957",
+    "quantity": 1,
+    "priceCents": 14925
+   }
+  ],
+  "totalCents": 14925,
+  "subtotalCents": 19900,
+  "taxCents": null,
+  "merchant": "ACTIV\nABOU ALAA"
+ },
+ {
+  "id": "23b1aa9c-cdf9-4667-badb-2b25cb690808",
+  "items": [
+   {
+    "name": "Cod Fee",
+    "quantity": 1,
+    "priceCents": 877
+   },
+   {
+    "name": "Blouse",
+    "quantity": 1,
+    "priceCents": 8684
+   },
+   {
+    "name": "LCW GRACE Tie Collar Embroidered Long\nSleeve Women's Blouse",
+    "quantity": 1,
+    "priceCents": 7807
+   },
+   {
+    "name": "Crew Neck Striped Sleeveless Viscose",
+    "quantity": 1,
+    "priceCents": 6930
+   },
+   {
+    "name": "Women's Blouse",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "Shipping Amount",
+    "quantity": 1,
+    "priceCents": 0
+   }
+  ],
+  "totalCents": 27700,
+  "subtotalCents": 24298,
+  "taxCents": 3402,
+  "merchant": "TEMA RETAIL EG S.A.E\nLC WAIKIKI"
+ },
+ {
+  "id": "b4dae139-155e-4219-b413-feedb64c8c12",
+  "items": [
+   {
+    "name": "PRINGLES CHIPS\nSOUR CREAM130GM",
+    "quantity": 1,
+    "priceCents": 4000
+   }
+  ],
+  "totalCents": 4000,
+  "subtotalCents": null,
+  "taxCents": 491,
+  "merchant": "امارات\nEmarat"
+ },
+ {
+  "id": "89cc7b04-e00a-47f2-bfb1-5472b61a9379",
+  "items": [
+   {
+    "name": "ItalianFiorDiLatteMozzarella",
+    "quantity": null,
+    "priceCents": 9776
+   },
+   {
+    "name": "Sante Crisp Bread, 150g",
+    "quantity": 1,
+    "priceCents": 4000
+   },
+   {
+    "name": "BiagiOrganicTomato Puip35",
+    "quantity": 1,
+    "priceCents": 4000
+   },
+   {
+    "name": "BiagiOrganicTomato Pulp35",
+    "quantity": 1,
+    "priceCents": 4000
+   }
+  ],
+  "totalCents": 21776,
+  "subtotalCents": null,
+  "taxCents": 982,
+  "merchant": "GOURMET"
+ },
+ {
+  "id": "cb86253a-d3ff-40db-bcf3-55ce7eb27793",
+  "items": [
+   {
+    "name": "بنطلون جبردين شروال",
+    "quantity": 1,
+    "priceCents": 27500
+   },
+   {
+    "name": "بنطلون جبردين",
+    "quantity": 1,
+    "priceCents": 27500
+   },
+   {
+    "name": "بنطلون جبردين شروال",
+    "quantity": 1,
+    "priceCents": 27500
+   }
+  ],
+  "totalCents": 82500,
+  "subtotalCents": 165000,
+  "taxCents": null,
+  "merchant": "MEN'S CLUB\nCOLLECTION"
+ },
+ {
+  "id": "19c6999b-a7bb-4208-b90a-7bdc6a777e8f",
+  "items": [
+   {
+    "name": "Ck Turkish Coffee S",
+    "quantity": 1,
+    "priceCents": 2600
+   },
+   {
+    "name": "Mixy Chili Snacks 167G",
+    "quantity": 1,
+    "priceCents": 2300
+   },
+   {
+    "name": "Pretzo Mini Sticks Tom",
+    "quantity": 1,
+    "priceCents": 2100
+   },
+   {
+    "name": "Lago Hazelnut Wafer 45",
+    "quantity": 2,
+    "priceCents": 2400
+   },
+   {
+    "name": "Sun Top Orange Juice 2",
+    "quantity": 1,
+    "priceCents": 1200
+   },
+   {
+    "name": "Elano Mineral Water 60",
+    "quantity": 3,
+    "priceCents": 2100
+   }
+  ],
+  "totalCents": 12700,
+  "subtotalCents": 12295,
+  "taxCents": 405,
+  "merchant": "@circle K"
+ },
+ {
+  "id": "141b6b10-c6f6-4a80-8871-d3731f078b5f",
+  "items": [
+   {
+    "name": "Temry Frsh.Chkn Livr&Gzrd 500",
+    "quantity": 4,
+    "priceCents": 30600
+   },
+   {
+    "name": "Cadbury Flake Dipped 32g",
+    "quantity": 1,
+    "priceCents": 1900
+   },
+   {
+    "name": "Carmn Wht S/Tissue 3Ply 10s",
+    "quantity": 6,
+    "priceCents": 1050
+   }
+  ],
+  "totalCents": 33550,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "LuLu"
+ },
+ {
+  "id": "f8dd27f7-f742-401c-98ce-740dcb565bfa",
+  "items": [
+   {
+    "name": "Dorit Flam. Hot#1 SwtC/P 41-45",
+    "quantity": 1,
+    "priceCents": 500
+   },
+   {
+    "name": "KingM Flour Tortillas Large 5",
+    "quantity": 1,
+    "priceCents": 1395
+   },
+   {
+    "name": "El Arosa Kenyan Tea 40g",
+    "quantity": 1,
+    "priceCents": 800
+   },
+   {
+    "name": "Aria UHT Milk FullCrm 1L",
+    "quantity": 1,
+    "priceCents": 2800
+   },
+   {
+    "name": "Basma Strawberry\n400gm",
+    "quantity": 1,
+    "priceCents": 1495
+   },
+   {
+    "name": "Green House Fig 400gm",
+    "quantity": 1,
+    "priceCents": 2050
+   }
+  ],
+  "totalCents": 9040,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Lulu Hypermarket , Emerald - Twin Plaza"
+ },
+ {
+  "id": "23ab61f6-3f21-419c-854c-0dab752d80b6",
+  "items": [
+   {
+    "name": "warfarha 275 EGP",
+    "quantity": 1,
+    "priceCents": 27500
+   }
+  ],
+  "totalCents": 27500,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "MAJID AL FUTTAIM LEISURE &\nENTERTAINMENT"
+ },
+ {
+  "id": "ee944c4a-60b6-438e-9e1b-93237831afa6",
+  "items": [
+   {
+    "name": "Marlboro Crafted Gol",
+    "quantity": 3,
+    "priceCents": 13200
+   }
+  ],
+  "totalCents": 13200,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "إمارات مصر."
+ },
+ {
+  "id": "f5030426-9297-41b0-a2b5-ef28b61f93c2",
+  "items": [
+   {
+    "name": "JERSEY SWEATSHIRT",
+    "quantity": 1,
+    "priceCents": 24900
+   }
+  ],
+  "totalCents": 24900,
+  "subtotalCents": 21842,
+  "taxCents": 3058,
+  "merchant": "LC WAIKIKI"
+ },
+ {
+  "id": "d15f208c-a9b8-4be3-91b7-9df86ae5c7dd",
+  "items": [
+   {
+    "name": "Bundle Butter Peanuts 300g",
+    "quantity": null,
+    "priceCents": 10000
+   },
+   {
+    "name": "Abu Auf Sahlab 250 g",
+    "quantity": null,
+    "priceCents": 4500
+   },
+   {
+    "name": "Raw Hazelnut",
+    "quantity": null,
+    "priceCents": 7375
+   },
+   {
+    "name": "Munchies Cheese flavor",
+    "quantity": null,
+    "priceCents": 2500
+   },
+   {
+    "name": "Almonds 400 g",
+    "quantity": null,
+    "priceCents": 10000
+   },
+   {
+    "name": "Pistachios 400 g",
+    "quantity": null,
+    "priceCents": 15000
+   }
+  ],
+  "totalCents": null,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "AbuA\nif"
+ },
+ {
+  "id": "205cccd2-a6c0-443f-8a32-cdd901fd5de2",
+  "items": [
+   {
+    "name": "ADSL Bill Payment",
+    "quantity": 1,
+    "priceCents": 19000
+   }
+  ],
+  "totalCents": 19000,
+  "subtotalCents": 19000,
+  "taxCents": 0,
+  "merchant": "Omrania Mini Shop"
+ },
+ {
+  "id": "4701ca25-3d46-4481-b2bc-c6aa1c8e0874",
+  "items": [
+   {
+    "name": "Woven Dres",
+    "quantity": 1,
+    "priceCents": 1790000
+   },
+   {
+    "name": "Short Slee",
+    "quantity": 1,
+    "priceCents": 6900
+   },
+   {
+    "name": "Maternity",
+    "quantity": 1,
+    "priceCents": 990000
+   },
+   {
+    "name": "Short Slee",
+    "quantity": 1,
+    "priceCents": 590000
+   },
+   {
+    "name": "Athlete",
+    "quantity": 1,
+    "priceCents": 990000
+   },
+   {
+    "name": "Short",
+    "quantity": 1,
+    "priceCents": 1290000
+   }
+  ],
+  "totalCents": 6340000,
+  "subtotalCents": null,
+  "taxCents": 778600,
+  "merchant": "DEFACTO"
+ },
+ {
+  "id": "f82e5049-ff57-407e-9534-1dbd387d51ad",
+  "items": [
+   {
+    "name": "SNICKERS SINGLE 50 G pos",
+    "quantity": 1,
+    "priceCents": 2700
+   },
+   {
+    "name": "MARS SINGLE 51 GM pcs",
+    "quantity": 1,
+    "priceCents": 3500
+   },
+   {
+    "name": "NESTLE PURE LIFE 500 p31",
+    "quantity": 1,
+    "priceCents": 700
+   }
+  ],
+  "totalCents": 6900,
+  "subtotalCents": null,
+  "taxCents": 847,
+  "merchant": "•لماات مصر\nEmarat|'u"
+ },
+ {
+  "id": "c2a24f5d-cea5-48b3-8093-c52e2a995eff",
+  "items": [
+   {
+    "name": "قميص أكسفورد",
+    "quantity": 1,
+    "priceCents": 46000
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": null
+   }
+  ],
+  "totalCents": 46001,
+  "subtotalCents": 115001,
+  "taxCents": null,
+  "merchant": "MEN'S CLUB"
+ },
+ {
+  "id": "33126166-20ad-440e-8a5a-343702ff5a8a",
+  "items": [
+   {
+    "name": "JAL/SS21/009",
+    "quantity": 1,
+    "priceCents": 44900
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "HOT/SS20/027",
+    "quantity": 1,
+    "priceCents": 29900
+   },
+   {
+    "name": "SALE",
+    "quantity": 1,
+    "priceCents": 8970
+   }
+  ],
+  "totalCents": 53870,
+  "subtotalCents": 74800,
+  "taxCents": 6616,
+  "merchant": "MOHYE ALDEEN"
+ },
+ {
+  "id": "65eb3dcd-726c-4731-84c0-60829b46e6c5",
+  "items": [
+   {
+    "name": "Pay parking ticket",
+    "quantity": 1,
+    "priceCents": 200000
+   }
+  ],
+  "totalCents": 200000,
+  "subtotalCents": null,
+  "taxCents": 24600,
+  "merchant": "CAC Parking"
+ },
+ {
+  "id": "391ccb6b-d4fa-4c1e-8899-4bb29797af49",
+  "items": [
+   {
+    "name": "beef barbecue",
+    "quantity": 1,
+    "priceCents": 11052
+   },
+   {
+    "name": "fried noodles w\nvegetables",
+    "quantity": 1,
+    "priceCents": 4736
+   },
+   {
+    "name": "2\nbeef,prawn,veg,\nrolls",
+    "quantity": 1,
+    "priceCents": 6052
+   }
+  ],
+  "totalCents": 13499,
+  "subtotalCents": 21841,
+  "taxCents": null,
+  "merchant": "PEKIN"
+ },
+ {
+  "id": "42132efb-ae9b-4c19-be7e-86ba16ae4cfe",
+  "items": [
+   {
+    "name": "WINSTON SILVER PACK pcs",
+    "quantity": 1,
+    "priceCents": 3200
+   }
+  ],
+  "totalCents": 3200,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "El-Wahat"
+ },
+ {
+  "id": "b6f8e1ce-9183-41e2-a409-5ac6281e9730",
+  "items": [
+   {
+    "name": "UN GREY",
+    "quantity": 1,
+    "priceCents": 44900
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": 24900
+   },
+   {
+    "name": "UN WHITE",
+    "quantity": 1,
+    "priceCents": 34900
+   },
+   {
+    "name": "37\nGREEN",
+    "quantity": 1,
+    "priceCents": 19900
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": 14900
+   }
+  ],
+  "totalCents": 64700,
+  "subtotalCents": 99700,
+  "taxCents": 7946,
+  "merchant": "deJAVI"
+ },
+ {
+  "id": "167f9c29-66b1-4b2b-b22b-0a20580b6d98",
+  "items": [
+   {
+    "name": "تورته فرنساوي",
+    "quantity": null,
+    "priceCents": 0
+   },
+   {
+    "name": "تورته 6 سيزون",
+    "quantity": null,
+    "priceCents": 37143
+   }
+  ],
+  "totalCents": 31571,
+  "subtotalCents": 37143,
+  "taxCents": 1857,
+  "merchant": "Coppermelt"
+ },
+ {
+  "id": "ce6e9390-f1c5-4d48-96ad-15228adc984d",
+  "items": [
+   {
+    "name": "Gourmet Mascarpone Ch",
+    "quantity": null,
+    "priceCents": 9000
+   },
+   {
+    "name": "Cooks Cornstarch 240g",
+    "quantity": 1,
+    "priceCents": 1800
+   },
+   {
+    "name": "Falcon L.AluminiumFoilP",
+    "quantity": 1,
+    "priceCents": 12900
+   }
+  ],
+  "totalCents": 23700,
+  "subtotalCents": null,
+  "taxCents": 1805,
+  "merchant": "Gourmet Egypt RR"
+ },
+ {
+  "id": "6ccd6c88-3d5a-4c6b-9daf-be779519e3f7",
+  "items": [
+   {
+    "name": "Turkish Coffee Dark 250g",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "Turkish Coffee Medium 250g",
+    "quantity": 1,
+    "priceCents": 8000
+   },
+   {
+    "name": "Coffee Special Mudium 250g",
+    "quantity": 3,
+    "priceCents": 28500
+   },
+   {
+    "name": "Turkish Coffee Light 250g",
+    "quantity": null,
+    "priceCents": 24000
+   }
+  ],
+  "totalCents": 68500,
+  "subtotalCents": 68500,
+  "taxCents": 0,
+  "merchant": "AbuAuf\""
+ },
+ {
+  "id": "a1395016-0029-449c-b5d0-6c449a0db9bd",
+  "items": [
+   {
+    "name": "CIGARETTES",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "MERIT FILTER",
+    "quantity": 2,
+    "priceCents": 12800
+   },
+   {
+    "name": "CONFECTIO.",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "KITKAT CHUNKY 40GM pcs",
+    "quantity": 1,
+    "priceCents": 3000
+   },
+   {
+    "name": "DRINKS",
+    "quantity": 1,
+    "priceCents": null
+   },
+   {
+    "name": "7 UP CAN 330 ml pos",
+    "quantity": 1,
+    "priceCents": 1500
+   }
+  ],
+  "totalCents": 17300,
+  "subtotalCents": null,
+  "taxCents": 184,
+  "merchant": "Emarat M'sr"
+ },
+ {
+  "id": "306e4bae-adff-4bd4-9b2e-edd7d25fd1e2",
+  "items": [
+   {
+    "name": "Wadi Kalamata Black Oli\nLE77.0",
+    "quantity": 1,
+    "priceCents": 7700
+   }
+  ],
+  "totalCents": 7700,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Gourmet Egypt"
+ },
+ {
+  "id": "128deddb-c05d-4ce7-a3d3-9a1d5e26ddfb",
+  "items": [
+   {
+    "name": "Wht Mocha Grande",
+    "quantity": 1,
+    "priceCents": 5500
+   },
+   {
+    "name": "Latte Grande",
+    "quantity": 1,
+    "priceCents": 5000
+   },
+   {
+    "name": "Master Card",
+    "quantity": 1,
+    "priceCents": 10500
+   }
+  ],
+  "totalCents": 10500,
+  "subtotalCents": 9211,
+  "taxCents": 9200,
+  "merchant": "Starbucks Coffee"
+ },
+ {
+  "id": "59c8a644-1cc8-4305-a504-26b1531dd123",
+  "items": [
+   {
+    "name": "TROUSERS",
+    "quantity": 1,
+    "priceCents": 64900
+   }
+  ],
+  "totalCents": 64900,
+  "subtotalCents": null,
+  "taxCents": 7970,
+  "merchant": "Bershka"
+ },
+ {
+  "id": "b869fe86-ce46-4404-93d8-d1ef14b00b89",
+  "items": [
+   {
+    "name": "Healthy Hair Cap",
+    "quantity": 1,
+    "priceCents": 8500
+   }
+  ],
+  "totalCents": 8500,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Ie. VONle"
+ },
+ {
+  "id": "673ea771-32c9-4d28-877e-10e7ccc94ef5",
+  "items": [
+   {
+    "name": "Voss Sparkling Water 800ml\nhocolate Antd.",
+    "quantity": 3,
+    "priceCents": 345
+   },
+   {
+    "name": "Not Available",
+    "quantity": 1,
+    "priceCents": 89
+   },
+   {
+    "name": "Chocolate Astd.",
+    "quantity": 1,
+    "priceCents": 83
+   },
+   {
+    "name": "Tiffany Quanta Brk 2Fngr 15.5g",
+    "quantity": 2,
+    "priceCents": 210
+   },
+   {
+    "name": "Tiff Bite Pistachio 81g 8s",
+    "quantity": 1,
+    "priceCents": 101
+   },
+   {
+    "name": "Tif.Delght ChocoChp Cooki90g4s",
+    "quantity": 1,
+    "priceCents": 100
+   },
+   {
+    "name": "Cashew Nuts Roasted",
+    "quantity": 1,
+    "priceCents": 97
+   },
+   {
+    "name": "Cashew Nuts Roasted",
+    "quantity": 1,
+    "priceCents": 99
+   }
+  ],
+  "totalCents": 1125,
+  "subtotalCents": 1125,
+  "taxCents": 53,
+  "merchant": "Lulu Muscat Hypermarket LLC"
+ },
+ {
+  "id": "99c1f6d5-b00a-4c7a-aa45-fbe8289ffc0c",
+  "items": [
+   {
+    "name": "High Coal Neck LS M4551",
+    "quantity": 1,
+    "priceCents": 12900
+   }
+  ],
+  "totalCents": 12900,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "CARINA"
+ },
+ {
+  "id": "3ede5160-bc5d-42f9-bbae-3077e844cb27",
+  "items": [
+   {
+    "name": "SLOGAN TEE",
+    "quantity": 1,
+    "priceCents": 6000
+   },
+   {
+    "name": "SLOGAN TEE",
+    "quantity": 1,
+    "priceCents": 14000
+   }
+  ],
+  "totalCents": 20000000,
+  "subtotalCents": 17500,
+  "taxCents": 2456,
+  "merchant": null
+ },
+ {
+  "id": "74a27c6f-91be-4b2e-b11b-704d220bf8b3",
+  "items": [
+   {
+    "name": "Rivoli ShwrGel Sens.Eleganc 3",
+    "quantity": 2,
+    "priceCents": 28900
+   }
+  ],
+  "totalCents": 87300,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "Cu.Cu"
+ },
+ {
+  "id": "802d2d96-b34b-4f0f-b61c-c7a18c398813",
+  "items": [
+   {
+    "name": "WHITE\nFOO/ACTIVN/PORT20206",
+    "quantity": 42,
+    "priceCents": 22900
+   }
+  ],
+  "totalCents": 22900,
+  "subtotalCents": 22900,
+  "taxCents": null,
+  "merchant": "ACTIV"
+ },
+ {
+  "id": "688ed6d8-76d6-40a6-ad1d-102d7e2e3563",
+  "items": [
+   {
+    "name": "Chipsy F / Salt: 72GM",
+    "quantity": 4,
+    "priceCents": 2000
+   },
+   {
+    "name": "Doritos Nacho Cheese pcs",
+    "quantity": 1,
+    "priceCents": 700
+   }
+  ],
+  "totalCents": 2700,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "أمارات"
+ },
+ {
+  "id": "f9bb936a-f7ce-42dc-bfc4-8e50c35bf0b9",
+  "items": [
+   {
+    "name": "Brazil Beef Liver",
+    "quantity": 1,
+    "priceCents": 8956
+   }
+  ],
+  "totalCents": 106976,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "CuCu"
+ },
+ {
+  "id": "92d45a91-fef1-4254-9eb4-ad71fcb64840",
+  "items": [
+   {
+    "name": "Filtered Coffee , merica:250g",
+    "quantity": null,
+    "priceCents": 9500
+   },
+   {
+    "name": "Coffee Special x dium 250g",
+    "quantity": null,
+    "priceCents": 9500
+   }
+  ],
+  "totalCents": 19000,
+  "subtotalCents": 19000,
+  "taxCents": 0,
+  "merchant": "AbuAuf"
+ },
+ {
+  "id": "37e02f61-4ffd-4e55-a6db-9ca76a079571",
+  "items": [
+   {
+    "name": "Americano",
+    "quantity": 1,
+    "priceCents": 5400
+   },
+   {
+    "name": "Turkey Sandwich",
+    "quantity": 1,
+    "priceCents": 8000
+   },
+   {
+    "name": "mineral water",
+    "quantity": 1,
+    "priceCents": 1000
+   }
+  ],
+  "totalCents": 14400,
+  "subtotalCents": 12632,
+  "taxCents": 1768,
+  "merchant": "NINE TWO NINE"
+ },
+ {
+  "id": "231f8411-5a39-4f0b-bd02-d3e1ead3b43c",
+  "items": [
+   {
+    "name": "Corporate Bill Payment",
+    "quantity": null,
+    "priceCents": 68000
+   }
+  ],
+  "totalCents": 68000,
+  "subtotalCents": null,
+  "taxCents": 0,
+  "merchant": "etisalat"
+ },
+ {
+  "id": "17e8c42e-0858-4ba4-9fbc-55e48b2811fa",
+  "items": [
+   {
+    "name": "JANUMET 50 MG /1000\nMG 56",
+    "quantity": null,
+    "priceCents": 33600
+   },
+   {
+    "name": "TRITACE COMP LS 14",
+    "quantity": null,
+    "priceCents": 6480
+   },
+   {
+    "name": "THIOTACID\nCOMPOUND 600 MG 20",
+    "quantity": null,
+    "priceCents": 9100
+   },
+   {
+    "name": "STIMULAN 400MG CAP",
+    "quantity": null,
+    "priceCents": 2400
+   },
+   {
+    "name": "VASTAREL MR 30TAB",
+    "quantity": null,
+    "priceCents": 15800
+   },
+   {
+    "name": "MAGNESIUM PLUS TAB",
+    "quantity": null,
+    "priceCents": 2100
+   },
+   {
+    "name": "ASPIRIN PROTECT 100\n30",
+    "quantity": null,
+    "priceCents": 6300
+   },
+   {
+    "name": "PRAXILENE 200MG\n30TAB",
+    "quantity": null,
+    "priceCents": 8400
+   },
+   {
+    "name": "ATOREZA 10MG/20MG\n21",
+    "quantity": null,
+    "priceCents": 15000
+   },
+   {
+    "name": "MYOGREL 30TAB",
+    "quantity": null,
+    "priceCents": 12000
+   },
+   {
+    "name": "LACTO-APEX 30TAB",
+    "quantity": null,
+    "priceCents": 19500
+   },
+   {
+    "name": "SERETIDE DISKUS 500",
+    "quantity": null,
+    "priceCents": 21000
+   },
+   {
+    "name": "FLECTOR 50 mg 30",
+    "quantity": null,
+    "priceCents": 1275
+   },
+   {
+    "name": "FOSAMAX 70MG",
+    "quantity": null,
+    "priceCents": 12500
+   },
+   {
+    "name": "PANADOL ADVANCED",
+    "quantity": null,
+    "priceCents": 1600
+   },
+   {
+    "name": "TANTUM VERDE\nMOUTH WASH",
+    "quantity": null,
+    "priceCents": 900
+   },
+   {
+    "name": "GINGER",
+    "quantity": null,
+    "priceCents": 4000
+   },
+   {
+    "name": "VITACID C EFF 12\nSACHETS",
+    "quantity": null,
+    "priceCents": 2400
+   },
+   {
+    "name": "MULTI TREAT",
+    "quantity": null,
+    "priceCents": 3200
+   },
+   {
+    "name": "ORLY 30",
+    "quantity": null,
+    "priceCents": 13200
+   },
+   {
+    "name": "PANADOL MIGRAINE 30",
+    "quantity": null,
+    "priceCents": 3000
+   },
+   {
+    "name": "PANADOL COLD&FLU\nDAY",
+    "quantity": null,
+    "priceCents": 2700
+   },
+   {
+    "name": "PANADOL COLD&FLU\nDAY",
+    "quantity": null,
+    "priceCents": 2700
+   }
+  ],
+  "totalCents": null,
+  "subtotalCents": null,
+  "taxCents": null,
+  "merchant": "wafik heshmat PH"
+ }
+]

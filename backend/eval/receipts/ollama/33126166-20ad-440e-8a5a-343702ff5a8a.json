@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"JAL/SS21/009\",\n      \"priceCents\": 44900\n    },\n    {\n      \"text\": \"HOT/SS20/027\",\n      \"priceCents\": 29900\n    }\n  ],\n  \"totalCents\": 53870\n}\n```"}

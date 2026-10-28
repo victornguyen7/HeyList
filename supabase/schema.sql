@@ -41,7 +41,11 @@ create table if not exists receipts (
   total_cents integer check (total_cents >= 0),
   -- Every line Textract read, with the list item the AI proposed for it, until the person confirms:
   -- [{"text": "2% MILK 1GAL", "priceCents": 429, "confidence": 98.1, "lowConfidence": false, "itemId": "<uuid>" | null}, ...]
+  -- priceCents is null where the price couldn't be read surely; one the person typed in has "typed": true.
   lines jsonb not null default '[]',
+  -- What the receipt charged besides its items (decision 57): [{"kind": "tax" | "tip" | "service" | "delivery" |
+  -- "discount" | "other", "name": "SALES TAX", "amountCents": 352 | null, "typed": true?}, ...]. A discount is negative.
+  fees jsonb not null default '[]',
   -- Receipt lines that matched no list item: [{"name": "...", "priceCents": 123}, ...]
   extras jsonb not null default '[]',
   -- Set when the person confirmed the matches and the items were checked off. Null means proposals only.
@@ -89,6 +93,8 @@ create table if not exists items (
   est_price_cents integer check (est_price_cents >= 0),
   -- What was actually paid for all of them, from the receipt or the captured order.
   price_cents integer check (price_cents >= 0),
+  -- The receipt couldn't read the price, so the person typed it: self-reported, like a hand tick (decision 57).
+  price_typed boolean not null default false,
   -- A real product chosen from a store search (Channel3, decision 50): title, store, url, imageUrl, priceCents
   -- (one unit, read by the server, and copied into est_price_cents), productId, fetchedAt.
   product jsonb,
@@ -156,3 +162,5 @@ alter table items add column if not exists product jsonb;
 drop index if exists members_list_id;
 alter table members add column if not exists user_id uuid references auth.users (id) on delete set null;
 create unique index if not exists members_list_id_user_id_key on members (list_id, user_id);
+alter table receipts add column if not exists fees jsonb not null default '[]';
+alter table items add column if not exists price_typed boolean not null default false;

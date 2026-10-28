@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\"lines\": [\n{\"text\": \"16200000 SLOGNE TEE\", \"priceCents\": 60000},\n{\"text\": \"16200000 SLOGNE TEE\", \"priceCents\": 140000},\n{\"text\": \"16200000 SLOGNE TEE\", \"priceCents\": 200000},\n{\"text\": \"16200000 SLOGNE TEE\", \"priceCents\": 200000}\n], \"totalCents\": 600000}\n```"}

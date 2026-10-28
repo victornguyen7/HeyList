@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"SNICKERS SINGLE 50 G Pcs\",\n      \"priceCents\": 2700\n    },\n    {\n      \"text\": \"MARS SINGLE 51 GM pcs\",\n      \"priceCents\": 3500\n    },\n    {\n      \"text\": \"NESTLE PURE LIFE 500 pcs\",\n      \"priceCents\": 700\n    }\n  ],\n  \"totalCents\": 6900\n}\n```"}

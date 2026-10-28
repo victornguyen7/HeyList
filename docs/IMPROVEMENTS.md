@@ -12,6 +12,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 4 | 5. Group accounting (narrow) | Done 2026-10-27 (see below) |
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
+| 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | Planned 2026-10-28 (see below) |
 
 ### Phase 1 — purchase verification (done)
 
@@ -183,6 +184,135 @@ About 5 days in all, leaving about 10 for the hosted URL, the live sandbox payme
 - **Key:** `CHANNEL3_API_KEY` is in `.env.local` and `render.yaml`. Live search and lookup checked 2026-10-27. The backend only reads its shell's environment, so load `.env.local` before starting it.
 - **Approvals:** the two eval runs (60 Ollama calls) and the live Channel3 and store-match checks were approved and run on 2026-10-27.
 - **Demo script:** [SUBMISSION.md](SUBMISSION.md) gets a "find it in a store" scene before the PayPal payment.
+
+### Phase 7 — closing the loop, agent shopping and sponsor tools (planned)
+
+Written 2026-10-28, after a review of the code, [HACKATHON.md](HACKATHON.md) and the sponsor prizes. About 15 days are left before the deadline (12 November 2026). Keep the last 4 of them for the hosted URL check, running `supabase/schema.sql` on the live database, the video and the write-up.
+
+**Why this phase:** the loop is built and tested, but three things are weak:
+
+- **The demo's ending.** Settle up ends on text ("Ben → Ann $X"), and [SUBMISSION.md](SUBMISSION.md) says not to show invoices.
+- **The agentic story.** Finding real products is manual, one item at a time.
+- **The sponsor prizes.** Several have no entry: AG Grid has the biggest sponsor pool (5 prizes, $10,000), and APIMatic has 3 prizes.
+
+#### Overview
+
+| Part | What | Size | Prizes and criteria it helps | Priority |
+|---|---|---|---|---|
+| 7A | Realtime list updates | 0.5–1 day | Design, Presentation, Best Demo Delivery | Do, first |
+| 7B | Settle up with PayPal: pay the person you owe | 1.5–2 days | Best Use of PayPal + AI, Technical, Presentation | Do |
+| 7C | "Shop this list for me" agent | 2–3 days | Best Use of Agentic Commerce, Best Use of Channel3, Innovation | Do |
+| 7D | AG Grid ledger | About 1 day | Best Use of AG Grid | If time allows |
+| 7E | PayPal webhooks on Render | About 1 day | Technical, Best Use of Render | If time allows |
+| 7F | APIMatic portal or SDK, and a Postman collection, for HeyList's API | About 0.5 day | Best Use of APIMatic, documentation | If time allows |
+
+Order: 7A, 7B, 7C, then 7D–7F as time allows. 7A–7C come to about 4–6 days.
+
+#### 7A — realtime list updates (issue 31)
+
+- **Problem:** a list loads once. Changes made by someone else show only after a reload (issue 31). The demo uses two browsers, so this shows on camera.
+- **Plan:** one Supabase Realtime **broadcast** channel per list (`list:<id>`), through the `@supabase/supabase-js` client the browser already loads for login.
+  - After any change the client makes (join, claim, tick, receipt confirm, capture), it sends a "changed" message.
+  - Every other open page of that list refetches `GET /api/lists/{id}` when it gets the message.
+- **Why broadcast, not Postgres changes:** a Postgres changes feed on `items` needs Row Level Security policies that let anonymous users read items. Link-shared lists would then be readable by anyone. A broadcast carries no list data, only a "changed" ping, so nothing leaks.
+- **Edge cases:** debounce the refetch, so several messages in a row cause one request. Refetch when the tab becomes visible again, so a missed message heals itself.
+- **Demo value:** Ben claims the tent and it appears on Ann's screen. Ann pays and Ben's list ticks off.
+- **Tests:** none in the backend (no backend change). Try it with two browsers before recording.
+
+#### 7B — settle up with PayPal: pay the person you owe
+
+- **Problem:** the Invoicing plan in [PayPal.md §6](PayPal.md) sends money to the wrong person. An invoice is issued by HeyList's own sandbox merchant account (the app's client ID), so Ben's payment would go to HeyList, not to Ann. Payouts have the same problem: they send money *from* HeyList.
+- **Plan:** a **Pay Ann $X with PayPal** button on each Settle up payment. It creates an Orders API order with `purchase_units[0].payee.email_address` set to the PayPal email of the person owed, so the money goes straight from Ben to Ann.
+  - It reuses `paypal.create_order()` and `capture_order()`, the idempotency keys and the return-page handling.
+  - The order has no list items, only one amount: "HeyList: settle up for <list name>".
+- **Amount comes from the server:** the amount is read from `money.split()`'s transfers on the server, never from the browser (decision 21). The route refuses an amount that no longer matches the current split.
+- **Emails:** ask for the PayPal email of the person owed when the first payment to them is started, and store it in `members.email` (already in the schema).
+- **Tracking:** store settlements as their own rows: debtor, creditor, amount, PayPal order ID, status. The `invoices` table can be reused or renamed. The split counts a completed settlement, and Settle up shows "Ben paid Ann $X with PayPal".
+- **Check first:** in the sandbox, confirm that a payee override to a sandbox **personal** account is accepted. If it isn't, ask Ann for a sandbox business account, or fall back to showing the transfer only. Record the result as a new decision.
+- **Demo:** the video ends with a real PayPal payment between friends instead of a line of text. Update the Settle scene in [SUBMISSION.md](SUBMISSION.md).
+- **Tests:**
+  - the payee is in the create request;
+  - the amount comes from the split, and a stale amount is refused;
+  - capturing twice records one settlement;
+  - the split after a settlement is even.
+
+#### 7C — "Shop this list for me" agent
+
+- **Problem:** finding real products is manual. Each item needs its own **Find in stores** and **Choose**. That's the strongest place to show agentic commerce, and today it isn't agentic.
+- **Plan:** one button on Progress or Items, **Shop this list for me**, for the person's claimed items or all open items.
+  1. For each open item, run a Channel3 search (`market.search()`) and filter it with `llm.store_matches()`, as Find in stores does today.
+  2. Pick one product per item so the total fits the remaining budget, in code, not by the AI (decision 10). Prefer the closest match, then the cheapest in-stock offer.
+  3. Show the plan: each chosen product with store, price and photo. Each skipped item gets a reason ("no online store sells milk; buy it in person and scan the receipt", "over budget").
+  4. The person removes or swaps items, then taps **Pay $X with PayPal**. That is one PayPal order for everything, with every price read from Channel3 again on the server (decision 50).
+- **Human in the loop:** the agent never pays. It proposes a cart, and the person approves it on PayPal's page. That's the safe version of agentic commerce, and it's the point to make to the judges.
+- **Limits:**
+  - at most 10 items a run, searched in parallel;
+  - it counts against the 100 searches an hour cap;
+  - each run costs one Channel3 search and one Ollama call per item. Every live test needs the owner's approval ([RULES.md](RULES.md)).
+- **Honest wording:** as for 6C, no order is placed with the stores. The sandbox payment goes to HeyList's merchant account until Channel3's checkout opens.
+- **Demo:** it replaces the single-item Find in stores scene. "Shop the rest of our list for $90" → plan → PayPal.
+- **Tests:**
+  - budget fitting;
+  - skipped items have reasons;
+  - prices come from the server lookup;
+  - a Channel3 failure on one item doesn't stop the rest;
+  - bought or pending items are left out.
+
+#### 7D — AG Grid ledger (if time allows)
+
+- **What:** a **Ledger** page in the website layout, with one row per money event across the lists this person has opened:
+  - PayPal capture;
+  - refund;
+  - receipt line;
+  - receipt fee (tax, tip, discount);
+  - hand tick;
+  - settlement (7B).
+- **Columns:** date, list, item, who, amount, proof, PayPal order or receipt ID.
+- **Features used:** group by person, list or month; filter by proof type; totals in the group rows; CSV export.
+- **Why it's genuine:** the data already exists (History loads every list in one request, decision 54), and the grid answers "where did our money go" across lists. It extends History and Money rather than being added for the prize.
+- **Phones:** keep the current cards on phones. AG Grid is for the laptop layout only (decision 46).
+- **Check first:** the AG Grid Community licence covers what's used (grouping with totals may need Enterprise, which has a trial licence for evaluation). Add the package and its version to [ARCHITECTURE.md](ARCHITECTURE.md#stack).
+
+#### 7E — PayPal webhooks on Render (if time allows)
+
+- **What:** `POST /api/paypal/webhook` for:
+  - `PAYMENT.CAPTURE.COMPLETED` and `PAYMENT.CAPTURE.DENIED`: a pending order completes or is released without anyone tapping **Check again**;
+  - `PAYMENT.CAPTURE.REFUNDED`: a refund made outside HeyList is recorded on the order.
+- **Safety:** verify every event with PayPal's verify-webhook-signature call before acting on it. Handle each event once (store the event ID). Reuse the conditional updates from capture.
+- **Setup:** register the webhook in the sandbox app for the Render URL, and add `PAYPAL_WEBHOOK_ID` to `render.yaml` and `.env.example`.
+- **Keep Check again** as the fallback for local development, where PayPal can't reach the backend.
+- **Tests:**
+  - a bad signature is refused;
+  - a repeated event is handled once;
+  - pending to completed;
+  - pending to denied;
+  - an outside refund.
+
+#### 7F — APIMatic portal or SDK, and a Postman collection (if time allows)
+
+- **APIMatic:** import FastAPI's `/openapi.json` into APIMatic and generate a developer portal (and optionally a TypeScript SDK) for HeyList's own API. Link it from the README. Today APIMatic shows up only as the generator of PayPal's SDK and the Context Plugin (decision 23). This is a direct use, for the Best Use of APIMatic prize.
+- **Before generating:** give the FastAPI routes summaries and response models where they're missing, so the portal is readable.
+- **Postman:** export the same OpenAPI file as a public Postman collection, with a sandbox environment (no keys in it). It helps judges try the API, and the README already lists Postman as a tool.
+
+#### Not doing in this phase
+
+| Idea | Why not |
+|---|---|
+| PayPal Invoicing for settle-up | The invoice comes from HeyList's merchant account, so the money doesn't reach the person owed. 7B replaces it |
+| Bryntum | A scheduler or Gantt chart has no natural place in HeyList |
+| Photo recognition | Spec only ([SPEC.md](SPEC.md#photo-recognition-planned-spec-and-learning-plan-only)), and too big for the time left |
+| Dark ("Midnight") theme, PayPal Checkout JS SDK buttons | Polish that the judging criteria barely score; after the hackathon |
+
+#### The demo after this phase
+
+One sentence → AI list → **the agent shops the rest within budget (7C)** → PayPal → items checked off live on the other phone (7A) → Ben's receipt → **Ben pays Ann with PayPal (7B)**. Every step is PayPal and AI working together. Update [SUBMISSION.md](SUBMISSION.md) once each part is built and checked live.
+
+#### Blockers and approvals
+
+- **Paid calls:** live tests of 7C (Channel3 and Ollama) need the owner's approval ([RULES.md](RULES.md)).
+- **Live sandbox:** 7B's payee check needs a second sandbox personal account. 7E needs the deployed Render URL.
+- **Schema:** 7B adds a settlements table, or changes `invoices`. Run `supabase/schema.sql` again on the live database.
+- **Decisions to record:** the realtime approach (7A), payee orders over invoices (7B), the agent's budget rule and human approval (7C).
 
 ## All phases
 

@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"RS 100 LOW X3 BLACK\",\n      \"priceCents\": 7900\n    },\n    {\n      \"text\": \"FACIAL MASK EGYPT ??\",\n      \"priceCents\": 8700\n    },\n    {\n      \"text\": \"3 x E\u00a3 29.00\",\n      \"priceCents\": 8700\n    }\n  ],\n  \"totalCents\": 16600\n}\n```"}

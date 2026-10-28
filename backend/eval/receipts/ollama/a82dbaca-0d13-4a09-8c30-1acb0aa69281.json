@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Marlboro Crafted Gol 5 pcs @ 38.00\",\n      \"priceCents\": 19000\n    }\n  ],\n  \"totalCents\": 19000\n}\n```"}

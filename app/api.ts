@@ -11,6 +11,8 @@ export type Item = {
   quantity: number;
   estPriceCents: number | null;
   priceCents: number | null;
+  // The receipt couldn't read the price, so the buyer typed it: self-reported, like a hand tick (decision 57).
+  priceTyped: boolean;
   claimedBy: string | null;
   boughtBy: string | null;
   checkedAt: string | null;
@@ -20,13 +22,18 @@ export type Item = {
   product: Product | null;
 };
 export type Product = { productId: string; title: string; store: string; url: string; imageUrl: string | null; priceCents: number };
-export type ReceiptLine = { text: string; priceCents: number; lowConfidence: boolean; itemId: string | null };
+// priceCents is null where the photo's price couldn't be read surely; typed marks one the person typed in.
+export type ReceiptLine = { text: string; priceCents: number | null; lowConfidence: boolean; itemId: string | null; typed?: boolean };
+// What a receipt charged besides its items. A discount's amountCents is negative; null means it couldn't be read.
+export type ReceiptFee = { kind: "tax" | "tip" | "service" | "delivery" | "discount" | "other"; name: string; amountCents: number | null; typed?: boolean };
 export type Receipt = {
   id: string;
   memberId: string | null;
   lines: ReceiptLine[];
+  // Missing on a receipt scanned before fees were read.
+  fees?: ReceiptFee[];
   totalCents: number | null;
-  extras: { name: string; priceCents: number }[];
+  extras: { name: string; priceCents: number | null }[];
   confirmedAt: string | null;
   createdAt: string;
 };
@@ -100,7 +107,8 @@ export function proofLabel(item: Item, orders: Order[]): string | null {
 // Said after a capture: how much came back for items someone had already bought.
 export const refundNote = (cents: number) => (cents > 0 ? ` ${usd(cents)} was refunded for items someone had already bought.` : "");
 
-export const usd = (cents: number) => `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
+export const usd = (cents: number) =>
+  `${cents < 0 ? "−" : ""}$${Math.floor(Math.abs(cents) / 100)}.${String(Math.abs(cents) % 100).padStart(2, "0")}`;
 
 // Readable messages for the backend's error codes; anything else shows the code itself.
 const MESSAGES: Record<string, string> = {

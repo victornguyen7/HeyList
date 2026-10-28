@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\"lines\": [\n{\"text\": \"L&M BOX 20 pcs @ 35.00\", \"priceCents\": 70000},\n{\"text\": \"L&M LIGHT BOX 10 pcs @ 35.00\", \"priceCents\": 35000}\n], \"totalCents\": 105000}\n```"}

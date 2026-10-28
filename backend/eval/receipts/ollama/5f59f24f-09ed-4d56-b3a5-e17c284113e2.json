@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Delicious Mix 400 g\",\n      \"priceCents\": 14000\n    },\n    {\n      \"text\": \"Chinese Crackers Cheese 225G\",\n      \"priceCents\": 4000\n    },\n    {\n      \"text\": \"Golden Raisins Iranian Kg\",\n      \"priceCents\": 6000\n    }\n  ],\n  \"totalCents\": 24000\n}\n```"}

@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "prompt": "e80db468af52", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"1 9PC LT\",\n      \"priceCents\": 999\n    }\n  ],\n  \"fees\": [\n    {\n      \"kind\": \"tax\",\n      \"name\": \"TXTL\",\n      \"amountCents\": 95\n    }\n  ],\n  \"totalCents\": 1094\n}\n```"}

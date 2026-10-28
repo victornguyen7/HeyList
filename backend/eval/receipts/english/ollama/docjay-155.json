@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "prompt": "e80db468af52", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"Chole Samosa *** TO GO ***\",\n      \"priceCents\": 599\n    }\n  ],\n  \"fees\": [\n    {\n      \"kind\": \"tax\",\n      \"name\": \"TAX\",\n      \"amountCents\": 57\n    }\n  ],\n  \"totalCents\": 656\n}\n```"}

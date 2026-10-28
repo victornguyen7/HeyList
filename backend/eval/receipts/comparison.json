@@ -1,0 +1,310 @@
+{
+ "receiptQA": {
+  "ranAt": "2026-10-28T16:15:01+00:00",
+  "textract": {
+   "summary": {
+    "receipts": 100,
+    "itemRecall": 0.727,
+    "linePrecision": 0.786,
+    "priceAccuracy": 0.894,
+    "totalAccuracy": 0.939,
+    "perfectReceipts": 0.51,
+    "wrongLinesFlagged": 0.192,
+    "rightLinesFlagged": 0.141,
+    "counts": {
+     "found": 253,
+     "expected": 348,
+     "priceOk": 220,
+     "priceChecked": 246,
+     "extra": 69,
+     "totalOk": 92,
+     "totalChecked": 98,
+     "perfect": 51,
+     "flaggedRight": 31,
+     "flaggedWrong": 5,
+     "rightLines": 220,
+     "wrongLines": 26
+    }
+   },
+   "byCategory": {}
+  },
+  "ollama": {
+   "summary": {
+    "receipts": 100,
+    "itemRecall": 0.796,
+    "linePrecision": 0.812,
+    "priceAccuracy": 0.757,
+    "totalAccuracy": 0.806,
+    "perfectReceipts": 0.45,
+    "wrongLinesFlagged": 0.0,
+    "rightLinesFlagged": 0.0,
+    "counts": {
+     "found": 277,
+     "expected": 348,
+     "priceOk": 202,
+     "priceChecked": 267,
+     "extra": 64,
+     "totalOk": 79,
+     "totalChecked": 98,
+     "perfect": 45,
+     "flaggedRight": 0,
+     "flaggedWrong": 0,
+     "rightLines": 202,
+     "wrongLines": 65
+    }
+   },
+   "byCategory": {}
+  }
+ },
+ "english": {
+  "ranAt": "2026-10-28T18:20:55+00:00",
+  "textract": {
+   "summary": {
+    "receipts": 189,
+    "itemRecall": 0.867,
+    "linePrecision": 0.925,
+    "priceAccuracy": 0.95,
+    "totalAccuracy": 0.942,
+    "perfectReceipts": 0.667,
+    "wrongLinesFlagged": 0.348,
+    "rightLinesFlagged": 0.04,
+    "counts": {
+     "found": 926,
+     "expected": 1068,
+     "priceOk": 880,
+     "priceChecked": 926,
+     "extra": 75,
+     "totalOk": 178,
+     "totalChecked": 189,
+     "perfect": 126,
+     "flaggedRight": 35,
+     "flaggedWrong": 16,
+     "rightLines": 880,
+     "wrongLines": 46
+    }
+   },
+   "byCategory": {
+    "bills_and_other": {
+     "receipts": 3,
+     "itemRecall": 0.667,
+     "linePrecision": 1.0,
+     "priceAccuracy": 1.0,
+     "totalAccuracy": 1.0,
+     "perfectReceipts": 0.667,
+     "wrongLinesFlagged": null,
+     "rightLinesFlagged": 0.0,
+     "counts": {
+      "found": 2,
+      "expected": 3,
+      "priceOk": 2,
+      "priceChecked": 2,
+      "extra": 0,
+      "totalOk": 3,
+      "totalChecked": 3,
+      "perfect": 2,
+      "flaggedRight": 0,
+      "flaggedWrong": 0,
+      "rightLines": 2,
+      "wrongLines": 0
+     }
+    },
+    "daily_items": {
+     "receipts": 7,
+     "itemRecall": 0.813,
+     "linePrecision": 0.893,
+     "priceAccuracy": 0.881,
+     "totalAccuracy": 0.714,
+     "perfectReceipts": 0.571,
+     "wrongLinesFlagged": 0.231,
+     "rightLinesFlagged": 0.052,
+     "counts": {
+      "found": 109,
+      "expected": 134,
+      "priceOk": 96,
+      "priceChecked": 109,
+      "extra": 13,
+      "totalOk": 5,
+      "totalChecked": 7,
+      "perfect": 4,
+      "flaggedRight": 5,
+      "flaggedWrong": 3,
+      "rightLines": 96,
+      "wrongLines": 13
+     }
+    },
+    "food": {
+     "receipts": 165,
+     "itemRecall": 0.891,
+     "linePrecision": 0.951,
+     "priceAccuracy": 0.984,
+     "totalAccuracy": 0.958,
+     "perfectReceipts": 0.685,
+     "wrongLinesFlagged": 0.2,
+     "rightLinesFlagged": 0.005,
+     "counts": {
+      "found": 640,
+      "expected": 718,
+      "priceOk": 630,
+      "priceChecked": 640,
+      "extra": 33,
+      "totalOk": 158,
+      "totalChecked": 165,
+      "perfect": 113,
+      "flaggedRight": 3,
+      "flaggedWrong": 2,
+      "rightLines": 630,
+      "wrongLines": 10
+     }
+    },
+    "grocery": {
+     "receipts": 14,
+     "itemRecall": 0.822,
+     "linePrecision": 0.858,
+     "priceAccuracy": 0.869,
+     "totalAccuracy": 0.857,
+     "perfectReceipts": 0.5,
+     "wrongLinesFlagged": 0.478,
+     "rightLinesFlagged": 0.178,
+     "counts": {
+      "found": 175,
+      "expected": 213,
+      "priceOk": 152,
+      "priceChecked": 175,
+      "extra": 29,
+      "totalOk": 12,
+      "totalChecked": 14,
+      "perfect": 7,
+      "flaggedRight": 27,
+      "flaggedWrong": 11,
+      "rightLines": 152,
+      "wrongLines": 23
+     }
+    }
+   }
+  },
+  "ollama": {
+   "summary": {
+    "receipts": 189,
+    "itemRecall": 0.921,
+    "linePrecision": 0.938,
+    "priceAccuracy": 0.929,
+    "totalAccuracy": 0.979,
+    "perfectReceipts": 0.688,
+    "wrongLinesFlagged": 0.0,
+    "rightLinesFlagged": 0.0,
+    "counts": {
+     "found": 984,
+     "expected": 1068,
+     "priceOk": 914,
+     "priceChecked": 984,
+     "extra": 65,
+     "totalOk": 185,
+     "totalChecked": 189,
+     "perfect": 130,
+     "flaggedRight": 0,
+     "flaggedWrong": 0,
+     "rightLines": 914,
+     "wrongLines": 70
+    }
+   },
+   "byCategory": {
+    "bills_and_other": {
+     "receipts": 3,
+     "itemRecall": 0.667,
+     "linePrecision": 1.0,
+     "priceAccuracy": 1.0,
+     "totalAccuracy": 1.0,
+     "perfectReceipts": 0.667,
+     "wrongLinesFlagged": null,
+     "rightLinesFlagged": 0.0,
+     "counts": {
+      "found": 2,
+      "expected": 3,
+      "priceOk": 2,
+      "priceChecked": 2,
+      "extra": 0,
+      "totalOk": 3,
+      "totalChecked": 3,
+      "perfect": 2,
+      "flaggedRight": 0,
+      "flaggedWrong": 0,
+      "rightLines": 2,
+      "wrongLines": 0
+     }
+    },
+    "daily_items": {
+     "receipts": 7,
+     "itemRecall": 0.873,
+     "linePrecision": 0.867,
+     "priceAccuracy": 0.906,
+     "totalAccuracy": 1.0,
+     "perfectReceipts": 0.429,
+     "wrongLinesFlagged": 0.0,
+     "rightLinesFlagged": 0.0,
+     "counts": {
+      "found": 117,
+      "expected": 134,
+      "priceOk": 106,
+      "priceChecked": 117,
+      "extra": 18,
+      "totalOk": 7,
+      "totalChecked": 7,
+      "perfect": 3,
+      "flaggedRight": 0,
+      "flaggedWrong": 0,
+      "rightLines": 106,
+      "wrongLines": 11
+     }
+    },
+    "food": {
+     "receipts": 165,
+     "itemRecall": 0.926,
+     "linePrecision": 0.955,
+     "priceAccuracy": 0.943,
+     "totalAccuracy": 0.982,
+     "perfectReceipts": 0.733,
+     "wrongLinesFlagged": 0.0,
+     "rightLinesFlagged": 0.0,
+     "counts": {
+      "found": 665,
+      "expected": 718,
+      "priceOk": 627,
+      "priceChecked": 665,
+      "extra": 31,
+      "totalOk": 162,
+      "totalChecked": 165,
+      "perfect": 121,
+      "flaggedRight": 0,
+      "flaggedWrong": 0,
+      "rightLines": 627,
+      "wrongLines": 38
+     }
+    },
+    "grocery": {
+     "receipts": 14,
+     "itemRecall": 0.939,
+     "linePrecision": 0.926,
+     "priceAccuracy": 0.895,
+     "totalAccuracy": 0.929,
+     "perfectReceipts": 0.286,
+     "wrongLinesFlagged": 0.0,
+     "rightLinesFlagged": 0.0,
+     "counts": {
+      "found": 200,
+      "expected": 213,
+      "priceOk": 179,
+      "priceChecked": 200,
+      "extra": 16,
+      "totalOk": 13,
+      "totalChecked": 14,
+      "perfect": 4,
+      "flaggedRight": 0,
+      "flaggedWrong": 0,
+      "rightLines": 179,
+      "wrongLines": 21
+     }
+    }
+   }
+  }
+ }
+}

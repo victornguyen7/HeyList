@@ -27,19 +27,21 @@ def assign_unclaimed(items: list[dict], member_ids: list[str]) -> dict[str, str]
     return assigned
 
 
-def split(items: list[dict], member_ids: list[str], orders: list[dict] = ()) -> dict: # pyright: ignore[reportArgumentType]
+def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), receipts: list[dict] = ()) -> dict: # pyright: ignore[reportArgumentType]
     """Who paid what for the list's items, each member's equal share, and the transfers that settle it.
     Only bought items count (price_cents is what was paid for all of them). Receipt extras are personal and not split.
     orders are the list's captured PayPal orders: a charge for an item that something else checked off first
     (a receipt, a hand tick) is still money the buyer spent, so it counts too and is listed in boughtTwice.
+    receipts are the list's receipts: a confirmed one's fees (tax, tip, discounts...) count in proportion to what it
+    bought for the list, and the part for its extras stays with the buyer (decision 57).
     Each member's purchases are the lines their paidCents adds up from, so every balance can be traced."""
     purchases: dict[str, list[dict]] = {member_id: [] for member_id in member_ids}
     unattributed = 0
 
-    def credit(member_id, item_id: str, cents: int, twice: bool = False):
+    def credit(member_id, item_id: str | None, cents: int, twice: bool = False, fees_of: str | None = None):
         nonlocal unattributed
         if member_id in purchases:
-            purchases[member_id].append({"itemId": item_id, "cents": cents, "boughtTwice": twice})
+            purchases[member_id].append({"itemId": item_id, "cents": cents, "boughtTwice": twice, "feesOf": fees_of})
         else:
             # A price but no buyer: nobody to pay back, so it stays out of the split.
             unattributed += cents
@@ -56,6 +58,17 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = ()) -> 
             if proof.get(item_id) != order["id"] and order["prices"].get(item_id):
                 credit(order["member_id"], item_id, order["prices"][item_id], twice=True)
                 bought_twice.append({"orderId": order["id"], "itemId": item_id, "cents": order["prices"][item_id]})
+
+    for receipt in receipts:
+        fees = sum(fee["amountCents"] for fee in receipt.get("fees") or [] if fee["amountCents"] is not None)
+        if not receipt["confirmed_at"] or not fees:
+            continue
+        on_list = sum(item["price_cents"] or 0 for item in items if item["receipt_id"] == receipt["id"])
+        extras = sum(extra["priceCents"] or 0 for extra in receipt["extras"])
+        # ponytail: a receipt whose prices are all unknown shares no fees; ask for them if that shows up.
+        share = round(fees * on_list / (on_list + extras)) if on_list + extras else 0
+        if share:
+            credit(receipt["member_id"], None, share, fees_of=receipt["id"])
 
     paid = {member_id: sum(line["cents"] for line in lines) for member_id, lines in purchases.items()}
     total = sum(paid.values())

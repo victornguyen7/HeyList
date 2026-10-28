@@ -1,0 +1,1 @@
+{"model": "gemma4:31b", "reply": "```json\n{\n  \"lines\": [\n    {\n      \"text\": \"High Coal Neck LS M4551\",\n      \"priceCents\": 12900\n    }\n  ],\n  \"totalCents\": 12900\n}\n```"}

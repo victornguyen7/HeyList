@@ -3,8 +3,9 @@ import unittest
 import money
 
 
-def item(item_id, cents=None, quantity=1, claimed_by=None, checked_at=None, price_cents=None, bought_by=None, order_id=None):
+def item(item_id, cents=None, quantity=1, claimed_by=None, checked_at=None, price_cents=None, bought_by=None, order_id=None, receipt_id=None):
     return {
+        "receipt_id": receipt_id,
         "id": item_id,
         "est_price_cents": cents,
         "quantity": quantity,
@@ -86,13 +87,27 @@ class SplitTest(unittest.TestCase):
         self.assertEqual(
             result["members"][0]["purchases"],
             [
-                {"itemId": "tent", "cents": 9000, "boughtTwice": False},
-                {"itemId": "food", "cents": 2500, "boughtTwice": True},
-                {"itemId": "gone", "cents": 100, "boughtTwice": True},
+                {"itemId": "tent", "cents": 9000, "boughtTwice": False, "feesOf": None},
+                {"itemId": "food", "cents": 2500, "boughtTwice": True, "feesOf": None},
+                {"itemId": "gone", "cents": 100, "boughtTwice": True, "feesOf": None},
             ],
         )
         self.assertEqual(result["totalCents"], 14600)
         self.assertEqual([b["itemId"] for b in result["boughtTwice"]], ["food", "gone"])
+
+    def test_receipt_fees_are_shared_in_proportion_to_the_list_items(self):
+        items = [item("milk", price_cents=600, bought_by="ann", receipt_id="R1"), item("eggs", price_cents=300, bought_by="ann", receipt_id="R1")]
+        receipt = {"id": "R1", "member_id": "ann", "confirmed_at": "now", "extras": [{"name": "GUM", "priceCents": 300}, {"name": "?", "priceCents": None}]}
+        fees = [{"kind": "tax", "amountCents": 100}, {"kind": "tip", "amountCents": 200}, {"kind": "discount", "amountCents": -60}, {"kind": "tax", "amountCents": None}]
+
+        result = money.split(items, ["ann", "bob"], receipts=[receipt | {"fees": fees}])
+
+        # 240 of fees on 900 of list items and 300 of extras: 180 is shared, 60 stays with ann.
+        self.assertEqual(result["members"][0]["purchases"][-1], {"itemId": None, "cents": 180, "boughtTwice": False, "feesOf": "R1"})
+        self.assertEqual(result["totalCents"], 1080)
+        # An unconfirmed receipt, or one with no fees, adds nothing.
+        for other in (receipt | {"fees": fees, "confirmed_at": None}, receipt | {"fees": []}):
+            self.assertEqual(money.split(items, ["ann", "bob"], receipts=[other])["totalCents"], 900)
 
     def test_no_members_is_not_a_crash(self):
         self.assertEqual(money.split([], [])["members"], [])

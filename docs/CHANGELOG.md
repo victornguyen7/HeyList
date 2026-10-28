@@ -2,6 +2,17 @@
 
 ## 2026-10-28
 
+### Added
+
+- **Unreadable prices are asked, not guessed** (decision 57): a receipt line whose price Textract isn't sure of (under 90%) or couldn't read comes back blank, and the review screen asks for it ("The price couldn't be read. Type it from the receipt, or leave it blank"). A typed price is marked typed (`items.price_typed`), shown "(typed)" on Receipts, and left out of price memory. The Ollama reader is told to give no price rather than guess one.
+- **Tax, tip and fees** (decision 57): receipts now read tax, tip, service charges, delivery fees and discounts (`receipts.fees`). The review screen lists them (asking for any it couldn't read) and checks that lines and fees add up to the receipt total. On Money and in the split, a receipt's fees are shared in proportion to the list items on it; the part for extras stays with the buyer. **Schema:** `receipts.fees` and `items.price_typed`; run `supabase/schema.sql` again.
+- **English receipt eval** (`eval_receipts.py --english`, `eval_receipts.py compare`): 189 English receipts from [docjay131/receipts-ocr-dataset](https://huggingface.co/datasets/docjay131/receipts-ocr-dataset), scored per category, side by side with ReceiptQA in `backend/eval/receipts/comparison.json`. Results in [RECEIPT_EVAL.md](RECEIPT_EVAL.md).
+
+### Fixed
+
+- **Receipt amounts:** `.98` was read as $98.00, and discounts printed `9.95-` or `($12.00)` as charges.
+- **Receipt names:** when Textract mixes the names of neighbouring lines ("WINCO SNDWCH WT / WINCO HOMO MILK"), the name is taken from the printed row with the line's price.
+
 ### Changed
 
 - **Stack documented** (issue 2, decision 56): [ARCHITECTURE.md](ARCHITECTURE.md#stack) now lists every framework, library, service, browser API and tool in use, with its pinned version and what it's for; the README's Stack section matches. The browser uses Supabase only for login, and checkout keeps PayPal's hosted page.
