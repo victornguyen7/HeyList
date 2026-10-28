@@ -17,7 +17,7 @@ Flow, end to end:
   - [x] Voice: the mic dictates the prompt with the browser's speech recognition (decision 47)
 - [ ] Share by link; people claim items they'll buy
   - [x] Join by name, claim items, share out unclaimed items evenly by estimated cost
-  - [ ] Realtime updates when someone else changes the list
+  - [x] Realtime updates when someone else changes the list (decision 59)
 - [ ] Check off by receipt scan: AI matches lines to items, with prices attached
   - [x] Camera capture, Textract line items with confidence, Ollama matching, confirm step, prices and buyer recorded
   - [x] Ollama vision reads the photo while Textract is unavailable (decision 38)
@@ -30,9 +30,9 @@ Flow, end to end:
   - [x] Create-order route and checkout button (test UI for the sample list)
   - [x] Store the order as proof and check the items off
 - [x] Flag receipt lines that match nothing as extras; keep unchecked items open
-- [ ] Settle up on shared lists with PayPal invoices
+- [ ] Settle up on shared lists with PayPal
   - [x] Split math: each person's paid amount, equal share, and the fewest payments to settle
-  - [ ] Send those payments as PayPal invoices
+  - [x] Pay the person owed with PayPal, straight to their account (decision 60); not yet tried on the sandbox
 - [ ] Finished list joins history
 
 Core features:
@@ -60,11 +60,11 @@ Pages (simple first versions built, at `/lists/<id>` and `/history`):
 - [x] Money
 - [x] Receipts
 - [x] History (by type, by month, buy again, price memory; loads in one request and shows the saved copy at once)
-- [ ] Settle-up (who pays whom built; PayPal invoices not yet)
+- [x] Settle-up (who pays whom, and paying it with PayPal)
 
 Infrastructure:
 
-- [ ] Supabase (lists, receipts storage, realtime): lists and receipt storage done; realtime not yet
+- [x] Supabase (lists, receipts storage, realtime)
 - [x] FastAPI backend, proxied under `/api` by Next.js
 - [ ] PayPal sandbox (Checkout JS SDK + Orders API, Invoicing API) — Orders API done via the PayPal Server SDK
 - [ ] LLM with vision via the Ollama API: starting lists and receipt matching done; receipt photos are read by Ollama vision when Textract is unavailable (decision 38)

@@ -16,6 +16,7 @@ from paypalserversdk.models.checkout_payment_intent import CheckoutPaymentIntent
 from paypalserversdk.models.item_request import ItemRequest
 from paypalserversdk.models.money import Money
 from paypalserversdk.models.order_request import OrderRequest
+from paypalserversdk.models.payee_base import PayeeBase
 from paypalserversdk.models.payment_source import PaymentSource
 from paypalserversdk.models.paypal_wallet import PaypalWallet
 from paypalserversdk.models.paypal_wallet_experience_context import PaypalWalletExperienceContext
@@ -93,9 +94,10 @@ def _usd(cents: int) -> Money:
     return Money(currency_code="USD", value=f"{cents // 100}.{cents % 100:02d}")
 
 
-def create_order(items: list[dict], return_url: str) -> dict:
+def create_order(items: list[dict], return_url: str, payee_email: str | None = None) -> dict:
     """Creates an order for [{"name", "priceCents", "quantity"}, ...] and returns its ID and the PayPal page to send
-    the buyer to. The caller looked the prices up; none came from the browser."""
+    the buyer to. The caller looked the prices up; none came from the browser. With payee_email the money goes to
+    that PayPal account instead of HeyList's (settle up, decision 60)."""
     total = sum(item["priceCents"] * item["quantity"] for item in items)
 
     body = OrderRequest(
@@ -112,6 +114,7 @@ def create_order(items: list[dict], return_url: str) -> dict:
                     ItemRequest(name=item["name"][:127], quantity=str(item["quantity"]), unit_amount=_usd(item["priceCents"]))
                     for item in items
                 ],
+                **({"payee": PayeeBase(email_address=payee_email)} if payee_email else {}),
             )
         ],
         # Where PayPal's hosted page sends the buyer back; it adds ?token=<order id>&PayerID=... after approval.

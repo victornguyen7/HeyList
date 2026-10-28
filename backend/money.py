@@ -27,13 +27,15 @@ def assign_unclaimed(items: list[dict], member_ids: list[str]) -> dict[str, str]
     return assigned
 
 
-def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), receipts: list[dict] = ()) -> dict: # pyright: ignore[reportArgumentType]
+def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), receipts: list[dict] = (), settlements: list[dict] = ()) -> dict: # pyright: ignore[reportArgumentType]
     """Who paid what for the list's items, each member's equal share, and the transfers that settle it.
     Only bought items count (price_cents is what was paid for all of them). Receipt extras are personal and not split.
     orders are the list's captured PayPal orders: a charge for an item that something else checked off first
     (a receipt, a hand tick) is still money the buyer spent, so it counts too and is listed in boughtTwice.
     receipts are the list's receipts: a confirmed one's fees (tax, tip, discounts...) count in proportion to what it
     bought for the list, and the part for its extras stays with the buyer (decision 57).
+    settlements are completed settle-up payments (decision 60): money one member sent another, which moves their
+    balances toward even; settledCents is what a member sent minus what they received.
     Each member's purchases are the lines their paidCents adds up from, so every balance can be traced."""
     purchases: dict[str, list[dict]] = {member_id: [] for member_id in member_ids}
     unattributed = 0
@@ -75,13 +77,26 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), rec
     # Equal shares in whole cents; the leftover cents go to the first members, so the shares add up to the total.
     base, extra = divmod(total, len(member_ids)) if member_ids else (0, 0)
     share = {member_id: base + (index < extra) for index, member_id in enumerate(member_ids)}
-    balance = {member_id: paid[member_id] - share[member_id] for member_id in member_ids}
+    settled = dict.fromkeys(member_ids, 0)
+    for payment in settlements:
+        # Someone who left the list since stays out, as for purchases.
+        if payment["debtor_id"] in settled and payment["creditor_id"] in settled:
+            settled[payment["debtor_id"]] += payment["amount_cents"]
+            settled[payment["creditor_id"]] -= payment["amount_cents"]
+    balance = {member_id: paid[member_id] - share[member_id] + settled[member_id] for member_id in member_ids}
     return {
         "totalCents": total,
         "unattributedCents": unattributed,
         "boughtTwice": bought_twice,
         "members": [
-            {"memberId": m, "paidCents": paid[m], "shareCents": share[m], "balanceCents": balance[m], "purchases": purchases[m]}
+            {
+                "memberId": m,
+                "paidCents": paid[m],
+                "shareCents": share[m],
+                "settledCents": settled[m],
+                "balanceCents": balance[m],
+                "purchases": purchases[m],
+            }
             for m in member_ids
         ],
         "transfers": settle(balance),

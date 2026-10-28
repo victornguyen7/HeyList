@@ -55,6 +55,19 @@ class SplitTest(unittest.TestCase):
             [{"from": "cat", "to": "ann", "amountCents": 4000}, {"from": "bob", "to": "ann", "amountCents": 1000}],
         )
 
+    def test_a_settle_up_payment_moves_both_balances_and_a_full_one_evens_them(self):
+        items = [item("tent", price_cents=9000, bought_by="ann"), item("food", price_cents=3000, bought_by="bob")]
+        part = [{"debtor_id": "bob", "creditor_id": "ann", "amount_cents": 1000}]
+
+        result = money.split(items, ["ann", "bob"], settlements=part)
+
+        self.assertEqual([m["settledCents"] for m in result["members"]], [-1000, 1000])
+        self.assertEqual(result["transfers"], [{"from": "bob", "to": "ann", "amountCents": 2000}])
+        full = part + [{"debtor_id": "bob", "creditor_id": "ann", "amount_cents": 2000}]
+        self.assertEqual(money.split(items, ["ann", "bob"], settlements=full)["transfers"], [])
+        # Spending and shares don't change: a settlement is money between people, not money spent on the list.
+        self.assertEqual(money.split(items, ["ann", "bob"], settlements=full)["totalCents"], 12000)
+
     def test_every_balance_adds_up_from_its_purchases(self):
         items = [item("tent", price_cents=9000, bought_by="ann"), item("gas", price_cents=1234, bought_by="ann"), item("food", price_cents=3001, bought_by="bob")]
 

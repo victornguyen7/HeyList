@@ -1,8 +1,9 @@
 import { supabase } from "./auth";
 import type { Split } from "./split";
 
-// userId is set for someone who joined logged in; null for a guest.
-export type Member = { id: string; name: string; userId: string | null };
+// userId is set for someone who joined logged in; null for a guest. hasEmail: their PayPal email for settle-up
+// payments is known (the email itself stays on the server).
+export type Member = { id: string; name: string; userId: string | null; hasEmail: boolean };
 export type Item = {
   id: string;
   name: string;
@@ -44,7 +45,8 @@ export type Order = {
   refunds: Record<string, { refundId: string; cents: number; status: string }>;
   createdAt: string;
 };
-export type Invoice = { id: string; debtorId: string | null; creditorId: string | null; amountCents: number; status: string; payUrl: string | null };
+// A settle-up payment sent with PayPal straight to the person owed (decision 60); id is the PayPal order ID.
+export type Settlement = { id: string; debtorId: string | null; creditorId: string | null; amountCents: number; status: "COMPLETED" | "PENDING"; capturedAt: string | null };
 export type List = {
   id: string;
   title: string;
@@ -56,7 +58,8 @@ export type List = {
   items: Item[];
   receipts: Receipt[];
   orders: Order[];
-  invoices: Invoice[];
+  // Missing on a list saved in this browser before settle-up payments existed.
+  settlements?: Settlement[];
   // Missing on a list saved in this browser before it was sent with the list.
   split?: Split;
 };
@@ -126,6 +129,9 @@ const MESSAGES: Record<string, string> = {
   PRODUCT_NOT_FOUND: "That product is no longer available. Search again.",
   PRICE_CHANGED: "A store price changed since it was chosen, or the store stopped selling it. Check the new total, then pay again.",
   ITEM_CHECKED: "That item has already been bought.",
+  SPLIT_CHANGED: "The amounts changed since this page loaded. Check the new amount, then pay again.",
+  EMAIL_NEEDED: "Type the PayPal email of the person you're paying.",
+  PAYEE_NOT_ACCEPTED: "PayPal can't send money to that email. Check it with them and try again.",
   NOT_YOURS: "That person joined with an account. Only they can do this, logged in.",
   NAME_TAKEN: "Someone with an account already uses that name on this list. Pick another, or log in if it's you.",
 };

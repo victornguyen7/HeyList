@@ -110,32 +110,33 @@ create table if not exists items (
   constraint items_one_proof check (receipt_id is null or order_id is null)
 );
 
--- A PayPal invoice sent for settle-up: debtor owes creditor amount_cents.
-create table if not exists invoices (
-  -- The PayPal invoice ID.
+-- A settle-up payment: debtor pays creditor amount_cents with PayPal, straight to the creditor's PayPal account
+-- (the order's payee, decision 60). A COMPLETED one counts in the split.
+create table if not exists settlements (
+  -- The PayPal order ID.
   id text primary key,
   list_id uuid not null references lists (id) on delete cascade,
   debtor_id uuid references members (id) on delete set null,
   creditor_id uuid references members (id) on delete set null,
   amount_cents integer not null check (amount_cents > 0),
-  -- PayPal's invoice status: DRAFT, SENT, PAID, CANCELLED, ...
-  status text not null,
-  -- The page where the debtor pays.
-  pay_url text,
+  -- The capture's status, as for orders: CREATED until captured, then COMPLETED, PENDING, DECLINED, ...
+  status text not null default 'CREATED',
+  capture_id text,
+  captured_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 create index if not exists items_list_id on items (list_id);
 create index if not exists receipts_list_id on receipts (list_id);
 create index if not exists orders_list_id on orders (list_id);
-create index if not exists invoices_list_id on invoices (list_id);
+create index if not exists settlements_list_id on settlements (list_id);
 
 alter table lists enable row level security;
 alter table members enable row level security;
 alter table receipts enable row level security;
 alter table orders enable row level security;
 alter table items enable row level security;
-alter table invoices enable row level security;
+alter table settlements enable row level security;
 
 -- Private bucket for receipt photos. The backend uploads and serves them; there is no public URL.
 insert into storage.buckets (id, name, public)
@@ -164,3 +165,5 @@ alter table members add column if not exists user_id uuid references auth.users 
 create unique index if not exists members_list_id_user_id_key on members (list_id, user_id);
 alter table receipts add column if not exists fees jsonb not null default '[]';
 alter table items add column if not exists price_typed boolean not null default false;
+-- PayPal invoices were never sent (decision 60 replaced them with settlements), so the table was always empty.
+drop table if exists invoices;

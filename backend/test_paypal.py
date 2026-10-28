@@ -76,6 +76,19 @@ class PayPalTest(unittest.TestCase):
         self.assertEqual([item["quantity"] for item in unit["items"]], ["2", "1"])
         self.assertEqual(body["payment_source"]["paypal"]["experience_context"]["return_url"], "http://app/?list=L1")
 
+    def test_a_payee_email_sends_the_money_to_that_account(self):
+        self.fake_paypal(
+            (201, {"id": "ORDER1", "links": [{"rel": "payer-action", "href": "https://pay"}]}),
+            (201, {"id": "ORDER2", "links": [{"rel": "payer-action", "href": "https://pay"}]}),
+        )
+
+        paypal.create_order([{"name": "Settle up", "priceCents": 3000, "quantity": 1}], "http://app/", payee_email="ann@example.com")
+        paypal.create_order([{"name": "Tent", "priceCents": 3000, "quantity": 1}], "http://app/")
+
+        units = [json.loads(request.body)["purchase_units"][0] for request in self.fake.requests[1:]]
+        self.assertEqual(units[0]["payee"], {"email_address": "ann@example.com"})
+        self.assertNotIn("payee", units[1])
+
     def test_capture_reports_the_payment_status(self):
         self.fake_paypal((201, captured("COMPLETED")))
 

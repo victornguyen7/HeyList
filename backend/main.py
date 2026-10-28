@@ -86,6 +86,12 @@ def email(value) -> str:
     return value
 
 
+def member_out(row: dict) -> dict:
+    """A member as the browser sees it: anyone with the link loads the list, so the PayPal email stays on the server
+    and only whether there is one is sent."""
+    return camel({key: value for key, value in row.items() if key != "email"} | {"has_email": bool(row["email"])})
+
+
 def find(table: str, row_id: str) -> dict | None:
     """The row with this ID, or None when the ID is malformed or unknown."""
     try:
@@ -138,7 +144,7 @@ def new_items(list_id: str, items, start: int = 0) -> list[dict]:
 
 
 def lists_state(list_ids: list[str]) -> list[dict]:
-    """Everything a list page shows, for each of these lists that exists: six queries however many lists,
+    """Everything a list page shows, for each of these lists that exists: seven queries however many lists,
     run at the same time (db.py's client is safe across threads)."""
 
     def rows(table: str, order: str = "created_at", **filters) -> dict[str, list[dict]]:
@@ -147,12 +153,13 @@ def lists_state(list_ids: list[str]) -> list[dict]:
             by_list[row["list_id"]].append(row)
         return by_list
 
-    with ThreadPoolExecutor(6) as pool:
+    with ThreadPoolExecutor(7) as pool:
         found = pool.submit(db.select, "lists", id=list_ids)
         members, items, receipts = pool.submit(rows, "members"), pool.submit(rows, "items", "position"), pool.submit(rows, "receipts")
         # Captured orders are proof; pending ones hold their items until PayPal decides. An order the buyer
         # walked away from (CREATED) or that was declined is not shown.
-        orders, invoices = pool.submit(rows, "orders", status=["COMPLETED", "PENDING"]), pool.submit(rows, "invoices")
+        orders = pool.submit(rows, "orders", status=["COMPLETED", "PENDING"])
+        settlements = pool.submit(rows, "settlements", status=["COMPLETED", "PENDING"])
     def state(row: dict) -> dict:
         list_id = row["id"]
         parts = {
@@ -160,24 +167,27 @@ def lists_state(list_ids: list[str]) -> list[dict]:
             "items": items.result()[list_id],
             "receipts": receipts.result()[list_id],
             "orders": orders.result()[list_id],
-            "invoices": invoices.result()[list_id],
+            "settlements": settlements.result()[list_id],
         }
         # Sent with the list, so Money and Settle up don't wait for a second request.
-        split = settled(parts["items"], parts["members"], parts["orders"], parts["receipts"])
-        return {**camel(row), **{key: [camel(r) for r in rs] for key, rs in parts.items()}, "split": split}
+        split = settled(parts["items"], parts["members"], parts["orders"], parts["receipts"], parts["settlements"])
+        out = {key: [camel(r) for r in rs] for key, rs in parts.items()} | {"members": [member_out(m) for m in parts["members"]]}
+        return {**camel(row), **out, "split": split}
 
     return [state(row) for row in found.result()]
 
 
-def settled(items: list[dict], members: list[dict], orders: list[dict], receipts: list[dict] = ()) -> dict: # pyright: ignore[reportArgumentType]
-    """What each member paid, their equal share, and who pays whom, from the list's rows."""
+def settled(items: list[dict], members: list[dict], orders: list[dict], receipts: list[dict] = (), settlements: list[dict] = ()) -> dict: # pyright: ignore[reportArgumentType]
+    """What each member paid, their equal share, and who pays whom, from the list's rows. A settle-up payment counts
+    once PayPal has captured it."""
     paid = [
         # A refunded charge was given back, so it is not money the buyer spent.
         order | {"prices": {k: v for k, v in order["prices"].items() if order["refunds"].get(k, {}).get("status", "FAILED") in REFUND_FAILED}}
         for order in orders
         if order["status"] == "COMPLETED"
     ]
-    return money.split(items, [member["id"] for member in members], paid, receipts)
+    done = [payment for payment in settlements if payment["status"] == "COMPLETED"]
+    return money.split(items, [member["id"] for member in members], paid, receipts, done)
 
 
 def list_state(list_id: str) -> dict:
@@ -267,14 +277,15 @@ def update_list(list_id: str, body=Depends(json_body)):
 
 @app.post("/api/lists/{list_id}/members")
 def join_list(list_id: str, request: Request, body=Depends(json_body)):
-    """Adds a person by name, or returns the one already there. An email given here is saved either way.
+    """Adds a person by name, or returns the one already there. An email given here is saved when they have none yet:
+    it is where settle-up payments to them go, so someone else on the link can't change it (decision 60).
     Logged in, the name can be left out (the account's is used) and the same member comes back on every device.
     A name taken by an account can't be joined by a guest or another account."""
     if not find("lists", list_id):
         return error("LIST_NOT_FOUND", 404)
     user = account(request)
     if user and (mine := db.select("members", list_id=list_id, user_id=user["id"])):
-        return camel(mine[0])
+        return member_out(mine[0])
     body = body or {}
     try:
         name = text(body.get("name") or (user and user["name"]), 40)
@@ -286,12 +297,14 @@ def join_list(list_id: str, request: Request, body=Depends(json_body)):
 
     existing = db.select("members", list_id=list_id, name=name)
     if not existing:
-        return camel(db.insert("members", [{"list_id": list_id, "name": name, **values}])[0])
+        return member_out(db.insert("members", [{"list_id": list_id, "name": name, **values}])[0])
     if existing[0]["user_id"]:
         return error("NAME_TAKEN", 409)
+    if existing[0]["email"]:
+        values.pop("email", None)
     if values:
-        return camel(db.update("members", values, id=existing[0]["id"])[0])
-    return camel(existing[0])
+        return member_out(db.update("members", values, id=existing[0]["id"])[0])
+    return member_out(existing[0])
 
 
 # Items
@@ -501,8 +514,8 @@ def store_prices_changed(items: list[dict]) -> bool:
 def capture_order(order_id: str):
     if not re.fullmatch(r"[A-Z0-9]{1,36}", order_id):
         return error("INVALID_ORDER_ID", 400)
-    orders = db.select("orders", id=order_id)
-    if not orders:
+    orders, settlement = paid_order(order_id)
+    if not orders and not settlement:
         return error("ORDER_NOT_FOUND", 404)
 
     try:
@@ -510,10 +523,18 @@ def capture_order(order_id: str):
     except Exception as exc:
         if isinstance(exc, paypal.PayPalError) and exc.issue == "INSTRUMENT_DECLINED":
             return error("INSTRUMENT_DECLINED", 422)
+        if isinstance(exc, paypal.PayPalError) and payee_refused(exc):
+            return error("PAYEE_NOT_ACCEPTED", 422)
         if not isinstance(exc, paypal.PayPalError):
             log.exception("Capture order failed")
         return error("PAYPAL_ERROR", 502)
-    return record_capture(orders[0], result)
+    return record_capture(orders[0], result) if orders else record_settlement(settlement, result)
+
+
+def paid_order(order_id: str) -> tuple[list[dict], dict | None]:
+    """The list order with this PayPal order ID, or else the settle-up payment with it."""
+    orders = db.select("orders", id=order_id)
+    return orders, None if orders else next(iter(db.select("settlements", id=order_id)), None)
 
 
 @app.post("/api/orders/{order_id}/refresh")
@@ -522,10 +543,10 @@ def refresh_order(order_id: str):
     since COMPLETED."""
     if not re.fullmatch(r"[A-Z0-9]{1,36}", order_id):
         return error("INVALID_ORDER_ID", 400)
-    orders = db.select("orders", id=order_id)
-    if not orders:
+    orders, settlement = paid_order(order_id)
+    if not orders and not settlement:
         return error("ORDER_NOT_FOUND", 404)
-    if orders[0]["status"] != "PENDING":
+    if (orders[0] if orders else settlement)["status"] != "PENDING":
         return error("ORDER_NOT_PENDING", 409)
     try:
         result = paypal.get_order(order_id)
@@ -533,7 +554,7 @@ def refresh_order(order_id: str):
         if not isinstance(exc, paypal.PayPalError):
             log.exception("Get order failed")
         return error("PAYPAL_ERROR", 502)
-    return record_capture(orders[0], result)
+    return record_capture(orders[0], result) if orders else record_settlement(settlement, result)
 
 
 def record_capture(order: dict, result: dict) -> dict:
@@ -586,6 +607,83 @@ def record_capture(order: dict, result: dict) -> dict:
 
 # A refund in any other state (COMPLETED, PENDING) is money on its way back to the buyer.
 REFUND_FAILED = ("FAILED", "CANCELLED")
+
+
+# Settle up
+
+
+def payee_refused(exc: paypal.PayPalError) -> bool:
+    """PayPal won't send money to that account: unknown email, restricted, can't receive, or the payer's own."""
+    return bool(exc.issue) and (exc.issue.startswith("PAYEE_") or exc.issue == "PAYER_CANNOT_PAY_SELF")
+
+
+@app.post("/api/lists/{list_id}/settlements")
+def settle_up(list_id: str, request: Request, body=Depends(json_body)):
+    """Starts one Settle up payment with PayPal: {fromId, toId, amountCents, email?}. The order's payee is the PayPal
+    email of the person owed, so the money goes straight to them, not to HeyList (decision 60). The amount must be
+    the current split's (decision 21): a stale one is refused so the payer sees the new amount first."""
+    found = find("lists", list_id)
+    if not found:
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        debtor, creditor = member_of(list_id, body["fromId"]), member_of(list_id, body["toId"])
+        amount = cents(body["amountCents"])
+        new_email = email(body["email"]) if body.get("email") else None
+        if not debtor or not creditor or not amount:
+            raise ValueError("a payment needs both people and an amount")
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+    if locked(debtor, request):
+        return error("NOT_YOURS", 403)
+    transfers = list_state(list_id)["split"]["transfers"]
+    if {"from": debtor, "to": creditor, "amountCents": amount} not in transfers:
+        return error("SPLIT_CHANGED", 409)
+    # A payment still pending at PayPal may yet go through and change every balance.
+    if db.select("settlements", list_id=list_id, debtor_id=debtor, status="PENDING"):
+        return error("PAYMENT_PENDING", 409)
+
+    member = db.select("members", id=creditor)[0]
+    payee = member["email"]
+    # The first payment to someone asks for their PayPal email. After that, only they can change it (logged in), so
+    # nobody else on the link can send the money to themselves.
+    if new_email and new_email != payee:
+        if payee and (not member["user_id"] or locked(creditor, request)):
+            return error("NOT_YOURS", 403)
+        payee = new_email
+    if not payee:
+        return error("EMAIL_NEEDED", 409)
+
+    try:
+        order = paypal.create_order(
+            [{"name": f"HeyList: settle up for {found['title']}", "priceCents": amount, "quantity": 1}],
+            # Back to Settle up, where the list layout captures it.
+            f"{APP_URL}/lists/{list_id}/settle",
+            payee_email=payee,
+        )
+    except Exception as exc:
+        if isinstance(exc, paypal.PayPalError) and payee_refused(exc):
+            return error("PAYEE_NOT_ACCEPTED", 422)
+        if not isinstance(exc, paypal.PayPalError):
+            log.exception("Create settlement failed")
+        return error("PAYPAL_ERROR", 502)
+
+    # Saved only once PayPal took the order, so a mistyped email isn't kept.
+    if payee != member["email"]:
+        db.update("members", {"email": payee}, id=creditor)
+    db.insert(
+        "settlements",
+        [{"id": order["orderId"], "list_id": list_id, "debtor_id": debtor, "creditor_id": creditor, "amount_cents": amount}],
+    )
+    return order
+
+
+def record_settlement(settlement: dict, result: dict) -> dict:
+    """Stores a settle-up payment's capture status. A COMPLETED one counts in the split from then on; a repeated
+    capture changes nothing."""
+    if settlement["status"] != "COMPLETED":
+        values = {"status": result["status"], "capture_id": result["captureId"]}
+        db.update("settlements", values | ({"captured_at": now()} if result["status"] == "COMPLETED" else {}), id=settlement["id"])
+    return {"orderId": settlement["id"], "status": result["status"], "refundedCents": 0, "settlement": True}
 
 
 # AI starting lists

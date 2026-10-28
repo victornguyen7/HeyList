@@ -40,7 +40,7 @@ The page background is the Figma gradient (`#86a5b8` → `#aec2cf` → `#d8dee6`
 | **Items** | Cards with a status chip | Item rows with a check circle, status and proof line, note, link to the receipt |
 | **Money** | Four number cards, a progress bar, a per-person list | "Spent together" in large type, an "Equal share" chip, a Budget card, "Who paid what" bars (the tick marks the equal share; dark = paid more, clay = paid less), Receipt extras. Web: Settle up shown beside it |
 | **Receipts** | Cards | Same content in the new card style; the scan button is the blue AI button |
-| **Settle up** | "Who pays whom" list, then "How this was worked out" | "2 payments and everyone's even", a card per payment (avatar → amount and arrow → avatar, with a clay edge when you are the payer), a note that PayPal invoices are coming, then "How this was worked out" (phase 4) |
+| **Settle up** | "Who pays whom" list, then "How this was worked out" | "2 payments and everyone's even", a card per payment (avatar → amount and arrow → avatar, with a clay edge and a **Pay with PayPal** button when you are the payer), the payments made with PayPal, then "How this was worked out" (phase 4) |
 | **History** | Totals and a plain list | Totals in cards, lists as the same cards as on Home, with **Buy again** |
 
 ## 3. Behaviour that changed
@@ -77,7 +77,6 @@ Unchanged: every API call, the backend, the database, the AI prompts, payments a
 
 | In the design | In the app | Why |
 |---|---|---|
-| "Pay Ann with PayPal" on Settle up | Not shown; a note says PayPal invoices are coming soon | PayPal invoices aren't built (decision 9) |
 | "How it works" in the web nav | Not shown | No such page |
 | "Hey Vic" greeting | Not shown | No accounts |
 | "Leaving in 6 days" | Shows "N people · you are <name>" | Lists have no date |
@@ -110,4 +109,3 @@ All of these are in issue 41 (or 40).
 - Try it on a real phone before recording the demo ([SUBMISSION.md](SUBMISSION.md)).
 - Re-export the check icon in a lighter colour (issue 40).
 - The dark "Midnight" theme: add its colours as a second set of the variables, with a switch (ROADMAP).
-- PayPal invoices, which would bring back "Pay Ann with PayPal" on Settle up.

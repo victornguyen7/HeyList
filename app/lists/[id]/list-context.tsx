@@ -5,9 +5,11 @@ import { useParams, usePathname, useRouter, useSearchParams } from "next/navigat
 import { createContext, use, useEffect, useRef, useState } from "react";
 import { api, cachedLists, cacheLists, refundNote, rememberList, type List, type Member } from "../../api";
 import { accountName, supabase, useSession } from "../../auth";
+import { listChanged, onListChanged } from "../../realtime";
 import { Avatar, button, card } from "../../ui";
 
-type Capture = { orderId: string; status: string; refundedCents: number };
+// settlement is set when the order was a settle-up payment rather than items from the list.
+type Capture = { orderId: string; status: string; refundedCents: number; settlement?: boolean };
 type Ctx = {
   list: List;
   setList: (list: List | ((current: List) => List)) => void;
@@ -85,17 +87,51 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
         (result) =>
           setStatus(
             result.status === "COMPLETED"
-              ? `Paid. Those items are checked off.${refundNote(result.refundedCents)}`
+              ? result.settlement
+                ? "Paid. The money went to their PayPal account, and Settle up is updated."
+                : `Paid. Those items are checked off.${refundNote(result.refundedCents)}`
               : result.status === "PENDING"
-                ? "PayPal is still processing this payment. The items are held as pending until it goes through."
+                ? result.settlement
+                  ? "PayPal is still processing this payment. It counts once it goes through."
+                  : "PayPal is still processing this payment. The items are held as pending until it goes through."
                 : `Payment is ${result.status.toLowerCase()}; items stay unchecked for now.`,
           ),
         (e) => setStatus(`Payment could not be confirmed: ${e.message}`),
       )
       // Drop ?token=&PayerID= so a reload or a shared link doesn't capture again after PayPal's idempotency
       // window, which would report a failure for an order already paid. The effect then runs again and loads the list.
-      .then(() => router.replace(`/lists/${listId}`, { scroll: false }));
-  }, [listId, orderId, approved, router]);
+      // Stays on the tab PayPal sent them back to (Settle up for a settle-up payment).
+      .then(() => {
+        listChanged(listId);
+        router.replace(pathname, { scroll: false });
+      });
+  }, [listId, orderId, approved, router, pathname]);
+
+  // Someone else's change, or coming back to the tab, reloads the list. Pings that arrive together cause one load.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const reload = () => {
+      clearTimeout(timer);
+      timer = setTimeout(
+        () =>
+          api<List>(`/api/lists/${encodeURIComponent(listId)}`)
+            .then((loaded) => {
+              cacheLists([loaded]);
+              setListState(loaded);
+            })
+            .catch(() => {}),
+        300,
+      );
+    };
+    const onVisible = () => document.visibilityState === "visible" && reload();
+    const stop = onListChanged(listId, reload);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearTimeout(timer);
+      stop();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [listId]);
 
   // Logged in with a saved name, the backend fills it in; otherwise the typed name is sent (and saved on the account).
   async function join(e: React.FormEvent) {
@@ -108,6 +144,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       } catch {}
       setJoined(member.id);
       setListState({ ...list!, members: [...list!.members.filter((m) => m.id !== member.id), member] });
+      listChanged(list!.id);
     } catch (err) {
       setStatus(`Could not add you: ${(err as Error).message}`);
     }
@@ -232,7 +269,11 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
           <ListContext
             value={{
               list,
-              setList: (next) => setListState((current) => (typeof next === "function" ? next(current!) : next)),
+              // Pages call this after a change they made, so the other open pages are told.
+              setList: (next) => {
+                setListState((current) => (typeof next === "function" ? next(current!) : next));
+                listChanged(list.id);
+              },
               me,
               memberName: (id) => list.members.find((m) => m.id === id)?.name,
               setStatus,

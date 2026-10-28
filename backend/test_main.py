@@ -25,6 +25,7 @@ DEFAULTS = {
     "lists": {"kind": "other"},
     "items": {"position": 0, "quantity": 1, "price_typed": False},
     "orders": {"status": "CREATED", "prices": {}, "refunds": {}},
+    "settlements": {"status": "CREATED"},
     "receipts": {"lines": [], "fees": [], "extras": []},
 }
 
@@ -652,6 +653,98 @@ class SplitTest(RoutesTest):
 
         self.assertEqual(split["totalCents"], 12000)
         self.assertEqual(split["transfers"], [{"from": self.bob, "to": self.ann, "amountCents": 3000}])
+
+
+class SettleUpTest(RoutesTest):
+    def setUp(self):
+        super().setUp()
+        self.list = self.new_list([{"name": "Tent", "estPriceCents": 9000}, {"name": "Food", "estPriceCents": 3000}])
+        self.ann, self.bob = (self.join(name) for name in ("Ann", "Bob"))
+        tent, food = (i["id"] for i in self.list["items"])
+        self.client.patch(f"/api/items/{tent}", json={"checked": True, "memberId": self.ann, "priceCents": 9000})
+        self.client.patch(f"/api/items/{food}", json={"checked": True, "memberId": self.bob, "priceCents": 3000})
+        # Bob owes Ann $30.
+        self.create = self.mock_paypal("create_order", return_value={"orderId": "SETTLE1", "approveUrl": "https://pay"})
+
+    def join(self, name, **body):
+        return self.client.post(f"/api/lists/{self.list['id']}/members", json={"name": name, **body}).json()["id"]
+
+    def pay(self, amount=3000, **body):
+        body = {"fromId": self.bob, "toId": self.ann, "amountCents": amount, **body}
+        return self.client.post(f"/api/lists/{self.list['id']}/settlements", json=body)
+
+    def state(self):
+        return self.client.get(f"/api/lists/{self.list['id']}").json()
+
+    def test_the_payment_goes_to_the_paypal_email_of_the_person_owed(self):
+        self.assertEqual(self.pay(email="ann@example.com").json(), {"orderId": "SETTLE1", "approveUrl": "https://pay"})
+
+        items, return_url = self.create.call_args.args
+        self.assertEqual(self.create.call_args.kwargs, {"payee_email": "ann@example.com"})
+        self.assertEqual(items, [{"name": "HeyList: settle up for Trip", "priceCents": 3000, "quantity": 1}])
+        self.assertEqual(return_url, f"{main.APP_URL}/lists/{self.list['id']}/settle")
+        row = self.db.tables["settlements"][0]
+        self.assertEqual((row["debtor_id"], row["creditor_id"], row["amount_cents"], row["status"]), (self.bob, self.ann, 3000, "CREATED"))
+        # The email is kept for next time, but never sent to the browser.
+        self.assertEqual({m["name"]: m["hasEmail"] for m in self.state()["members"]}, {"Ann": True, "Bob": False})
+        self.assertNotIn("email", self.state()["members"][0])
+
+    def test_the_amount_must_be_the_current_splits(self):
+        for amount, from_id, to_id in ((2999, self.bob, self.ann), (3000, self.ann, self.bob), (0, self.bob, self.ann)):
+            with self.subTest(amount=amount):
+                response = self.pay(amount, fromId=from_id, toId=to_id, email="ann@example.com")
+                self.assertIn(response.status_code, (400, 409))
+        self.assertEqual(self.pay(2999, email="ann@example.com").json(), {"error": "SPLIT_CHANGED"})
+        self.create.assert_not_called()
+
+    def test_an_email_is_asked_for_and_kept_only_once_paypal_accepts_it(self):
+        self.assertEqual(self.pay().json(), {"error": "EMAIL_NEEDED"})
+        self.create.side_effect = paypal.PayPalError(422, "PAYEE_ACCOUNT_INVALID")
+        self.assertEqual(self.pay(email="typo@example.com").json(), {"error": "PAYEE_NOT_ACCEPTED"})
+        self.assertIsNone(self.db.tables["members"][0]["email"])
+        self.assertNotIn("settlements", self.db.tables)
+
+    def test_once_set_the_email_cant_be_changed_by_someone_else_on_the_link(self):
+        self.pay(email="ann@example.com")
+        self.db.tables["settlements"].clear()
+
+        self.assertEqual(self.pay(email="bob@example.com").status_code, 403)
+        # Joining again by name doesn't change it either.
+        self.join("Ann", email="bob@example.com")
+        self.assertEqual(self.db.tables["members"][0]["email"], "ann@example.com")
+        self.assertEqual(self.pay().status_code, 200)
+        self.assertEqual(self.create.call_args.kwargs, {"payee_email": "ann@example.com"})
+
+    def test_capturing_twice_records_one_settlement_and_everyone_is_even(self):
+        self.pay(email="ann@example.com")
+        capture = self.mock_paypal("capture_order", return_value={"orderId": "SETTLE1", "status": "COMPLETED", "captureId": "CAP1"})
+
+        first = self.client.post("/api/orders/SETTLE1/capture").json()
+        captured_at = self.db.tables["settlements"][0]["captured_at"]
+        self.client.post("/api/orders/SETTLE1/capture")
+
+        self.assertEqual(first, {"orderId": "SETTLE1", "status": "COMPLETED", "refundedCents": 0, "settlement": True})
+        self.assertEqual(capture.call_count, 2)
+        self.assertEqual(len(self.db.tables["settlements"]), 1)
+        self.assertEqual(self.db.tables["settlements"][0]["captured_at"], captured_at)
+        split = self.state()["split"]
+        self.assertEqual(split["transfers"], [])
+        self.assertEqual({m["memberId"]: m["balanceCents"] for m in split["members"]}, {self.ann: 0, self.bob: 0})
+        # Nothing on the list was checked off or re-priced by it.
+        self.assertEqual(split["totalCents"], 12000)
+
+    def test_a_pending_payment_doesnt_count_yet_and_blocks_another(self):
+        self.pay(email="ann@example.com")
+        self.mock_paypal("capture_order", return_value={"orderId": "SETTLE1", "status": "PENDING", "captureId": "CAP1"})
+        self.client.post("/api/orders/SETTLE1/capture")
+
+        self.assertEqual(self.state()["split"]["transfers"], [{"from": self.bob, "to": self.ann, "amountCents": 3000}])
+        self.assertEqual(self.state()["settlements"][0]["status"], "PENDING")
+        self.assertEqual(self.pay().json(), {"error": "PAYMENT_PENDING"})
+
+        self.mock_paypal("get_order", return_value={"orderId": "SETTLE1", "status": "COMPLETED", "captureId": "CAP1"})
+        self.assertEqual(self.client.post("/api/orders/SETTLE1/refresh").json()["status"], "COMPLETED")
+        self.assertEqual(self.state()["split"]["transfers"], [])
 
 
 class ReceiptTest(RoutesTest):

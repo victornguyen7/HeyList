@@ -12,7 +12,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 4 | 5. Group accounting (narrow) | Done 2026-10-27 (see below) |
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
-| 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | Planned 2026-10-28 (see below) |
+| 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A and 7B built 2026-10-28; 7C–7F planned (see below) |
 
 ### Phase 1 — purchase verification (done)
 
@@ -210,6 +210,8 @@ Order: 7A, 7B, 7C, then 7D–7F as time allows. 7A–7C come to about 4–6 days
 
 #### 7A — realtime list updates (issue 31)
 
+**Built 2026-10-28** (decision 59). `app/realtime.ts` holds one broadcast channel per list; `ListProvider` sends the ping from `setList` (every page calls it after its own change), after a join and after a capture, and reloads on a ping (debounced 300 ms) or when the tab is shown again. Differs from the plan: a channel stays open for the rest of the visit, because Supabase reuses a channel by topic and removes it asynchronously, which broke Strict Mode's second mount. `tsc` and `eslint` clean; no backend change. **Not yet tried with two browsers**, and Realtime must allow public channels in the Supabase project (the default).
+
 - **Problem:** a list loads once. Changes made by someone else show only after a reload (issue 31). The demo uses two browsers, so this shows on camera.
 - **Plan:** one Supabase Realtime **broadcast** channel per list (`list:<id>`), through the `@supabase/supabase-js` client the browser already loads for login.
   - After any change the client makes (join, claim, tick, receipt confirm, capture), it sends a "changed" message.
@@ -220,6 +222,22 @@ Order: 7A, 7B, 7C, then 7D–7F as time allows. 7A–7C come to about 4–6 days
 - **Tests:** none in the backend (no backend change). Try it with two browsers before recording.
 
 #### 7B — settle up with PayPal: pay the person you owe
+
+**Built 2026-10-28** (decision 60). `POST /api/lists/{id}/settlements` with `{fromId, toId, amountCents, email?}`; `paypal.create_order(..., payee_email=)`; a new `settlements` table (the empty `invoices` table is dropped); the capture and refresh routes find a settlement when the order ID isn't a list order; `money.split(..., settlements=)` adds `settledCents` per member. On Settle up, the person who owes gets **Pay Ann $X with PayPal** (with an email field the first time), and paid or pending payments are listed with **Check again**. PayPal sends the payer back to Settle up.
+
+| Plan | Built |
+|---|---|
+| Reuse `create_order()` / `capture_order()` | Yes: `create_order` takes an optional payee; the same capture and refresh routes |
+| Amount from the split, stale refused | Must equal a transfer in the current split, else `409 SPLIT_CHANGED` |
+| Ask for the email on the first payment | Yes, saved only after PayPal accepts the order. **Added:** once saved, only the person owed (logged in) can change it, and emails are no longer sent to the browser (`hasEmail`). Otherwise anyone on the link could redirect the money to themselves. `join_list` no longer overwrites a saved email either |
+| Settlements as their own rows | `settlements` table; a completed one counts in the split, a pending one blocks that person's next payment (`409 PAYMENT_PENDING`) |
+
+- **Tests:** 126 backend tests pass (new: payee sent and absent, settlement moves both balances and a full one evens them, the payee and return URL, stale or wrong amounts refused, email asked for and kept only when PayPal accepts it, a saved email can't be changed by someone else, capturing twice records one settlement and everyone ends even, pending doesn't count and blocks). `tsc` and `eslint` clean.
+- **Not done yet:**
+  - The sandbox payee check: it needs a second sandbox **personal** account, plus the owner's go-ahead for live PayPal calls. If a personal payee is refused, `PAYEE_NOT_ACCEPTED` is shown and the fallback is a sandbox business account for the person owed.
+  - Trying it in a browser.
+  - Running `supabase/schema.sql` on the live database.
+  - The Settle scene in [SUBMISSION.md](SUBMISSION.md) (to be updated once it has worked live, as the phase says).
 
 - **Problem:** the Invoicing plan in [PayPal.md §6](PayPal.md) sends money to the wrong person. An invoice is issued by HeyList's own sandbox merchant account (the app's client ID), so Ben's payment would go to HeyList, not to Ann. Payouts have the same problem: they send money *from* HeyList.
 - **Plan:** a **Pay Ann $X with PayPal** button on each Settle up payment. It creates an Orders API order with `purchase_units[0].payee.email_address` set to the PayPal email of the person owed, so the money goes straight from Ben to Ann.

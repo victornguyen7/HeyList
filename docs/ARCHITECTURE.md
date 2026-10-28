@@ -16,7 +16,7 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 | TypeScript 5 | All frontend code |
 | Tailwind CSS 4 (`@tailwindcss/turbopack`) | Styles; the soft glass classes live in `app/ui.tsx` (decision 46) |
 | Geist and Geist Mono (`next/font/google`) | Fonts (`app/layout.tsx`) |
-| `@supabase/supabase-js` 2.117.3 | Login only: the email magic link and the session token sent to the backend (`app/auth.ts`, decision 52). All list data goes through the backend (decision 56) |
+| `@supabase/supabase-js` 2.117.3 | Login (the email magic link and the session token sent to the backend, `app/auth.ts`, decision 52) and a Realtime broadcast "changed" ping per list (`app/realtime.ts`, decision 59). All list data goes through the backend (decision 56) |
 | ESLint 9 (`eslint-config-next`) | `npm run lint` |
 | Browser APIs | Web Speech API (`SpeechRecognition`) for voice; camera capture (`<input capture="environment">`) and `<canvas>` to shrink receipt photos; `localStorage` for lists this browser has opened and their saved copies (decision 55) |
 
@@ -38,8 +38,8 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 
 | Service | Used for | Status |
 |---|---|---|
-| Supabase | Postgres tables, the private `receipts` bucket (`supabase/schema.sql`), Auth (magic link) | Built. Realtime planned |
-| PayPal sandbox | Orders API: create, capture, read, refund. The buyer approves on PayPal's hosted page and is sent back to `APP_URL` (decision 56) | Built. Checkout JS SDK and Invoicing API planned |
+| Supabase | Postgres tables, the private `receipts` bucket (`supabase/schema.sql`), Auth (magic link) | Built, with Realtime broadcast for live list updates (decision 59) |
+| PayPal sandbox | Orders API: create, capture, read, refund. The buyer approves on PayPal's hosted page and is sent back to `APP_URL` (decision 56) | Built, including settle-up orders paid to the person owed (decision 60). Checkout JS SDK planned |
 | Ollama API (cloud) | One LLM with vision (`OLLAMA_MODEL`, measured on `gemma4:31b`) | Built |
 | AWS Textract | Reading receipts, with a confidence per line | Built and tested on 289 real receipts (issue 15); Ollama reads receipts only when Textract is unavailable |
 | Channel3 | Real store products and prices (`backend/market.py`), results checked by the LLM (decision 51) | Built |
@@ -169,7 +169,7 @@ Six pages, described in [SPEC.md](SPEC.md#pages): Progress, Items, Money, Receip
 
 - **Receipts** links directly with **Items**: each item's proof (receipt scan or PayPal order) is reachable from the item.
 - **Money** draws on prices from receipts and PayPal orders, compared against the list budget.
-- **Settle-up** turns per-person totals into PayPal invoices and tracks their status.
+- **Settle-up** turns per-person totals into the fewest payments, each paid with PayPal straight to the person owed (decision 60).
 
 ## Key flows
 
@@ -181,7 +181,7 @@ Six pages, described in [SPEC.md](SPEC.md#pages): Progress, Items, Money, Receip
 
 **Share** — a list is shared by link; no account is needed to view or check items. People claim the items they will buy.
 
-**Settle up** — code works out who owes whom; PayPal Invoicing sends and tracks the invoices.
+**Settle up** — code works out who owes whom; the person who owes pays with a PayPal order whose payee is the person owed, and a captured payment evens the balances.
 
 ## Links
 

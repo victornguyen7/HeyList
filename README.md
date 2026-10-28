@@ -19,7 +19,7 @@ Every step keeps what the step before it established: the quantities and estimat
 | Step | Question it answers | How | Status |
 |---|---|---|---|
 | **Need** | What do we need? | Type or say one sentence ("…, $200 budget"); the AI suggests a list with quantities and estimated prices within the budget; you drop, rename, change or add items before anything is saved | Built |
-| **Coordinate** | Who handles it? | Share the link, join by name, claim items, or share out the rest evenly by estimated cost | Built. Realtime updates planned |
+| **Coordinate** | Who handles it? | Share the link, join by name, claim items, or share out the rest evenly by estimated cost | Built, with live updates: a change on one phone shows on the others |
 | **Verify** | What got done? | Tick it off by hand (you say what you paid), pay with PayPal (a completed capture is the proof), or scan a receipt (the AI reads it and matches lines to items, and you confirm). Each item says what its status rests on: "Paid with PayPal", "On a receipt", "Marked bought by hand", or "Payment pending at PayPal" | Built |
 | **Settle** | Who owes whom? | Code (not AI) works out each person's share from the recorded prices and the fewest payments to even up | Built. PayPal invoices planned |
 
@@ -73,7 +73,7 @@ Progress · Items · Money · Receipts · History · Settle-up — see [docs/SPE
 
 - **Frontend:** Next.js 16 (App Router, Turbopack), React 19, TypeScript 5, Tailwind CSS 4, Geist fonts, on Node.js 24; mobile-first website (native app later); `/api/*` is proxied to the backend
 - **Backend:** Python 3.14, FastAPI on uvicorn, in `backend/`; tests with `unittest`
-- **Data and login:** Supabase — Postgres, receipt photo storage, Auth (email magic link, through `@supabase/supabase-js` in the browser and the `supabase` Python client in the backend). Realtime planned
+- **Data and login:** Supabase — Postgres, receipt photo storage, Auth (email magic link, through `@supabase/supabase-js` in the browser and the `supabase` Python client in the backend), and Realtime broadcast to tell open pages a list changed
 - **Payments:** PayPal sandbox — Orders API (create, capture, refund) through the PayPal Server SDK (Python, APIMatic-generated), with PayPal's hosted approval page. Checkout JS SDK and Invoicing API planned
 - **AI:** one LLM with vision through the Ollama API (`ollama` client) for starting lists, receipt matching and checking store results
 - **Receipts:** AWS Textract `AnalyzeExpense` (`boto3`), falling back to the Ollama vision model

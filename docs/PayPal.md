@@ -20,7 +20,7 @@ How HeyList meets them:
 | Requirement | HeyList | Status |
 |---|---|---|
 | PayPal developer platform, sandbox | Orders API v2 on the sandbox, through the PayPal Server SDK (sections 2–4) | Built |
-| PayPal central to the project | Buying from a list goes through PayPal Checkout, and a captured order is the proof an item was bought (decision 8). Settle-up through PayPal invoices is planned (section 6) | Checkout built; invoices planned |
+| PayPal central to the project | Buying from a list goes through PayPal Checkout, and a captured order is the proof an item was bought (decision 8). Settle up pays the person owed with PayPal: an order whose payee is their PayPal account (decision 60) | Built; settle-up not yet tried on the sandbox |
 | Meaningful AI | AI starting lists set the estimated prices that PayPal charges; AI receipt reading and matching check items off beside PayPal orders; both feed the who-owes-whom split | Built |
 | Working demo | Deployed on Render (`render.yaml`); local run steps in the README | Built; one live sandbox payment still to test (issue 25) |
 | Open source license file | MIT, in `LICENSE` at the repo root (added 2026-10-27) | Added; the repo still has to be made public |
@@ -81,13 +81,13 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 | Items | Each paid item's proof: "PayPal order <ID>" |
 | Receipts | Every PayPal order on the list: ID, total, date, who paid, and the items it covered |
 | Money | PayPal orders count toward what each person paid and the total spent |
-| Settle up | Who pays whom (worked out from PayPal orders and receipts); an Invoices section that is ready for PayPal invoices |
+| Settle up | Who pays whom (worked out from PayPal orders and receipts); **Pay Ann $X with PayPal** on each payment you owe, which sends the money to Ann's PayPal account; the payments made, with **Check again** for a pending one |
 
 ## 6. Planned, not built
 
-- **PayPal Invoicing API for settle-up** (decision 9). The app already works out the fewest payments that even out what everyone paid (`backend/money.py`). Next: send each payment as a PayPal invoice from the person owed to the person who owes, and track its status. Ready for it: the `invoices` table (PayPal invoice ID, debtor, creditor, amount, status such as `DRAFT`/`SENT`/`PAID`/`CANCELLED`, and `pay_url`), `members.email` (where an invoice is sent), and the Settle up page, which lists invoices with their pay link and shows "Sending these as PayPal invoices is coming soon" until then. Not built: the API calls, the routes, and asking for emails.
+- **Settle-up on the live sandbox** (decision 60, replacing the invoices of decision 9). Built and unit-tested: `POST /api/lists/{id}/settlements` creates an Orders API order with `purchase_units[0].payee.email_address` set to the PayPal email of the person owed, for the amount in the current split. The capture and **Check again** routes handle it like a list order, and a completed one counts in the split (`settlements` table). Still to check: that the sandbox accepts a **personal** account as the payee (it needs a second sandbox personal account). If it refuses, the person owed needs a sandbox business account.
 - **PayPal Checkout JS SDK** (decision 17). Checkout uses PayPal's hosted page and a redirect for now (decision 56). The JS SDK would keep the buyer on the list page with PayPal's own buttons.
-- **Dark redesign.** The Figma draft puts a blue "Pay <name> with PayPal" button on each payment in Settle up ([ROADMAP](ROADMAP.md)). It depends on the invoices above.
+- **Dark redesign.** The Figma draft puts a blue "Pay <name> with PayPal" button on each payment in Settle up ([ROADMAP](ROADMAP.md)). Built on the current design (decision 60).
 
 ## 7. Testing
 
@@ -107,6 +107,6 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 - Make one live sandbox payment end to end and close issue 25.
 - Record the demo video (under 3 minutes): an AI list → buy with PayPal → items checked off with the order as proof → who owes whom.
 - In the submission, name the AI used (Ollama models for lists, receipt reading and matching; AWS Textract for receipts when it is available) and how it ties into PayPal.
-- Optional, for the bigger PayPal prizes: PayPal invoices for settle-up (section 6).
+- One sandbox settle-up payment to a second personal account (section 6).
 
 Sources for section 1, read 2026-10-26: [Devpost page](https://paypalaihackathon.devpost.com/) (search summary) · [DevGrants Daily](https://devgrantsdaily.com/items/2026-10-02-paypal-ai-hackathon-2026/) · [Startup Grants India](https://www.startupgrantsindia.com/competitions/paypal-ai-hackathon)
