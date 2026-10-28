@@ -202,7 +202,7 @@ Written 2026-10-28, after a review of the code, [HACKATHON.md](HACKATHON.md) and
 | 7A | Realtime list updates | 0.5–1 day | Design, Presentation, Best Demo Delivery | Do, first |
 | 7B | Settle up with PayPal: pay the person you owe | 1.5–2 days | Best Use of PayPal + AI, Technical, Presentation | Do |
 | 7C | "Shop this list for me" agent | 2–3 days | Best Use of Agentic Commerce, Best Use of Channel3, Innovation | Do |
-| 7D | AG Grid ledger | About 1 day | Best Use of AG Grid | If time allows |
+| 7D | AG Studio money dashboard: custom widgets, theming, and an analyst agent | 2–3 days | Best Use of AG Grid | If time allows |
 | 7E | PayPal webhooks on Render | About 1 day | Technical, Best Use of Render | If time allows |
 | 7F | APIMatic portal or SDK, and a Postman collection, for HeyList's API | About 0.5 day | Best Use of APIMatic, documentation | If time allows |
 
@@ -292,20 +292,48 @@ Order: 7A, 7B, 7C, then 7D–7F as time allows. 7A–7C come to about 4–6 days
   - a Channel3 failure on one item doesn't stop the rest;
   - bought or pending items are left out.
 
-#### 7D — AG Grid ledger (if time allows)
+#### 7D — AG Studio money dashboard, with a nudge widget and an analyst agent (if time allows)
 
-- **What:** a **Ledger** page in the website layout, with one row per money event across the lists this person has opened:
-  - PayPal capture;
-  - refund;
-  - receipt line;
-  - receipt fee (tax, tip, discount);
-  - hand tick;
-  - settlement (7B).
-- **Columns:** date, list, item, who, amount, proof, PayPal order or receipt ID.
-- **Features used:** group by person, list or month; filter by proof type; totals in the group rows; CSV export.
-- **Why it's genuine:** the data already exists (History loads every list in one request, decision 54), and the grid answers "where did our money go" across lists. It extends History and Money rather than being added for the prize.
-- **Phones:** keep the current cards on phones. AG Grid is for the laptop layout only (decision 46).
-- **Check first:** the AG Grid Community licence covers what's used (grouping with totals may need Enterprise, which has a trial licence for evaluation). Add the package and its version to [ARCHITECTURE.md](ARCHITECTURE.md#stack).
+Rewritten 2026-10-28 after reading the AG Grid prize brief. The first plan was a plain AG Grid table, but the prize asks for more: "custom widgets, theming, and layout tools, not just AG Grid or AG Charts on their own", plus the **Studio Agent Framework** ("a custom agent talking to Studio's built-in agents, or a swapped-in harness"). AG Studio is AG Grid's dashboard component: grids, charts and a data engine in one, which people can rearrange without code.
+
+- **What:** a **Dashboard** page in the website layout. It is one AG Studio dashboard over the money of every list this browser has opened, and it answers "where did our money go, and who still owes whom" across lists. It extends History, Money and Settle up rather than being added for the prize. Their own idea list includes a "Nudge-bot" (unpaid amounts, friendly reminders, a scoreboard), which is what HeyList's settle-up already does.
+- **Data, all already loaded:** History fetches every list in one request (decision 54). The page turns those lists into Studio data sources in the browser, so no new backend route is needed for the data.
+
+  | Source | One row per | Columns |
+  |---|---|---|
+  | `ledger` | money event: PayPal capture, refund, receipt line, receipt fee (tax, tip, discount), hand tick, settle-up payment (7B) | date, list, list type, item, who, amount, kind, proof, PayPal order or receipt ID |
+  | `balances` | person per list, from each list's `split` | list, person, paid, share, settled, balance |
+  | `items` | list item | list, item, status (needed, pending, paid with PayPal, on a receipt, by hand), estimate, price paid, store product |
+
+- **Layout: a starting dashboard,** which people can then rearrange in edit mode.
+  - KPI tiles: spent, refunded, still owed, share of spending with proof (PayPal or receipt).
+  - Charts: spending by person, by list type, by month; proof mix (PayPal, receipt, hand tick).
+  - The ledger grid, grouped by list or person, with totals and CSV export (Enterprise grid features are included in AG Studio).
+- **Custom widgets (the "polish" part of the prize):**
+  1. **Settle-up scoreboard:** who still owes whom, as a friendly scoreboard rather than a collections report: avatars, amounts, and **Pay with PayPal** on your own rows, which opens 7B's payment. Settled payments show as done.
+  2. **Proof meter:** for each list, how much of the spending is proven (PayPal, receipt) versus someone's word (hand tick). It shows HeyList's main idea, "know what really got done", in one widget.
+- **Theming:** the dashboard uses HeyList's colour variables from `globals.css` (list green, money clay, AI blue), fonts and rounded cards, so it looks like part of the app, not an embedded tool.
+- **Agent (the Studio Agent Framework):** a custom **HeyList analyst** agent, working with Studio's built-in tools (view the schema, run a query, add a widget).
+  - "Show what we spent on trips this month by person" → it adds a live widget.
+  - "Draft a friendly nudge for Ben" → it reads the scoreboard and writes a short, kind reminder ("hey, just a heads-up: $30 for the camping trip whenever you get a minute"). The person copies or shares it; **nothing is sent automatically**.
+  - **Model:** Studio has no model of its own; every call goes through an adapter we supply. Ours calls a new backend route, `POST /api/studio/chat`, which forwards to Ollama. The Ollama key never reaches the browser (RULES.md).
+  - **Cost:** every agent turn is a paid Ollama call. The route is capped with `allow()` like the others (for example 30 turns an hour for everyone), and every live test needs the owner's approval.
+  - **Data sent to Ollama:** the schema, plus the query results the agent asks for. That's only names and amounts from lists this browser has opened, the same kind of data the starting-list and receipt calls already send.
+- **Setup:**
+  - `npm install ag-studio-react ag-studio`: version 3.0.0, React 17–19, so React 19.3 is fine. Add both to [ARCHITECTURE.md](ARCHITECTURE.md#stack).
+  - **Licence:** commercial, with a free 45-day trial key from AG Grid. It runs locally without a key but shows a watermark. The owner requests the key; it goes in `.env.local` and Render as `AG_STUDIO_LICENSE_KEY`, which `next.config.ts` passes to the browser as `NEXT_PUBLIC_AG_STUDIO_LICENSE_KEY` at build time, as for Supabase (a frontend key is visible in the bundle anyway, but keep it out of the repo). Installed 2026-10-28: `ag-studio` and `ag-studio-react` 3.0.0, pinned; `render.yaml` has the key with `sync: false`. `AgStudioLicenseManager.setLicenseKey()` is called once before rendering. The trial may end during judging; the watermark then comes back.
+  - **Next.js 16:** AG Studio runs only in the browser. Load it on the Dashboard page with `next/dynamic` and `ssr: false`, in a `"use client"` component; read the Next.js guide in `node_modules/next/dist/docs/` first (AGENTS.md).
+  - **Size:** `ag-studio` is about 33 MB unpacked and brings AG Grid Enterprise and AG Charts Enterprise. Loading it only on its own page keeps it out of every other page.
+- **Phones:** laptop layout only (decision 46). Phones keep History's cards and get a short note pointing to the laptop view.
+- **Check first:**
+  - the adapter interface for `directLlmRunner`, and whether `gemma4:31b` on Ollama does tool calls reliably. If it doesn't, use `clientToolRunner` with the loop on our server;
+  - that the web build fits Render's Starter plan (512 MB) with the new packages;
+  - that AG Grid's boilerplate (AG Studio with PayPal set up) has nothing we should reuse.
+- **Tests:**
+  - **Backend:** the chat route forwards to Ollama, is capped, never returns the key, and turns an Ollama failure into a 502.
+  - **Frontend:** there are no frontend tests in the project, so the ledger rows are built by one plain function. Check its totals by hand against Money and Settle up for one list, before recording.
+- **Size:** about 2–3 days, not 1: about 1 for the data, layout and theming, 1 for the two custom widgets, and 0.5–1 for the agent.
+- **Demo:** a short scene after Settle up, on the laptop. Open the Dashboard, ask the agent "who still owes what across our trips?", and it adds the scoreboard; tap **Pay with PayPal** from it.
 
 #### 7E — PayPal webhooks on Render (if time allows)
 
@@ -343,7 +371,8 @@ One sentence → AI list → **the agent shops the rest within budget (7C)** →
 
 #### Blockers and approvals
 
-- **Paid calls:** live tests of 7C (Channel3 and Ollama) need the owner's approval ([RULES.md](RULES.md)).
+- **Paid calls:** live tests of 7C (Channel3 and Ollama) and of 7D's agent (Ollama) need the owner's approval ([RULES.md](RULES.md)).
+- **AG Studio trial key:** 7D needs the owner to request the 45-day trial licence; until then it runs with a watermark.
 - **Live sandbox:** 7B's payee check needs a second sandbox personal account. 7E needs the deployed Render URL.
 - **Schema:** 7B adds a settlements table, or changes `invoices`. Run `supabase/schema.sql` again on the live database.
 - **Decisions to record:** the realtime approach (7A), payee orders over invoices (7B), the agent's budget rule and human approval (7C).

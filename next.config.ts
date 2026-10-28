@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY,
+    // AG Studio's licence (the Dashboard, 7D): a frontend key, so it ends up in the browser bundle either way.
+    NEXT_PUBLIC_AG_STUDIO_LICENSE_KEY: process.env.AG_STUDIO_LICENSE_KEY,
   },
   cacheComponents: true,
   partialPrefetching: true,

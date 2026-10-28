@@ -16,6 +16,7 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 | TypeScript 5 | All frontend code |
 | Tailwind CSS 4 (`@tailwindcss/turbopack`) | Styles; the soft glass classes live in `app/ui.tsx` (decision 46) |
 | Geist and Geist Mono (`next/font/google`) | Fonts (`app/layout.tsx`) |
+| `ag-studio` and `ag-studio-react` 3.0.0 | The Dashboard (phase 7D): AG Studio's grids, charts and data engine, with AG Grid Enterprise 36.2 and AG Charts Enterprise 14.2 inside. Commercial; a 45-day trial key in `AG_STUDIO_LICENSE_KEY`. Browser only, loaded on its own page |
 | `@supabase/supabase-js` 2.117.3 | Login (the email magic link and the session token sent to the backend, `app/auth.ts`, decision 52) and a Realtime broadcast "changed" ping per list (`app/realtime.ts`, decision 59). All list data goes through the backend (decision 56) |
 | ESLint 9 (`eslint-config-next`) | `npm run lint` |
 | Browser APIs | Web Speech API (`SpeechRecognition`) for voice; camera capture (`<input capture="environment">`) and `<canvas>` to shrink receipt photos; `localStorage` for lists this browser has opened and their saved copies (decision 55) |
