@@ -12,7 +12,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 4 | 5. Group accounting (narrow) | Done 2026-10-27 (see below) |
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
-| 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7C built 2026-10-28; 7D–7F planned (see below) |
+| 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7D built 2026-10-28; 7E–7F planned (see below) |
 
 ### Phase 1 — purchase verification (done)
 
@@ -293,6 +293,28 @@ Order: 7A, 7B, 7C, then 7D–7F as time allows. 7A–7C come to about 4–6 days
   - bought or pending items are left out.
 
 #### 7D — AG Studio money dashboard, with a nudge widget and an analyst agent (if time allows)
+
+**Built 2026-10-28** (decision 62). The **Dashboard** page (nav link on the laptop) shows one AG Studio dashboard over every list this browser has opened.
+
+| Plan | Built |
+|---|---|
+| Tables built in the browser | `app/dashboard/data.ts`: `ledger` (money lines from each list's split, plus refunds), `balances`, `transfers` (open payments and settle-up payments), `items`. Field names, descriptions and dollar formats are set for Studio and its agents |
+| Starting layout | Page "Where our money went": 4 KPI tiles (spent, proven, refunded, still owed), the two custom widgets, 4 charts (by person, proof mix, by month, by list type) and the ledger grid; a blank "Your charts" page for the assistant. Edit mode, panels collapsed |
+| Custom widgets | **Who owes whom** (`settle-scoreboard`): friendly scoreboard, **Pay with PayPal** opens the list's Settle up. **Proof meter** (`proof-meter`): data-mapped and read with `widgetApi.getData`, so filters apply. Both in a "HeyList" group of the widget menu |
+| Theming | `studioTheme.withParams`: AI blue accent, Geist font, soft canvas, 24px widget corners, chart palette blue, clay, ink |
+| Agent | `heylist` agent (primary) with `view_schema`, `view_page`, `execute_query`, a custom `who_owes_whom` tool, and `delegate_to` Studio's built-in `page` and `widget` agents. Prompt starters: who owes what, spending by person, draft a friendly nudge |
+| Model | `app/dashboard/ollama-adapter.ts` (`AgLlmAdapter`) → `POST /api/studio/chat` → `llm.agent_turn()` (Ollama with tools). 60 turns an hour for everyone, not 30: one question takes several turns once it delegates |
+
+- **Checks:**
+  - 140 backend tests pass. New ones cover: a turn forwarded and returned, bad conversations refused before any call, the cap, a failure returning 502 without details, and `agent_turn`'s mapping.
+  - `tsc`, `eslint` and `next build` pass.
+  - A one-off check of `dashboardData()` and the message conversion: spending equals the split's total, hand ticks are unproven, and refunds and settle-up payments come through.
+- **Build memory:** `next build` peaked at about 905 MB on this Mac, against about 840 MB without the Dashboard. The Starter plan is 512 MB, but the build was already above that and deploys today. Watch the first Render deploy.
+- **Not done yet:**
+  - **Opened in a browser:** the layout sizes, the theme and the custom widgets haven't been seen rendering.
+  - **The agent live:** this costs Ollama calls and needs the owner's OK. Whether `gemma4:31b` handles Studio's tool schemas well is still unknown. If not, give the HeyList agent fewer tools or switch the model.
+  - **Saving the layout:** a rearranged dashboard isn't saved yet; it resets on reload.
+  - The demo scene in [SUBMISSION.md](SUBMISSION.md).
 
 Rewritten 2026-10-28 after reading the AG Grid prize brief. The first plan was a plain AG Grid table, but the prize asks for more: "custom widgets, theming, and layout tools, not just AG Grid or AG Charts on their own", plus the **Studio Agent Framework** ("a custom agent talking to Studio's built-in agents, or a swapped-in harness"). AG Studio is AG Grid's dashboard component: grids, charts and a data engine in one, which people can rearrange without code.
 

@@ -775,6 +775,50 @@ class ShopTest(RoutesTest):
         create.assert_not_called()
 
 
+class StudioChatTest(RoutesTest):
+    MESSAGES = [{"role": "system", "content": "You are the HeyList analyst."}, {"role": "user", "content": "Who owes what?"}]
+    TOOLS = [{"type": "function", "function": {"name": "who_owes_whom", "description": "Open debts", "parameters": {"type": "object"}}}]
+    REPLY = {"content": "", "toolCalls": [{"name": "who_owes_whom", "arguments": {}}], "usage": {"inputTokens": 10, "outputTokens": 3}}
+
+    def chat(self, **body):
+        return self.client.post("/api/studio/chat", json={"messages": self.MESSAGES, "tools": self.TOOLS, **body})
+
+    def test_a_turn_goes_to_ollama_and_comes_back_as_text_and_tool_calls(self):
+        turn = mock.patch.object(llm, "agent_turn", return_value=self.REPLY).start()
+        self.addCleanup(mock.patch.stopall)
+
+        response = self.chat()
+
+        self.assertEqual(response.json(), self.REPLY)
+        turn.assert_called_once_with(self.MESSAGES, self.TOOLS, None)
+
+    def test_bad_conversations_are_refused_before_any_call(self):
+        turn = mock.patch.object(llm, "agent_turn").start()
+        self.addCleanup(mock.patch.stopall)
+        for body in (
+            {"messages": []},
+            {"messages": [{"role": "admin", "content": "x"}]},
+            {"tools": [{"type": "web_search"}]},
+            {"format": "json"},
+            {"messages": [{"role": "user", "content": "x" * main.MAX_STUDIO_CHARS}]},
+        ):
+            with self.subTest(body=str(body)[:60]):
+                self.assertEqual(self.chat(**body).status_code, 400)
+        turn.assert_not_called()
+
+    def test_turns_are_capped_and_a_failure_is_a_502_without_details(self):
+        mock.patch.object(llm, "agent_turn", side_effect=RuntimeError("OLLAMA_API_KEY=secret")).start()
+        self.addCleanup(mock.patch.stopall)
+        with self.assertLogs(main.log, "ERROR"):
+            response = self.chat()
+        self.assertEqual(response.json(), {"error": "AI_UNAVAILABLE"})
+        self.assertNotIn("secret", response.text)
+
+        for _ in range(59):
+            main.allow("studio", 60, 3600)
+        self.assertEqual(self.chat().status_code, 429)
+
+
 class SettleUpTest(RoutesTest):
     def setUp(self):
         super().setUp()

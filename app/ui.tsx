@@ -36,6 +36,7 @@ function NavLinks({ path }: { path: string }) {
     <div className="flex gap-9 text-base">
       {link("/", "My lists", path === "/" || path.startsWith("/lists"))}
       {link("/history", "History", path === "/history")}
+      {link("/dashboard", "Dashboard", path === "/dashboard")}
     </div>
   );
 }

@@ -118,5 +118,28 @@ class StoreMatchTest(unittest.TestCase):
         chat.assert_not_called()
 
 
+
+class AgentTurnTest(unittest.TestCase):
+    def test_text_tool_calls_and_usage_come_back_and_the_model_is_the_servers(self):
+        from ollama._types import ChatResponse, Message
+
+        reply = ChatResponse(
+            message=Message(role="assistant", content="Here you go", tool_calls=[Message.ToolCall(function=Message.ToolCall.Function(name="who_owes_whom", arguments={"list": "Trip"}))]),
+            prompt_eval_count=120,
+            eval_count=8,
+        )
+        fake = mock.Mock()
+        fake.chat.return_value = reply
+        tools = [{"type": "function", "function": {"name": "who_owes_whom"}}]
+        with mock.patch.object(llm, "client", return_value=fake), mock.patch.dict("os.environ", {"OLLAMA_MODEL": "gemma4:31b"}):
+            turn = llm.agent_turn([{"role": "user", "content": "hi"}], tools)
+
+        self.assertEqual(
+            turn,
+            {"content": "Here you go", "toolCalls": [{"name": "who_owes_whom", "arguments": {"list": "Trip"}}], "usage": {"inputTokens": 120, "outputTokens": 8}},
+        )
+        fake.chat.assert_called_once_with(model="gemma4:31b", messages=[{"role": "user", "content": "hi"}], tools=tools, format=None)
+
+
 if __name__ == "__main__":
     unittest.main()

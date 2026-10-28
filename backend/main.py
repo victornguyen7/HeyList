@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -733,6 +734,40 @@ def shop_checkout(list_id: str, request: Request, body=Depends(json_body)):
     if sum(item["est_price_cents"] * item["quantity"] for item in saved) != seen_total:
         return error("PRICE_CHANGED", 409)
     return open_order(list_id, saved, member_id)
+
+
+# Dashboard agent
+
+STUDIO_ROLES = ("system", "user", "assistant", "tool")
+MAX_STUDIO_CHARS = 400_000  # a long conversation with schemas and query results, not a whole database
+
+
+@app.post("/api/studio/chat")
+def studio_chat(body=Depends(json_body)):
+    """One model turn for the Dashboard's analyst agent (AG Studio, decision 62): {messages, tools, format?} in
+    Ollama's chat format. Studio drives the loop and runs the tools in the browser; this only keeps the Ollama key on
+    the server. Each turn is a paid call, so all turns share one cap: one question can take several turns."""
+    if not allow("studio", 60, 3600):
+        return error("TOO_MANY_REQUESTS", 429)
+    try:
+        messages, tools, format = body["messages"], body.get("tools") or [], body.get("format")
+        if not isinstance(messages, list) or not 1 <= len(messages) <= 300 or not isinstance(tools, list) or len(tools) > 50:
+            raise ValueError("bad conversation")
+        if any(not isinstance(m, dict) or m.get("role") not in STUDIO_ROLES for m in messages):
+            raise ValueError("bad message")
+        if any(not isinstance(t, dict) or t.get("type") != "function" or not isinstance(t.get("function"), dict) for t in tools):
+            raise ValueError("bad tool")
+        if format is not None and not isinstance(format, dict):
+            raise ValueError("bad format")
+        if len(json.dumps(body)) > MAX_STUDIO_CHARS:
+            raise ValueError("too long")
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+    try:
+        return llm.agent_turn(messages, tools, format)
+    except Exception:
+        log.exception("Dashboard agent turn failed")
+        return error("AI_UNAVAILABLE", 502)
 
 
 # Settle up
