@@ -4,11 +4,13 @@ import uuid
 from pathlib import Path
 from unittest import mock
 
+import httpx
 from fastapi.testclient import TestClient
 
 import db
 import llm
 import main
+import market
 import paypal
 import receipts
 
@@ -20,6 +22,12 @@ COLUMNS = {
 }
 # Column defaults the routes read back.
 DEFAULTS = {"lists": {"kind": "other"}, "items": {"position": 0, "quantity": 1}, "orders": {"status": "CREATED", "prices": {}, "refunds": {}}}
+
+
+def generate(table, row):
+    """The generated columns Postgres keeps up to date."""
+    if table == "items":
+        row["name_key"] = row["name"].strip().lower()
 
 
 class FakeDB:
@@ -54,6 +62,7 @@ class FakeDB:
                     **DEFAULTS.get(table, {}),
                     **row,
                 })
+            generate(table, added[-1])
             self.tables.setdefault(table, []).append(added[-1])
         return [dict(row) for row in added]
 
@@ -62,6 +71,7 @@ class FakeDB:
         changed = self.rows(table, filters)
         for row in changed:
             row.update(values)
+            generate(table, row)
         return [dict(row) for row in changed]
 
     def delete(self, table, **filters):
@@ -314,6 +324,67 @@ class CheckoutTest(RoutesTest):
         self.assertEqual(self.client.post("/api/orders/bad-id/capture").status_code, 400)
 
 
+class ProductRoutesTest(RoutesTest):
+    PRODUCT = {"productId": "P1", "title": "SPF 50", "store": "shop.example", "url": "https://shop.example/p", "imageUrl": None, "priceCents": 950}
+
+    def setUp(self):
+        super().setUp()
+        self.list = self.new_list([{"name": "Sunscreen", "estPriceCents": 500, "quantity": 2}])
+        self.item = self.list["items"][0]
+
+    def mock_market(self, name, **kwargs):
+        patch = mock.patch.object(market, name, **kwargs)
+        self.addCleanup(patch.stop)
+        return patch.start()
+
+    def choose(self, body):
+        return self.client.post(f"/api/items/{self.item['id']}/product", json=body)
+
+    def test_search_uses_the_item_name_and_saves_nothing(self):
+        search = self.mock_market("search", return_value=[self.PRODUCT])
+
+        self.assertEqual(self.client.get(f"/api/items/{self.item['id']}/products").json(), {"products": [self.PRODUCT]})
+        search.assert_called_once_with("Sunscreen")
+        self.assertIsNone(self.db.tables["items"][0]["product"])
+
+    def test_the_price_comes_from_channel3_not_the_request_and_paypal_charges_it(self):
+        lookup = self.mock_market("get", return_value=self.PRODUCT)
+
+        item = self.choose({"productId": "P1", "priceCents": 1}).json()
+
+        lookup.assert_called_once_with("P1")
+        self.assertEqual((item["estPriceCents"], item["product"]["store"]), (950, "shop.example"))
+        self.assertIn("fetchedAt", item["product"])
+        create = self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": [self.item["id"]]})
+        self.assertEqual(create.call_args.args[0], [{"name": "Sunscreen", "priceCents": 950, "quantity": 2}])
+
+    def test_renaming_or_repricing_drops_the_product(self):
+        self.mock_market("get", return_value=self.PRODUCT)
+        for change in ({"name": "Sun cream"}, {"estPriceCents": 700}):
+            with self.subTest(change=change):
+                self.choose({"productId": "P1"})
+                self.assertIsNone(self.client.patch(f"/api/items/{self.item['id']}", json=change).json()["product"])
+
+    def test_a_bought_or_held_item_and_bad_input_are_refused(self):
+        lookup = self.mock_market("get", return_value=None)
+        self.assertEqual(self.choose({"productId": "../lists"}).status_code, 400)
+        self.assertEqual(self.choose({"productId": "P9"}).status_code, 404)
+        self.db.insert("orders", [{"id": "ORDER1", "list_id": self.list["id"], "item_ids": [self.item["id"]], "status": "PENDING"}])
+        self.assertEqual(self.choose({"productId": "P1"}).json(), {"error": "PAYMENT_PENDING"})
+        self.db.update("items", {"checked_at": "earlier"}, id=self.item["id"])
+        self.assertEqual(self.choose({"productId": "P1"}).json(), {"error": "ITEM_CHECKED"})
+        self.assertEqual(lookup.call_count, 1)
+
+    def test_channel3_failures_are_502_and_searches_capped(self):
+        self.mock_market("search", side_effect=httpx.ConnectError("down"))
+        with self.assertLogs(main.log):
+            self.assertEqual(self.client.get(f"/api/items/{self.item['id']}/products").json(), {"error": "MARKET_UNAVAILABLE"})
+        self.mock_market("search", return_value=[])
+        statuses = [self.client.get(f"/api/items/{self.item['id']}/products").status_code for _ in range(100)]
+        self.assertEqual(statuses[-2:], [200, 429])
+
+
 class StartingListTest(RoutesTest):
     def test_a_suggestion_is_returned_not_saved(self):
         suggestion = {"title": "Trip", "kind": "trip", "items": [{"name": "Tent", "quantity": 1, "estPriceCents": None}]}
@@ -337,6 +408,31 @@ class StartingListTest(RoutesTest):
         self.mock_llm(return_value={"title": "x", "kind": "other", "items": []})
         statuses = [self.client.post("/api/lists/suggest", json={"description": "x"}).status_code for _ in range(21)]
         self.assertEqual(statuses[-2:], [200, 429])
+
+    def test_prices_come_from_proven_purchases_then_store_products_then_the_ai(self):
+        old = self.new_list([{"name": "Sunscreen", "quantity": 2}, {"name": "Sunscreen"}, {"name": "sunscreen"},
+                             {"name": "Tent"}, {"name": "Rope"}, {"name": "Lamp"}])["items"]
+        proof = [{"order_id": "ORDER1", "price_cents": 1800}, {"receipt_id": "R1", "price_cents": 1000}, {"price_cents": 100}]
+        for item, values in zip(old, proof):  # 900 a unit, 1000, and a hand tick that doesn't count
+            self.db.update("items", {"checked_at": "earlier", **values}, id=item["id"])
+        self.db.update("items", {"product": {"priceCents": 4999}}, id=old[3]["id"])
+        self.db.update("items", {"checked_at": "earlier", "price_cents": 700}, id=old[4]["id"])  # hand tick only
+        self.mock_llm(return_value={"title": "Beach", "kind": "trip", "items": [
+            {"name": "SUNSCREEN ", "quantity": 1, "estPriceCents": 500},
+            {"name": "Tent", "quantity": 1, "estPriceCents": 9000},
+            {"name": "Rope", "quantity": 1, "estPriceCents": 800},
+            {"name": "Towel", "quantity": 1, "estPriceCents": None},
+        ]})
+
+        items = self.client.post("/api/lists/suggest", json={"description": "Beach"}).json()["items"]
+
+        self.assertEqual([(i["estPriceCents"], i["priceSource"]) for i in items], [(950, "paid"), (4999, "store"), (800, "estimate"), (None, None)])
+
+    def test_a_price_memory_failure_still_returns_the_suggestion(self):
+        self.mock_llm(return_value={"title": "x", "kind": "other", "items": [{"name": "Tent", "quantity": 1, "estPriceCents": 9000}]})
+        with mock.patch.object(db, "select", side_effect=RuntimeError("no name_key column")), self.assertLogs(main.log):
+            response = self.client.post("/api/lists/suggest", json={"description": "x"})
+        self.assertEqual(response.json()["items"][0]["estPriceCents"], 9000)
 
     def mock_llm(self, **kwargs):
         patch = mock.patch.object(llm, "starting_list", **kwargs)

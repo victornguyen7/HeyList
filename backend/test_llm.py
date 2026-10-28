@@ -1,5 +1,6 @@
 import json
 import unittest
+from pathlib import Path
 from unittest import mock
 
 import llm
@@ -42,7 +43,7 @@ class StartingListTest(unittest.TestCase):
             },
         )
         messages, schema = chat.call_args.args
-        self.assertIn("Budget: 15000 cents", messages[1]["content"])
+        self.assertIn("Budget: 15000 cents", messages[-1]["content"])
         self.assertIs(schema, llm.STARTER_SCHEMA)
 
     def test_the_same_item_with_different_amounts_is_kept_twice_and_flagged(self):
@@ -55,6 +56,34 @@ class StartingListTest(unittest.TestCase):
 
         flag = "listed twice with different amounts; check how many"
         self.assertEqual([(i["quantity"], i["note"]) for i in items], [(20, flag), (10, flag)])
+
+    def test_no_examples_are_sent_by_default(self):
+        chat = self.reply('{"title": "Pup", "kind": "home", "items": []}')
+
+        llm.starting_list("Bringing home a puppy we adopted")
+
+        self.assertEqual([m["role"] for m in chat.call_args.args[0]], ["system", "user"])
+
+    def test_when_turned_on_the_closest_examples_are_sent_before_the_request(self):
+        chat = self.reply('{"title": "Pup", "kind": "home", "items": []}')
+
+        with mock.patch.object(llm, "EXAMPLE_COUNT", 3):
+            llm.starting_list("Bringing home a puppy we adopted")
+
+        messages = chat.call_args.args[0]
+        self.assertEqual([m["role"] for m in messages], ["system"] + ["user", "assistant"] * 3 + ["user"])
+        self.assertEqual(messages[1]["content"], "Prepare supplies for bringing home a newly adopted puppy")
+        self.assertEqual(json.loads(messages[2]["content"])["title"], next(e for e in llm.EXAMPLES if e["request"] == messages[1]["content"])["reply"]["title"])
+        self.assertEqual(messages[-1]["content"], "Bringing home a puppy we adopted")
+
+    def test_every_example_is_a_valid_reply_and_none_repeats_an_eval_case(self):
+        cases = json.loads((Path(__file__).parent / "eval" / "starter_cases.json").read_text())
+        for example in llm.EXAMPLES:
+            reply = example["reply"]
+            self.assertIn(reply["kind"], llm.KINDS)
+            for item in reply["items"]:
+                self.assertTrue(item["name"] and 1 <= item["quantity"] <= 99 and item["estPriceCents"] >= 0, item)
+            self.assertNotIn(example["request"].lower(), [case["input"].lower() for case in cases])
 
     def test_an_unknown_kind_and_missing_title_fall_back(self):
         self.reply('{"kind": "picnic", "items": []}')

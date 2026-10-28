@@ -74,6 +74,8 @@ create table if not exists items (
   id uuid primary key default gen_random_uuid(),
   list_id uuid not null references lists (id) on delete cascade,
   name text not null,
+  -- The name as price memory matches it across lists (decision 49).
+  name_key text generated always as (lower(btrim(name))) stored,
   position integer not null default 0,
   -- What the name and quantity can't say, from the AI or the person: a condition ("only if nobody has one")
   -- or an amount to check ("how many? enough snacks for 4 people").
@@ -84,6 +86,9 @@ create table if not exists items (
   est_price_cents integer check (est_price_cents >= 0),
   -- What was actually paid for all of them, from the receipt or the captured order.
   price_cents integer check (price_cents >= 0),
+  -- A real product chosen from a store search (Channel3, decision 50): title, store, url, imageUrl, priceCents
+  -- (one unit, read by the server, and copied into est_price_cents), productId, fetchedAt.
+  product jsonb,
   -- Who said they will buy it.
   claimed_by uuid references members (id) on delete set null,
   -- Who checked it off (and paid, when there is a price).
@@ -140,5 +145,9 @@ alter table orders add column if not exists prices jsonb not null default '{}';
 alter table items add column if not exists note text check (char_length(note) <= 200);
 alter table orders add column if not exists capture_id text;
 alter table orders add column if not exists refunds jsonb not null default '{}';
+alter table items add column if not exists name_key text generated always as (lower(btrim(name))) stored;
+-- After the add column, so it also works on a database created before name_key existed.
+create index if not exists items_name_key on items (name_key);
+alter table items add column if not exists product jsonb;
 -- unique (list_id, name) already indexes members by list_id.
 drop index if exists members_list_id;

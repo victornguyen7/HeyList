@@ -4,3 +4,4 @@ paypal-server-sdk==2.4.0
 supabase==2.32.0
 ollama==0.6.3
 boto3==1.43.114
+httpx==0.28.1

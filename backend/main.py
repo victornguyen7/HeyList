@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import statistics
 import time
 import uuid
 from collections import defaultdict, deque
@@ -12,6 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 import db
 import llm
+import market
 import money
 import paypal
 import receipts
@@ -247,6 +249,9 @@ def update_item(item_id: str, body=Depends(json_body)):
             values["name"] = text(body["name"])
         if "estPriceCents" in body:
             values["est_price_cents"] = cents(body["estPriceCents"])
+        # A store product describes this name at this price; change either and it no longer does.
+        if "name" in body or "estPriceCents" in body:
+            values["product"] = None
         if "quantity" in body:
             values["quantity"] = quantity(body["quantity"])
         if "claimedBy" in body:
@@ -288,6 +293,53 @@ def delete_item(item_id: str):
         return error("ITEM_PAID", 409)
     db.delete("items", id=item["id"])
     return Response(status_code=204)
+
+
+# Store products (Channel3, decision 50)
+
+
+@app.get("/api/items/{item_id}/products")
+def find_products(item_id: str):
+    """Real products for this item, to choose from. Nothing is saved."""
+    item = find("items", item_id)
+    if not item:
+        return error("ITEM_NOT_FOUND", 404)
+    # One cap for everyone, as for suggestions: anyone can make a list, so a per-list cap is easy to get round.
+    if not allow("market", 100, 3600):
+        return error("TOO_MANY_REQUESTS", 429)
+    try:
+        return {"products": market.search(item["name"])}
+    except Exception:
+        log.exception("Product search failed")
+        return error("MARKET_UNAVAILABLE", 502)
+
+
+@app.post("/api/items/{item_id}/product")
+def choose_product(item_id: str, body=Depends(json_body)):
+    """{"productId"}: the item gets that product, at the price Channel3 gives now, as the price PayPal charges."""
+    item = find("items", item_id)
+    if not item:
+        return error("ITEM_NOT_FOUND", 404)
+    product_id = body.get("productId")
+    if not isinstance(product_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", product_id):
+        return error("INVALID_BODY", 400)
+    if item["checked_at"]:
+        return error("ITEM_CHECKED", 409)
+    if any(item["id"] in order["item_ids"] for order in db.select("orders", list_id=item["list_id"], status="PENDING")):
+        return error("PAYMENT_PENDING", 409)
+    try:
+        product = market.get(product_id)
+    except Exception:
+        log.exception("Product lookup failed")
+        return error("MARKET_UNAVAILABLE", 502)
+    if not product:
+        return error("PRODUCT_NOT_FOUND", 404)
+    values = {"product": product | {"fetchedAt": now()}, "est_price_cents": product["priceCents"]}
+    # checked_at=None: an item checked off while Channel3 answered keeps the price it was bought at.
+    saved = db.update("items", values, id=item["id"], checked_at=None)
+    if not saved:
+        return error("ITEM_CHECKED", 409)
+    return camel(saved[0])
 
 
 # PayPal Checkout
@@ -432,6 +484,30 @@ REFUND_FAILED = ("FAILED", "CANCELLED")
 # AI starting lists
 
 
+def remember_prices(items: list[dict]) -> list[dict]:
+    """Price memory (decision 49): each item's price from what people really paid for the same name on any list,
+    else from the store product last chosen for it, else the AI's estimate. Adds priceSource: paid, store or
+    estimate (None when there is no price at all). Only names and prices are read, never who bought what.
+    ponytail: exact names only ("water bottle" is not "water bottles"); add plural or fuzzy matching if too few match."""
+    keys = {item["name"].strip().lower() for item in items}
+    paid, store = defaultdict(list), {}
+    for row in db.select("items", "created_at", name_key=list(keys)):
+        # Proven only: a PayPal capture or a confirmed receipt. Prices typed in with a hand tick are self-reported.
+        if row["checked_at"] and row["price_cents"] and (row["order_id"] or row["receipt_id"]):
+            paid[row["name_key"]].append(round(row["price_cents"] / row["quantity"]))
+        if row["product"]:
+            store[row["name_key"]] = row["product"]["priceCents"]
+    for item in items:
+        key = item["name"].strip().lower()
+        if paid[key]:
+            item["estPriceCents"], item["priceSource"] = round(statistics.median(paid[key][-10:])), "paid"
+        elif key in store:
+            item["estPriceCents"], item["priceSource"] = store[key], "store"
+        else:
+            item["priceSource"] = "estimate" if item["estPriceCents"] else None
+    return items
+
+
 @app.post("/api/lists/suggest")
 def suggest_list(body=Depends(json_body)):
     """A starting list from one sentence. Nothing is saved: the person edits it, then creates it with POST /api/lists."""
@@ -445,10 +521,16 @@ def suggest_list(body=Depends(json_body)):
     except BAD_INPUT:
         return error("INVALID_BODY", 400)
     try:
-        return llm.starting_list(description, budget)
+        suggestion = llm.starting_list(description, budget)
     except Exception:
         log.exception("Starting list failed")
         return error("AI_UNAVAILABLE", 502)
+    try:
+        remember_prices(suggestion["items"])
+    except Exception:
+        # Price memory is an extra; the AI's estimates still make a usable list (e.g. before the schema is run).
+        log.exception("Price memory failed")
+    return suggestion
 
 
 # Splitting

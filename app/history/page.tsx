@@ -40,7 +40,11 @@ export default function HistoryPage() {
   // Buy again: a fresh copy of the list with the same items, all unchecked.
   async function again(list: List) {
     try {
-      const items = list.items.map(({ name, note, quantity, estPriceCents }) => ({ name, note, quantity, estPriceCents }));
+      // A proven price (PayPal or a receipt) replaces the old estimate: what one unit really cost (decision 49).
+      const items = list.items.map(({ name, note, quantity, estPriceCents, priceCents, orderId, receiptId }) => ({
+        name, note, quantity,
+        estPriceCents: priceCents && (orderId || receiptId) ? Math.round(priceCents / quantity) : estPriceCents,
+      }));
       const created = await api<List>("/api/lists", {
         method: "POST",
         body: JSON.stringify({ title: list.title, kind: list.kind, budgetCents: list.budgetCents, items }),

@@ -4,6 +4,9 @@ Every case is one real (paid) Ollama call, so this only runs with --yes, and onl
 (RULES.md). From backend/, with the keys loaded from .env.local:
 
     set -a; . ../.env.local; set +a; ../../.venv/bin/python eval_starter.py --yes
+
+It runs what the app does. Add --examples to send the 3 closest prompt examples (decision 48, off in the app) and
+compare; that report is written to eval/eval_report_examples.json.
 """
 
 import json
@@ -53,6 +56,13 @@ def main() -> None:
         sys.exit(f"Makes {len(json.loads(CASES.read_text()))} paid Ollama calls. Run with --yes once the owner has agreed.")
     import llm  # only when running for real, so the tests can import score() without the Ollama client
 
+    examples = "--examples" in sys.argv
+    if examples:
+        # Near-copies of eval cases stay out, or the run would score copying (decision 48).
+        llm.EXAMPLES = [example for example in llm.EXAMPLES if not example.get("evalOverlap")]
+        llm.EXAMPLE_COUNT = 3
+    report = REPORT.with_name("eval_report_examples.json") if examples else REPORT
+
     # Token usage is reported back after every paid run (RULES.md), so each reply's counts are added up here.
     usage = {"promptTokens": 0, "outputTokens": 0, "calls": 0}
     real = llm.client()
@@ -78,7 +88,8 @@ def main() -> None:
         for key in keys:
             totals[key] += result[key]
         invented += len(result["invented"])
-        cases.append({"id": case["id"], "input": case["input"], "explicit": case["explicit"], "error": error, "items": items, "score": result})
+        shown = [example["request"] for example in llm.closest_examples(case["input"])]
+        cases.append({"id": case["id"], "input": case["input"], "explicit": case["explicit"], "examples": shown, "error": error, "items": items, "score": result})
         print(
             f"{case['id']}: items {result['found']}/{result['expected']}, quantities {result['quantityOk']}/{result['quantityChecked']},"
             f" notes {result['notesKept']}/{result['notesChecked']}" + (f", invented {result['invented']}" if result["invented"] else "")
@@ -96,11 +107,12 @@ def main() -> None:
         "failedCases": sum(1 for case in cases if case["error"]),
         "counts": totals,
     }
-    REPORT.write_text(
+    report.write_text(
         json.dumps(
             {
                 "ranAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "model": os.environ.get("OLLAMA_MODEL"),
+                "examples": llm.EXAMPLE_COUNT,
                 "cases": len(cases),
                 "summary": summary,
                 "usage": usage,
@@ -114,7 +126,7 @@ def main() -> None:
         f"\nItem recall {totals['found']}/{totals['expected']} · quantity accuracy {totals['quantityOk']}/{totals['quantityChecked']}"
         f" · conditions and unclear amounts kept {totals['notesKept']}/{totals['notesChecked']} · invented items {invented}"
     )
-    print(f"Tokens: {usage['promptTokens']} in, {usage['outputTokens']} out, {usage['calls']} calls. Report: {REPORT}")
+    print(f"Tokens: {usage['promptTokens']} in, {usage['outputTokens']} out, {usage['calls']} calls. Report: {report}")
 
 
 if __name__ == "__main__":

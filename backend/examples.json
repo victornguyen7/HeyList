@@ -1,0 +1,1079 @@
+[
+  {
+    "evalOverlap": true,
+    "request": "Restock everyday groceries for one person for the next week",
+    "reply": {
+      "title": "Weekly groceries",
+      "kind": "groceries",
+      "items": [
+        {"name": "eggs", "quantity": 1, "estPriceCents": 400, "note": "one dozen"},
+        {"name": "milk", "quantity": 1, "estPriceCents": 400},
+        {"name": "bread", "quantity": 1, "estPriceCents": 350},
+        {"name": "bananas", "quantity": 1, "estPriceCents": 250},
+        {"name": "chicken breast", "quantity": 1, "estPriceCents": 800, "note": "about 1 lb"},
+        {"name": "frozen vegetables", "quantity": 2, "estPriceCents": 500},
+        {"name": "rice", "quantity": 1, "estPriceCents": 500}
+      ]
+    }
+  },
+  {
+    "request": "Prepare meal prep lunches and dinners for one person for five days",
+    "reply": {
+      "title": "Weekly meal prep",
+      "kind": "groceries",
+      "items": [
+        {"name": "chicken breast", "quantity": 1, "estPriceCents": 1000, "note": "about 2 lb"},
+        {"name": "brown rice", "quantity": 1, "estPriceCents": 400},
+        {"name": "broccoli", "quantity": 2, "estPriceCents": 600},
+        {"name": "sweet potatoes", "quantity": 3, "estPriceCents": 450},
+        {"name": "olive oil", "quantity": 1, "estPriceCents": 800, "note": "skip if already stocked"},
+        {"name": "meal prep containers", "quantity": 1, "estPriceCents": 1200, "note": "reusable set"}
+      ]
+    }
+  },
+  {
+    "request": "Pack a healthy lunch and snacks to take to work tomorrow",
+    "reply": {
+      "title": "Work lunch",
+      "kind": "groceries",
+      "items": [
+        {"name": "whole wheat bread", "quantity": 1, "estPriceCents": 350},
+        {"name": "turkey slices", "quantity": 1, "estPriceCents": 500},
+        {"name": "lettuce", "quantity": 1, "estPriceCents": 250},
+        {"name": "apples", "quantity": 2, "estPriceCents": 300},
+        {"name": "Greek yogurt", "quantity": 2, "estPriceCents": 300},
+        {"name": "reusable sandwich bag", "quantity": 1, "estPriceCents": 500, "note": "only if needed"}
+      ]
+    }
+  },
+  {
+    "request": "Get everything needed for moving into a college dorm for the first time",
+    "reply": {
+      "title": "Dorm move-in",
+      "kind": "other",
+      "items": [
+        {"name": "twin XL sheets", "quantity": 1, "estPriceCents": 2500},
+        {"name": "pillow", "quantity": 1, "estPriceCents": 1200},
+        {"name": "laundry hamper", "quantity": 1, "estPriceCents": 1500},
+        {"name": "shower caddy", "quantity": 1, "estPriceCents": 1000},
+        {"name": "hangers", "quantity": 1, "estPriceCents": 800, "note": "pack of 20"},
+        {"name": "desk lamp", "quantity": 1, "estPriceCents": 1800},
+        {"name": "power strip", "quantity": 1, "estPriceCents": 1500, "note": "check campus housing rules"},
+        {"name": "storage bins", "quantity": 2, "estPriceCents": 1600}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Restock cleaning supplies before doing a full apartment cleaning",
+    "reply": {
+      "title": "Apartment cleaning",
+      "kind": "home",
+      "items": [
+        {"name": "all-purpose cleaner", "quantity": 1, "estPriceCents": 500},
+        {"name": "glass cleaner", "quantity": 1, "estPriceCents": 400},
+        {"name": "microfiber cloths", "quantity": 1, "estPriceCents": 800},
+        {"name": "dish sponges", "quantity": 1, "estPriceCents": 400},
+        {"name": "trash bags", "quantity": 1, "estPriceCents": 700},
+        {"name": "rubber cleaning gloves", "quantity": 1, "estPriceCents": 500},
+        {"name": "toilet bowl cleaner", "quantity": 1, "estPriceCents": 450}
+      ]
+    }
+  },
+  {
+    "request": "Prepare everything for laundry day because I am running low on supplies",
+    "reply": {
+      "title": "Laundry day",
+      "kind": "home",
+      "items": [
+        {"name": "laundry detergent", "quantity": 1, "estPriceCents": 1000},
+        {"name": "dryer sheets", "quantity": 1, "estPriceCents": 500, "note": "optional if you use them"},
+        {"name": "stain remover", "quantity": 1, "estPriceCents": 600},
+        {"name": "mesh laundry bags", "quantity": 1, "estPriceCents": 800, "note": "for delicate clothing"},
+        {"name": "quarters for laundry", "quantity": 1, "estPriceCents": 5000, "note": "only if the machines require coins"}
+      ]
+    }
+  },
+  {
+    "request": "Host a movie night at home for four friends",
+    "reply": {
+      "title": "Movie night",
+      "kind": "party",
+      "items": [
+        {"name": "popcorn", "quantity": 4, "estPriceCents": 500},
+        {"name": "candy", "quantity": 4, "estPriceCents": 800},
+        {"name": "soda", "quantity": 2, "estPriceCents": 700, "note": "12-packs"},
+        {"name": "chips", "quantity": 2, "estPriceCents": 500},
+        {"name": "paper bowls", "quantity": 1, "estPriceCents": 400},
+        {"name": "cozy blankets", "quantity": 2, "estPriceCents": 2000, "note": "only if guests need extras"}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Organize a birthday party for a child with 10 guests",
+    "reply": {
+      "title": "Kids birthday party",
+      "kind": "party",
+      "items": [
+        {"name": "birthday cake", "quantity": 1, "estPriceCents": 3500},
+        {"name": "juice boxes", "quantity": 12, "estPriceCents": 700},
+        {"name": "pizza", "quantity": 4, "estPriceCents": 5000, "note": "four large pizzas"},
+        {"name": "paper plates", "quantity": 1, "estPriceCents": 500},
+        {"name": "birthday balloons", "quantity": 1, "estPriceCents": 1000},
+        {"name": "birthday candles", "quantity": 1, "estPriceCents": 250},
+        {"name": "party favors", "quantity": 10, "estPriceCents": 1500}
+      ]
+    }
+  },
+  {
+    "request": "Plan a graduation party for 15 people at home",
+    "reply": {
+      "title": "Graduation party",
+      "kind": "party",
+      "items": [
+        {"name": "graduation cake", "quantity": 1, "estPriceCents": 4500},
+        {"name": "sandwich platter", "quantity": 2, "estPriceCents": 5000},
+        {"name": "chips", "quantity": 4, "estPriceCents": 1000},
+        {"name": "soda", "quantity": 3, "estPriceCents": 1050, "note": "12-packs"},
+        {"name": "disposable cups", "quantity": 1, "estPriceCents": 500},
+        {"name": "tablecloths", "quantity": 2, "estPriceCents": 800},
+        {"name": "graduation decorations", "quantity": 1, "estPriceCents": 1800},
+        {"name": "thank-you cards", "quantity": 1, "estPriceCents": 700}
+      ]
+    }
+  },
+  {
+    "request": "Prepare Thanksgiving dinner for eight people",
+    "reply": {
+      "title": "Thanksgiving dinner",
+      "kind": "party",
+      "items": [
+        {"name": "whole turkey", "quantity": 1, "estPriceCents": 2500, "note": "size suitable for eight people"},
+        {"name": "potatoes", "quantity": 1, "estPriceCents": 500, "note": "5 lb bag"},
+        {"name": "stuffing mix", "quantity": 2, "estPriceCents": 700},
+        {"name": "green beans", "quantity": 2, "estPriceCents": 500},
+        {"name": "cranberry sauce", "quantity": 2, "estPriceCents": 500},
+        {"name": "dinner rolls", "quantity": 2, "estPriceCents": 600},
+        {"name": "pumpkin pie", "quantity": 2, "estPriceCents": 1800},
+        {"name": "aluminum roasting pan", "quantity": 1, "estPriceCents": 800, "note": "only if needed"}
+      ]
+    }
+  },
+  {
+    "request": "Bring a dish and supplies to a potluck dinner with coworkers",
+    "reply": {
+      "title": "Office potluck",
+      "kind": "party",
+      "items": [
+        {"name": "pasta salad ingredients", "quantity": 1, "estPriceCents": 1800},
+        {"name": "serving bowl", "quantity": 1, "estPriceCents": 1000, "note": "skip if you have one"},
+        {"name": "serving spoon", "quantity": 1, "estPriceCents": 400, "note": "skip if you have one"},
+        {"name": "food storage container", "quantity": 1, "estPriceCents": 700},
+        {"name": "paper plates", "quantity": 1, "estPriceCents": 500},
+        {"name": "disposable forks", "quantity": 1, "estPriceCents": 400},
+        {"name": "food label cards", "quantity": 1, "estPriceCents": 300, "note": "include common allergens"}
+      ]
+    }
+  },
+  {
+    "request": "Host a backyard barbecue for six people this weekend",
+    "reply": {
+      "title": "Backyard barbecue",
+      "kind": "party",
+      "items": [
+        {"name": "hamburger patties", "quantity": 6, "estPriceCents": 1200},
+        {"name": "hot dogs", "quantity": 1, "estPriceCents": 600, "note": "pack of eight"},
+        {"name": "hamburger buns", "quantity": 1, "estPriceCents": 350},
+        {"name": "hot dog buns", "quantity": 1, "estPriceCents": 300},
+        {"name": "lettuce, tomatoes, and onions", "quantity": 1, "estPriceCents": 1000},
+        {"name": "ketchup and mustard", "quantity": 1, "estPriceCents": 700},
+        {"name": "charcoal", "quantity": 1, "estPriceCents": 1200, "note": "only if using a charcoal grill"},
+        {"name": "ice", "quantity": 2, "estPriceCents": 600}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Pack food and supplies for a family picnic at a local park",
+    "reply": {
+      "title": "Family picnic",
+      "kind": "trip",
+      "items": [
+        {"name": "sandwich ingredients", "quantity": 1, "estPriceCents": 1800},
+        {"name": "strawberries", "quantity": 1, "estPriceCents": 500},
+        {"name": "trail mix", "quantity": 1, "estPriceCents": 600},
+        {"name": "bottled water", "quantity": 1, "estPriceCents": 500, "note": "multi-pack"},
+        {"name": "paper napkins", "quantity": 1, "estPriceCents": 300},
+        {"name": "reusable picnic blanket", "quantity": 1, "estPriceCents": 1800},
+        {"name": "sunscreen", "quantity": 1, "estPriceCents": 900},
+        {"name": "trash bags", "quantity": 1, "estPriceCents": 300}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Get ready for a two-night camping trip for two people",
+    "reply": {
+      "title": "Weekend camping",
+      "kind": "trip",
+      "items": [
+        {"name": "camping tent", "quantity": 1, "estPriceCents": 6000},
+        {"name": "sleeping bags", "quantity": 2, "estPriceCents": 8000},
+        {"name": "camping stove", "quantity": 1, "estPriceCents": 3000},
+        {"name": "fuel canister", "quantity": 1, "estPriceCents": 1000},
+        {"name": "headlamps", "quantity": 2, "estPriceCents": 2400},
+        {"name": "trail snacks", "quantity": 1, "estPriceCents": 1200},
+        {"name": "bottled water", "quantity": 1, "estPriceCents": 800, "note": "supplement with a safe water source or treatment"},
+        {"name": "insect repellent", "quantity": 1, "estPriceCents": 800}
+      ]
+    }
+  },
+  {
+    "request": "Prepare a day hike for two people on a moderate trail",
+    "reply": {
+      "title": "Day hike",
+      "kind": "trip",
+      "items": [
+        {"name": "daypacks", "quantity": 2, "estPriceCents": 5000, "note": "only if you need backpacks"},
+        {"name": "water bottles", "quantity": 2, "estPriceCents": 2000},
+        {"name": "trail mix", "quantity": 2, "estPriceCents": 1000},
+        {"name": "energy bars", "quantity": 4, "estPriceCents": 800},
+        {"name": "first aid kit", "quantity": 1, "estPriceCents": 1200},
+        {"name": "blister bandages", "quantity": 1, "estPriceCents": 600},
+        {"name": "sunscreen", "quantity": 1, "estPriceCents": 900},
+        {"name": "rain ponchos", "quantity": 2, "estPriceCents": 1200}
+      ]
+    }
+  },
+  {
+    "request": "Pack for a weekend ski trip with one day on the slopes",
+    "reply": {
+      "title": "Ski weekend",
+      "kind": "trip",
+      "items": [
+        {"name": "thermal base layers", "quantity": 2, "estPriceCents": 4000},
+        {"name": "ski socks", "quantity": 2, "estPriceCents": 2000},
+        {"name": "waterproof gloves", "quantity": 1, "estPriceCents": 2500},
+        {"name": "neck warmer", "quantity": 1, "estPriceCents": 1200},
+        {"name": "hand warmers", "quantity": 1, "estPriceCents": 700},
+        {"name": "sunscreen", "quantity": 1, "estPriceCents": 900},
+        {"name": "lip balm with SPF", "quantity": 1, "estPriceCents": 400},
+        {"name": "ski goggles", "quantity": 1, "estPriceCents": 3500, "note": "only if renting or borrowing is not an option"}
+      ]
+    }
+  },
+  {
+    "request": "Get snacks and essentials ready for a six-hour road trip",
+    "reply": {
+      "title": "Road trip essentials",
+      "kind": "trip",
+      "items": [
+        {"name": "bottled water", "quantity": 1, "estPriceCents": 500, "note": "multi-pack"},
+        {"name": "mixed nuts", "quantity": 1, "estPriceCents": 600},
+        {"name": "granola bars", "quantity": 1, "estPriceCents": 500},
+        {"name": "fresh fruit", "quantity": 1, "estPriceCents": 700},
+        {"name": "car phone mount", "quantity": 1, "estPriceCents": 1500},
+        {"name": "USB car charger", "quantity": 1, "estPriceCents": 1200},
+        {"name": "paper towels", "quantity": 1, "estPriceCents": 400},
+        {"name": "motion sickness bags", "quantity": 1, "estPriceCents": 500, "note": "if anyone is prone to motion sickness"}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Pack a carry-on for an overnight domestic flight",
+    "reply": {
+      "title": "Overnight flight",
+      "kind": "trip",
+      "items": [
+        {"name": "travel-size toiletries", "quantity": 1, "estPriceCents": 1500},
+        {"name": "travel toothbrush", "quantity": 1, "estPriceCents": 400},
+        {"name": "sleep mask", "quantity": 1, "estPriceCents": 800},
+        {"name": "travel pillow", "quantity": 1, "estPriceCents": 1800},
+        {"name": "portable phone charger", "quantity": 1, "estPriceCents": 2500},
+        {"name": "snacks", "quantity": 1, "estPriceCents": 800},
+        {"name": "earplugs", "quantity": 1, "estPriceCents": 500},
+        {"name": "travel-size hand sanitizer", "quantity": 1, "estPriceCents": 350}
+      ]
+    }
+  },
+  {
+    "request": "Get ready for a two-week international vacation",
+    "reply": {
+      "title": "International vacation",
+      "kind": "trip",
+      "items": [
+        {"name": "luggage locks", "quantity": 2, "estPriceCents": 1500},
+        {"name": "universal travel adapter", "quantity": 1, "estPriceCents": 2200},
+        {"name": "packing cubes", "quantity": 1, "estPriceCents": 1800},
+        {"name": "travel-size toiletries", "quantity": 1, "estPriceCents": 1500},
+        {"name": "portable phone charger", "quantity": 1, "estPriceCents": 2500},
+        {"name": "RFID-blocking travel wallet", "quantity": 1, "estPriceCents": 1200, "note": "optional"},
+        {"name": "travel laundry detergent sheets", "quantity": 1, "estPriceCents": 600},
+        {"name": "luggage tag", "quantity": 2, "estPriceCents": 600}
+      ]
+    }
+  },
+  {
+    "request": "Prepare to move from one apartment to another next weekend",
+    "reply": {
+      "title": "Apartment move",
+      "kind": "home",
+      "items": [
+        {"name": "moving boxes", "quantity": 15, "estPriceCents": 3000},
+        {"name": "packing tape", "quantity": 3, "estPriceCents": 1200},
+        {"name": "bubble wrap", "quantity": 1, "estPriceCents": 1500},
+        {"name": "permanent markers", "quantity": 1, "estPriceCents": 500},
+        {"name": "stretch wrap", "quantity": 1, "estPriceCents": 1200},
+        {"name": "furniture sliders", "quantity": 1, "estPriceCents": 1000},
+        {"name": "trash bags", "quantity": 1, "estPriceCents": 700},
+        {"name": "cleaning supplies", "quantity": 1, "estPriceCents": 1500}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Set up the basic kitchen supplies for my first apartment",
+    "reply": {
+      "title": "First apartment kitchen",
+      "kind": "home",
+      "items": [
+        {"name": "frying pan", "quantity": 1, "estPriceCents": 1800},
+        {"name": "saucepan", "quantity": 1, "estPriceCents": 2000},
+        {"name": "chef's knife", "quantity": 1, "estPriceCents": 1500},
+        {"name": "cutting board", "quantity": 1, "estPriceCents": 800},
+        {"name": "plates and bowls", "quantity": 1, "estPriceCents": 2500, "note": "basic set for two"},
+        {"name": "silverware set", "quantity": 1, "estPriceCents": 1200},
+        {"name": "food storage containers", "quantity": 1, "estPriceCents": 1500},
+        {"name": "dish towels", "quantity": 1, "estPriceCents": 700}
+      ]
+    }
+  },
+  {
+    "request": "Get supplies ready in case the power goes out during a storm",
+    "reply": {
+      "title": "Power outage preparation",
+      "kind": "home",
+      "items": [
+        {"name": "flashlights", "quantity": 2, "estPriceCents": 2000},
+        {"name": "batteries", "quantity": 1, "estPriceCents": 1200},
+        {"name": "portable power bank", "quantity": 1, "estPriceCents": 3000},
+        {"name": "battery-powered radio", "quantity": 1, "estPriceCents": 2500},
+        {"name": "bottled water", "quantity": 1, "estPriceCents": 1000, "note": "store enough for household needs"},
+        {"name": "ready-to-eat canned food", "quantity": 6, "estPriceCents": 1200},
+        {"name": "manual can opener", "quantity": 1, "estPriceCents": 600},
+        {"name": "emergency blankets", "quantity": 2, "estPriceCents": 1200}
+      ]
+    }
+  },
+  {
+    "request": "Prepare my home and car for an approaching winter storm",
+    "reply": {
+      "title": "Winter storm preparation",
+      "kind": "home",
+      "items": [
+        {"name": "rock salt or ice melt", "quantity": 1, "estPriceCents": 1200},
+        {"name": "snow shovel", "quantity": 1, "estPriceCents": 2500},
+        {"name": "warm gloves", "quantity": 2, "estPriceCents": 2000},
+        {"name": "bottled water", "quantity": 1, "estPriceCents": 1000},
+        {"name": "canned soup", "quantity": 6, "estPriceCents": 1200},
+        {"name": "flashlight batteries", "quantity": 1, "estPriceCents": 1000},
+        {"name": "windshield scraper", "quantity": 1, "estPriceCents": 800},
+        {"name": "extra warm blankets", "quantity": 2, "estPriceCents": 3000}
+      ]
+    }
+  },
+  {
+    "request": "Make an emergency kit for a family of three in an area at risk of hurricanes",
+    "reply": {
+      "title": "Hurricane emergency kit",
+      "kind": "home",
+      "items": [
+        {"name": "bottled water", "quantity": 9, "estPriceCents": 4500, "note": "gallons: one per person per day for three days"},
+        {"name": "canned food", "quantity": 12, "estPriceCents": 2400},
+        {"name": "batteries", "quantity": 2, "estPriceCents": 2000},
+        {"name": "flashlights", "quantity": 2, "estPriceCents": 2000},
+        {"name": "portable phone charger", "quantity": 1, "estPriceCents": 2500},
+        {"name": "first aid kit", "quantity": 1, "estPriceCents": 1500},
+        {"name": "manual can opener", "quantity": 1, "estPriceCents": 600},
+        {"name": "waterproof document pouch", "quantity": 1, "estPriceCents": 1200}
+      ]
+    }
+  },
+  {
+    "request": "Prepare a small go-bag in case my family needs to evacuate during a wildfire",
+    "reply": {
+      "title": "Wildfire evacuation bag",
+      "kind": "home",
+      "items": [
+        {"name": "N95 respirators", "quantity": 6, "estPriceCents": 1800, "note": "for smoke exposure; not a substitute for evacuation guidance"},
+        {"name": "goggles", "quantity": 3, "estPriceCents": 1500},
+        {"name": "bottled water", "quantity": 1, "estPriceCents": 1500},
+        {"name": "ready-to-eat snacks", "quantity": 1, "estPriceCents": 1200},
+        {"name": "portable phone charger", "quantity": 1, "estPriceCents": 2500},
+        {"name": "first aid kit", "quantity": 1, "estPriceCents": 1500},
+        {"name": "waterproof document pouch", "quantity": 1, "estPriceCents": 1200},
+        {"name": "pet carrier", "quantity": 1, "estPriceCents": 4000, "note": "if traveling with a pet"}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Stock up on basic supplies to get through a few days with a cold",
+    "reply": {
+      "title": "Cold and flu comfort supplies",
+      "kind": "home",
+      "items": [
+        {"name": "facial tissues", "quantity": 3, "estPriceCents": 600},
+        {"name": "soup", "quantity": 4, "estPriceCents": 1000},
+        {"name": "honey", "quantity": 1, "estPriceCents": 700},
+        {"name": "herbal tea", "quantity": 1, "estPriceCents": 500},
+        {"name": "electrolyte drinks", "quantity": 4, "estPriceCents": 800},
+        {"name": "throat lozenges", "quantity": 1, "estPriceCents": 500},
+        {"name": "thermometer", "quantity": 1, "estPriceCents": 1200, "note": "only if you do not have one"}
+      ]
+    }
+  },
+  {
+    "request": "Restock a basic home first aid kit for two roommates",
+    "reply": {
+      "title": "First aid kit restock",
+      "kind": "home",
+      "items": [
+        {"name": "adhesive bandages", "quantity": 1, "estPriceCents": 500},
+        {"name": "sterile gauze pads", "quantity": 1, "estPriceCents": 700},
+        {"name": "medical adhesive tape", "quantity": 1, "estPriceCents": 400},
+        {"name": "antiseptic wipes", "quantity": 1, "estPriceCents": 500},
+        {"name": "disposable gloves", "quantity": 1, "estPriceCents": 600},
+        {"name": "instant cold pack", "quantity": 2, "estPriceCents": 500},
+        {"name": "digital thermometer", "quantity": 1, "estPriceCents": 1200, "note": "only if needed"},
+        {"name": "small first aid scissors", "quantity": 1, "estPriceCents": 500}
+      ]
+    }
+  },
+  {
+    "request": "Set up a basic home workout space for strength training",
+    "reply": {
+      "title": "Home workout setup",
+      "kind": "other",
+      "items": [
+        {"name": "exercise mat", "quantity": 1, "estPriceCents": 1800},
+        {"name": "resistance bands", "quantity": 1, "estPriceCents": 1500},
+        {"name": "adjustable dumbbells", "quantity": 1, "estPriceCents": 8000, "note": "optional higher-cost purchase"},
+        {"name": "foam roller", "quantity": 1, "estPriceCents": 1500},
+        {"name": "reusable water bottle", "quantity": 1, "estPriceCents": 1000},
+        {"name": "workout towel", "quantity": 1, "estPriceCents": 700}
+      ]
+    }
+  },
+  {
+    "request": "Prepare everything I need for marathon race day",
+    "reply": {
+      "title": "Marathon race day",
+      "kind": "other",
+      "items": [
+        {"name": "running socks", "quantity": 1, "estPriceCents": 1500},
+        {"name": "anti-chafing balm", "quantity": 1, "estPriceCents": 1000},
+        {"name": "energy gels", "quantity": 6, "estPriceCents": 1800, "note": "use products practiced during training"},
+        {"name": "electrolyte drink mix", "quantity": 1, "estPriceCents": 1200},
+        {"name": "running belt", "quantity": 1, "estPriceCents": 2000},
+        {"name": "disposable warm-up layer", "quantity": 1, "estPriceCents": 1500, "note": "only if appropriate for the event"},
+        {"name": "sunscreen", "quantity": 1, "estPriceCents": 900},
+        {"name": "recovery snack", "quantity": 1, "estPriceCents": 700}
+      ]
+    }
+  },
+  {
+    "request": "Get ready for my first 5K race this Saturday",
+    "reply": {
+      "title": "5K race preparation",
+      "kind": "other",
+      "items": [
+        {"name": "running shorts", "quantity": 1, "estPriceCents": 2500, "note": "only if needed"},
+        {"name": "moisture-wicking shirt", "quantity": 1, "estPriceCents": 2000, "note": "only if needed"},
+        {"name": "running socks", "quantity": 1, "estPriceCents": 1200},
+        {"name": "race belt", "quantity": 1, "estPriceCents": 1200, "note": "optional"},
+        {"name": "banana", "quantity": 2, "estPriceCents": 100},
+        {"name": "water bottle", "quantity": 1, "estPriceCents": 1000},
+        {"name": "sunscreen", "quantity": 1, "estPriceCents": 900}
+      ]
+    }
+  },
+  {
+    "request": "Prepare supplies for bringing home a newly adopted puppy",
+    "reply": {
+      "title": "New puppy essentials",
+      "kind": "home",
+      "items": [
+        {"name": "puppy food", "quantity": 1, "estPriceCents": 2500},
+        {"name": "food and water bowls", "quantity": 1, "estPriceCents": 1500},
+        {"name": "leash and collar", "quantity": 1, "estPriceCents": 1800},
+        {"name": "puppy training pads", "quantity": 1, "estPriceCents": 1200},
+        {"name": "waste bags", "quantity": 1, "estPriceCents": 500},
+        {"name": "chew toys", "quantity": 2, "estPriceCents": 1600},
+        {"name": "pet bed", "quantity": 1, "estPriceCents": 2500},
+        {"name": "enzyme cleaner", "quantity": 1, "estPriceCents": 1000}
+      ]
+    }
+  },
+  {
+    "request": "Get the essentials before adopting a cat from the shelter",
+    "reply": {
+      "title": "Cat adoption essentials",
+      "kind": "home",
+      "items": [
+        {"name": "cat food", "quantity": 1, "estPriceCents": 2000},
+        {"name": "litter box", "quantity": 1, "estPriceCents": 1800},
+        {"name": "cat litter", "quantity": 1, "estPriceCents": 1200},
+        {"name": "food and water bowls", "quantity": 1, "estPriceCents": 1200},
+        {"name": "cat carrier", "quantity": 1, "estPriceCents": 3000},
+        {"name": "scratching post", "quantity": 1, "estPriceCents": 2000},
+        {"name": "interactive cat toys", "quantity": 1, "estPriceCents": 1000},
+        {"name": "pet-safe cleaner", "quantity": 1, "estPriceCents": 900}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Organize a baby shower for a friend with about 20 guests",
+    "reply": {
+      "title": "Baby shower",
+      "kind": "party",
+      "items": [
+        {"name": "snack platters", "quantity": 3, "estPriceCents": 6000},
+        {"name": "cupcakes", "quantity": 24, "estPriceCents": 3600},
+        {"name": "sparkling water", "quantity": 3, "estPriceCents": 1500},
+        {"name": "paper plates and cups", "quantity": 1, "estPriceCents": 1200},
+        {"name": "baby shower decorations", "quantity": 1, "estPriceCents": 2500},
+        {"name": "gift bags", "quantity": 20, "estPriceCents": 2000},
+        {"name": "baby gift", "quantity": 1, "estPriceCents": 3000},
+        {"name": "thank-you cards", "quantity": 1, "estPriceCents": 800}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Pack a diaper bag for an afternoon out with a newborn",
+    "reply": {
+      "title": "Newborn diaper bag",
+      "kind": "home",
+      "items": [
+        {"name": "diapers", "quantity": 6, "estPriceCents": 1200},
+        {"name": "baby wipes", "quantity": 1, "estPriceCents": 300},
+        {"name": "portable changing pad", "quantity": 1, "estPriceCents": 1200},
+        {"name": "extra baby outfit", "quantity": 1, "estPriceCents": 1500, "note": "only if you need an extra set"},
+        {"name": "diaper disposal bags", "quantity": 1, "estPriceCents": 400},
+        {"name": "burp cloths", "quantity": 2, "estPriceCents": 800},
+        {"name": "feeding supplies", "quantity": 1, "estPriceCents": 1000, "note": "pack according to feeding method"}
+      ]
+    }
+  },
+  {
+    "request": "Plan a relaxing date night at home for two",
+    "reply": {
+      "title": "At-home date night",
+      "kind": "party",
+      "items": [
+        {"name": "pasta", "quantity": 1, "estPriceCents": 300},
+        {"name": "pasta sauce", "quantity": 1, "estPriceCents": 500},
+        {"name": "salad ingredients", "quantity": 1, "estPriceCents": 800},
+        {"name": "garlic bread", "quantity": 1, "estPriceCents": 400},
+        {"name": "dessert", "quantity": 1, "estPriceCents": 1000},
+        {"name": "sparkling juice", "quantity": 1, "estPriceCents": 500},
+        {"name": "candles", "quantity": 1, "estPriceCents": 1000, "note": "optional"}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Host a dinner party for six friends and cook a three-course meal",
+    "reply": {
+      "title": "Dinner party",
+      "kind": "party",
+      "items": [
+        {"name": "appetizer ingredients", "quantity": 1, "estPriceCents": 1500},
+        {"name": "main dish ingredients", "quantity": 1, "estPriceCents": 4000},
+        {"name": "side dish ingredients", "quantity": 1, "estPriceCents": 1500},
+        {"name": "dessert ingredients", "quantity": 1, "estPriceCents": 1800},
+        {"name": "sparkling water", "quantity": 2, "estPriceCents": 800},
+        {"name": "dinner napkins", "quantity": 1, "estPriceCents": 500},
+        {"name": "serving platter", "quantity": 1, "estPriceCents": 1500, "note": "only if you need another"},
+        {"name": "food storage containers", "quantity": 1, "estPriceCents": 1000, "note": "for leftovers"}
+      ]
+    }
+  },
+  {
+    "request": "Get ingredients and tools for baking holiday cookies with my family",
+    "reply": {
+      "title": "Holiday cookie baking",
+      "kind": "party",
+      "items": [
+        {"name": "all-purpose flour", "quantity": 1, "estPriceCents": 400},
+        {"name": "granulated sugar", "quantity": 1, "estPriceCents": 300},
+        {"name": "butter", "quantity": 2, "estPriceCents": 1000},
+        {"name": "eggs", "quantity": 1, "estPriceCents": 400},
+        {"name": "vanilla extract", "quantity": 1, "estPriceCents": 600},
+        {"name": "chocolate chips", "quantity": 2, "estPriceCents": 800},
+        {"name": "cookie cutters", "quantity": 1, "estPriceCents": 1000, "note": "only if needed"},
+        {"name": "parchment paper", "quantity": 1, "estPriceCents": 500}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Prepare a Halloween party for eight friends with snacks and decorations",
+    "reply": {
+      "title": "Halloween party",
+      "kind": "party",
+      "items": [
+        {"name": "Halloween candy", "quantity": 3, "estPriceCents": 1500},
+        {"name": "chips and dip", "quantity": 2, "estPriceCents": 1200},
+        {"name": "soda", "quantity": 2, "estPriceCents": 700},
+        {"name": "Halloween decorations", "quantity": 1, "estPriceCents": 2000},
+        {"name": "disposable cups", "quantity": 1, "estPriceCents": 500},
+        {"name": "paper plates", "quantity": 1, "estPriceCents": 500},
+        {"name": "LED tea lights", "quantity": 1, "estPriceCents": 1000},
+        {"name": "costume accessories", "quantity": 1, "estPriceCents": 1500, "note": "optional"}
+      ]
+    }
+  },
+  {
+    "request": "Wrap Christmas presents for my family and friends",
+    "reply": {
+      "title": "Christmas gift wrapping",
+      "kind": "party",
+      "items": [
+        {"name": "wrapping paper", "quantity": 3, "estPriceCents": 1500},
+        {"name": "gift bags", "quantity": 1, "estPriceCents": 1200},
+        {"name": "gift tags", "quantity": 1, "estPriceCents": 500},
+        {"name": "ribbon", "quantity": 2, "estPriceCents": 800},
+        {"name": "scissors", "quantity": 1, "estPriceCents": 500, "note": "only if needed"},
+        {"name": "clear tape", "quantity": 2, "estPriceCents": 500},
+        {"name": "tissue paper", "quantity": 1, "estPriceCents": 600},
+        {"name": "gift boxes", "quantity": 1, "estPriceCents": 1500, "note": "for oddly shaped presents"}
+      ]
+    }
+  },
+  {
+    "request": "Plan a simple Valentine's Day surprise for my partner",
+    "reply": {
+      "title": "Valentine's Day surprise",
+      "kind": "party",
+      "items": [
+        {"name": "flowers", "quantity": 1, "estPriceCents": 2500},
+        {"name": "chocolates", "quantity": 1, "estPriceCents": 1500},
+        {"name": "greeting card", "quantity": 1, "estPriceCents": 500},
+        {"name": "dinner ingredients", "quantity": 1, "estPriceCents": 2500},
+        {"name": "dessert", "quantity": 1, "estPriceCents": 1000},
+        {"name": "gift wrapping supplies", "quantity": 1, "estPriceCents": 800, "note": "only if you are giving a wrapped gift"}
+      ]
+    }
+  },
+  {
+    "request": "Get everything I need to study for final exams during a week in the library",
+    "reply": {
+      "title": "Final exam study week",
+      "kind": "other",
+      "items": [
+        {"name": "notebooks", "quantity": 2, "estPriceCents": 800},
+        {"name": "pens", "quantity": 1, "estPriceCents": 500},
+        {"name": "highlighters", "quantity": 1, "estPriceCents": 600},
+        {"name": "sticky notes", "quantity": 1, "estPriceCents": 400},
+        {"name": "index cards", "quantity": 1, "estPriceCents": 500},
+        {"name": "snack bars", "quantity": 1, "estPriceCents": 800},
+        {"name": "reusable water bottle", "quantity": 1, "estPriceCents": 1000},
+        {"name": "earplugs", "quantity": 1, "estPriceCents": 500, "note": "if you need quiet study sessions"}
+      ]
+    }
+  },
+  {
+    "request": "Get ready for the first day of college classes",
+    "reply": {
+      "title": "First day of classes",
+      "kind": "other",
+      "items": [
+        {"name": "backpack", "quantity": 1, "estPriceCents": 3500, "note": "only if needed"},
+        {"name": "notebook", "quantity": 1, "estPriceCents": 400},
+        {"name": "pens and pencils", "quantity": 1, "estPriceCents": 600},
+        {"name": "laptop charger", "quantity": 1, "estPriceCents": 2500, "note": "only if your current one needs replacing"},
+        {"name": "portable charger", "quantity": 1, "estPriceCents": 2000},
+        {"name": "reusable water bottle", "quantity": 1, "estPriceCents": 1000},
+        {"name": "snacks", "quantity": 1, "estPriceCents": 500},
+        {"name": "folders", "quantity": 1, "estPriceCents": 500}
+      ]
+    }
+  },
+  {
+    "request": "Set up a comfortable home office for remote work",
+    "reply": {
+      "title": "Home office setup",
+      "kind": "other",
+      "items": [
+        {"name": "ergonomic office chair", "quantity": 1, "estPriceCents": 12000},
+        {"name": "laptop stand", "quantity": 1, "estPriceCents": 2500},
+        {"name": "external keyboard", "quantity": 1, "estPriceCents": 3000},
+        {"name": "wireless mouse", "quantity": 1, "estPriceCents": 2000},
+        {"name": "desk lamp", "quantity": 1, "estPriceCents": 1800},
+        {"name": "surge protector", "quantity": 1, "estPriceCents": 1800},
+        {"name": "cable organizer", "quantity": 1, "estPriceCents": 800},
+        {"name": "notebook and pens", "quantity": 1, "estPriceCents": 700}
+      ]
+    }
+  },
+  {
+    "request": "Prepare for an in-person software engineering internship interview",
+    "reply": {
+      "title": "Job interview preparation",
+      "kind": "other",
+      "items": [
+        {"name": "professional shirt", "quantity": 1, "estPriceCents": 3000, "note": "only if you need one"},
+        {"name": "notebook", "quantity": 1, "estPriceCents": 400},
+        {"name": "professional pen", "quantity": 1, "estPriceCents": 500},
+        {"name": "portfolio printouts", "quantity": 1, "estPriceCents": 500, "note": "optional"},
+        {"name": "folder for documents", "quantity": 1, "estPriceCents": 500},
+        {"name": "breath mints", "quantity": 1, "estPriceCents": 250},
+        {"name": "phone charging cable", "quantity": 1, "estPriceCents": 800, "note": "only if needed"}
+      ]
+    }
+  },
+  {
+    "request": "Pack supplies for a 24-hour college hackathon with a team of four",
+    "reply": {
+      "title": "College hackathon",
+      "kind": "party",
+      "items": [
+        {"name": "laptop chargers", "quantity": 4, "estPriceCents": 4000, "note": "bring existing chargers where possible"},
+        {"name": "power strips", "quantity": 2, "estPriceCents": 3000, "note": "check event rules"},
+        {"name": "portable phone chargers", "quantity": 2, "estPriceCents": 4000},
+        {"name": "notebooks", "quantity": 4, "estPriceCents": 1600},
+        {"name": "pens", "quantity": 1, "estPriceCents": 500},
+        {"name": "granola bars", "quantity": 2, "estPriceCents": 1000},
+        {"name": "reusable water bottles", "quantity": 4, "estPriceCents": 4000},
+        {"name": "painters tape", "quantity": 1, "estPriceCents": 500, "note": "optional for labeling cables or team items"}
+      ]
+    }
+  },
+  {
+    "request": "Get materials for a middle school science fair project about plant growth",
+    "reply": {
+      "title": "Science fair project",
+      "kind": "other",
+      "items": [
+        {"name": "small plant pots", "quantity": 6, "estPriceCents": 1200},
+        {"name": "potting soil", "quantity": 1, "estPriceCents": 800},
+        {"name": "fast-growing seeds", "quantity": 1, "estPriceCents": 500},
+        {"name": "ruler", "quantity": 1, "estPriceCents": 400},
+        {"name": "science notebook", "quantity": 1, "estPriceCents": 500},
+        {"name": "poster board", "quantity": 1, "estPriceCents": 500},
+        {"name": "markers", "quantity": 1, "estPriceCents": 700},
+        {"name": "plant labels", "quantity": 1, "estPriceCents": 300}
+      ]
+    }
+  },
+  {
+    "request": "Prepare my garden for spring planting on a small patio",
+    "reply": {
+      "title": "Spring container gardening",
+      "kind": "home",
+      "items": [
+        {"name": "container pots", "quantity": 4, "estPriceCents": 2400},
+        {"name": "potting mix", "quantity": 1, "estPriceCents": 1000},
+        {"name": "herb seeds", "quantity": 1, "estPriceCents": 600},
+        {"name": "tomato seedlings", "quantity": 2, "estPriceCents": 800},
+        {"name": "gardening gloves", "quantity": 1, "estPriceCents": 800},
+        {"name": "small trowel", "quantity": 1, "estPriceCents": 700},
+        {"name": "watering can", "quantity": 1, "estPriceCents": 1000},
+        {"name": "plant labels", "quantity": 1, "estPriceCents": 300}
+      ]
+    }
+  },
+  {
+    "request": "Put together a winter emergency kit for my car before temperatures drop",
+    "reply": {
+      "title": "Car winter emergency kit",
+      "kind": "home",
+      "items": [
+        {"name": "ice scraper and snow brush", "quantity": 1, "estPriceCents": 1200},
+        {"name": "jumper cables", "quantity": 1, "estPriceCents": 2500},
+        {"name": "reflective warning triangle", "quantity": 1, "estPriceCents": 1500},
+        {"name": "warm blanket", "quantity": 1, "estPriceCents": 1500},
+        {"name": "work gloves", "quantity": 1, "estPriceCents": 800},
+        {"name": "flashlight", "quantity": 1, "estPriceCents": 1000},
+        {"name": "portable phone charger", "quantity": 1, "estPriceCents": 2500},
+        {"name": "small shovel", "quantity": 1, "estPriceCents": 1800}
+      ]
+    }
+  },
+  {
+    "request": "Prepare for a weekend wedding as a guest traveling to another city",
+    "reply": {
+      "title": "Wedding guest travel",
+      "kind": "party",
+      "items": [
+        {"name": "formal outfit", "quantity": 1, "estPriceCents": 8000, "note": "only if you need a new one"},
+        {"name": "dress shoes", "quantity": 1, "estPriceCents": 5000, "note": "only if you need a new pair"},
+        {"name": "gift for the couple", "quantity": 1, "estPriceCents": 5000, "note": "follow the couple's registry or preferences"},
+        {"name": "gift card or envelope", "quantity": 1, "estPriceCents": 500},
+        {"name": "travel-size toiletries", "quantity": 1, "estPriceCents": 1500},
+        {"name": "garment bag", "quantity": 1, "estPriceCents": 1800, "note": "only if needed"},
+        {"name": "lint roller", "quantity": 1, "estPriceCents": 500},
+        {"name": "fashion tape", "quantity": 1, "estPriceCents": 600, "note": "optional"}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Prepare for a family reunion picnic of 12 people",
+    "reply": {
+      "title": "Family reunion",
+      "kind": "party",
+      "items": [
+        {"name": "sandwich platter", "quantity": 3, "estPriceCents": 9000},
+        {"name": "fruit platter", "quantity": 2, "estPriceCents": 5000},
+        {"name": "potato salad", "quantity": 2, "estPriceCents": 3000},
+        {"name": "water bottles", "quantity": 2, "estPriceCents": 1000},
+        {"name": "paper plates", "quantity": 1, "estPriceCents": 800},
+        {"name": "disposable cutlery", "quantity": 1, "estPriceCents": 600},
+        {"name": "large trash bags", "quantity": 1, "estPriceCents": 500},
+        {"name": "reusable cooler", "quantity": 1, "estPriceCents": 3500, "note": "only if you need one"}
+      ]
+    }
+  },
+  {
+    "request": "Get ready to host friends for a football watch party at home",
+    "reply": {
+      "title": "Football watch party",
+      "kind": "party",
+      "items": [
+        {"name": "chicken wings", "quantity": 3, "estPriceCents": 2400},
+        {"name": "frozen pizza", "quantity": 2, "estPriceCents": 1600},
+        {"name": "chips", "quantity": 3, "estPriceCents": 900},
+        {"name": "salsa and dip", "quantity": 2, "estPriceCents": 1000},
+        {"name": "soda", "quantity": 2, "estPriceCents": 700},
+        {"name": "paper plates", "quantity": 1, "estPriceCents": 500},
+        {"name": "napkins", "quantity": 1, "estPriceCents": 300},
+        {"name": "ice", "quantity": 1, "estPriceCents": 300}
+      ]
+    }
+  },
+  {
+    "evalOverlap": true,
+    "request": "Prepare for a beach day with three friends",
+    "reply": {
+      "title": "Beach day",
+      "kind": "trip",
+      "items": [
+        {"name": "sunscreen", "quantity": 2, "estPriceCents": 1800},
+        {"name": "beach towels", "quantity": 4, "estPriceCents": 4000},
+        {"name": "reusable water bottles", "quantity": 4, "estPriceCents": 4000},
+        {"name": "snacks", "quantity": 1, "estPriceCents": 1200},
+        {"name": "cooler bag", "quantity": 1, "estPriceCents": 2500},
+        {"name": "beach umbrella", "quantity": 1, "estPriceCents": 3000},
+        {"name": "waterproof phone pouch", "quantity": 4, "estPriceCents": 2000},
+        {"name": "trash bags", "quantity": 1, "estPriceCents": 300}
+      ]
+    }
+  },
+  {
+    "request": "Prepare a small celebration for passing my driving test",
+    "reply": {
+      "title": "Driving test celebration",
+      "kind": "party",
+      "items": [
+        {"name": "cake or cupcakes", "quantity": 1, "estPriceCents": 2000},
+        {"name": "pizza", "quantity": 2, "estPriceCents": 3000},
+        {"name": "soda", "quantity": 1, "estPriceCents": 500},
+        {"name": "paper plates", "quantity": 1, "estPriceCents": 400},
+        {"name": "napkins", "quantity": 1, "estPriceCents": 300},
+        {"name": "congratulatory banner", "quantity": 1, "estPriceCents": 800}
+      ]
+    }
+  },
+  {
+    "request": "Get my apartment ready before my parents visit for the weekend",
+    "reply": {
+      "title": "Preparing for family visitors",
+      "kind": "home",
+      "items": [
+        {"name": "fresh bed sheets", "quantity": 1, "estPriceCents": 2500, "note": "only if you need a spare set"},
+        {"name": "bath towels", "quantity": 2, "estPriceCents": 1800},
+        {"name": "hand soap", "quantity": 1, "estPriceCents": 400},
+        {"name": "toilet paper", "quantity": 1, "estPriceCents": 800},
+        {"name": "breakfast ingredients", "quantity": 1, "estPriceCents": 2000},
+        {"name": "coffee and tea", "quantity": 1, "estPriceCents": 1000},
+        {"name": "guest snacks", "quantity": 1, "estPriceCents": 1000},
+        {"name": "air freshener", "quantity": 1, "estPriceCents": 500, "note": "optional"}
+      ]
+    }
+  },
+  {
+    "request": "Prepare a basic emergency kit for an earthquake-prone area for two adults",
+    "reply": {
+      "title": "Earthquake emergency kit",
+      "kind": "home",
+      "items": [
+        {"name": "drinking water", "quantity": 6, "estPriceCents": 3000, "note": "gallons for two adults for three days"},
+        {"name": "shelf-stable meals", "quantity": 6, "estPriceCents": 2400},
+        {"name": "first aid kit", "quantity": 1, "estPriceCents": 1500},
+        {"name": "flashlights", "quantity": 2, "estPriceCents": 2000},
+        {"name": "batteries", "quantity": 1, "estPriceCents": 1200},
+        {"name": "whistle", "quantity": 2, "estPriceCents": 600},
+        {"name": "work gloves", "quantity": 2, "estPriceCents": 1600},
+        {"name": "emergency radio", "quantity": 1, "estPriceCents": 2500}
+      ]
+    }
+  },
+  {
+    "request": "Get everything for a weekend of volunteering at a community garden",
+    "reply": {
+      "title": "Community garden volunteering",
+      "kind": "other",
+      "items": [
+        {"name": "gardening gloves", "quantity": 1, "estPriceCents": 800},
+        {"name": "reusable water bottle", "quantity": 1, "estPriceCents": 1000},
+        {"name": "sun hat", "quantity": 1, "estPriceCents": 1200},
+        {"name": "sunscreen", "quantity": 1, "estPriceCents": 900},
+        {"name": "rubber boots", "quantity": 1, "estPriceCents": 3500, "note": "only if the work area is muddy"},
+        {"name": "small hand trowel", "quantity": 1, "estPriceCents": 700},
+        {"name": "snacks", "quantity": 1, "estPriceCents": 600},
+        {"name": "insect repellent", "quantity": 1, "estPriceCents": 800}
+      ]
+    }
+  },
+  {
+    "request": "Get the essentials for a small houseplant care and repotting afternoon",
+    "reply": {
+      "title": "Houseplant repotting",
+      "kind": "home",
+      "items": [
+        {"name": "indoor potting mix", "quantity": 1, "estPriceCents": 1000},
+        {"name": "plant pots with drainage", "quantity": 3, "estPriceCents": 2400},
+        {"name": "small pruning shears", "quantity": 1, "estPriceCents": 1000},
+        {"name": "watering can", "quantity": 1, "estPriceCents": 1000},
+        {"name": "gardening gloves", "quantity": 1, "estPriceCents": 800},
+        {"name": "plant saucers", "quantity": 3, "estPriceCents": 900},
+        {"name": "plant labels", "quantity": 1, "estPriceCents": 300}
+      ]
+    }
+  },
+  {
+    "request": "Prepare a welcome basket for a friend who just moved into a new home",
+    "reply": {
+      "title": "Housewarming welcome basket",
+      "kind": "other",
+      "items": [
+        {"name": "coffee or tea", "quantity": 1, "estPriceCents": 1000},
+        {"name": "snack assortment", "quantity": 1, "estPriceCents": 1500},
+        {"name": "dish towels", "quantity": 1, "estPriceCents": 700},
+        {"name": "hand soap", "quantity": 1, "estPriceCents": 400},
+        {"name": "scented candle", "quantity": 1, "estPriceCents": 1200},
+        {"name": "small indoor plant", "quantity": 1, "estPriceCents": 1500},
+        {"name": "greeting card", "quantity": 1, "estPriceCents": 400},
+        {"name": "gift basket", "quantity": 1, "estPriceCents": 1000}
+      ]
+    }
+  },
+  {
+    "request": "Prepare for an overnight stay at a friend's house",
+    "reply": {
+      "title": "Overnight stay",
+      "kind": "trip",
+      "items": [
+        {"name": "toothbrush", "quantity": 1, "estPriceCents": 300},
+        {"name": "travel-size toothpaste", "quantity": 1, "estPriceCents": 250},
+        {"name": "deodorant", "quantity": 1, "estPriceCents": 500},
+        {"name": "shampoo and conditioner", "quantity": 1, "estPriceCents": 800},
+        {"name": "clean change of clothes", "quantity": 1, "estPriceCents": 0, "note": "pack from your existing wardrobe"},
+        {"name": "phone charger", "quantity": 1, "estPriceCents": 0, "note": "bring your existing charger"},
+        {"name": "sleepwear", "quantity": 1, "estPriceCents": 0, "note": "pack from your existing wardrobe"},
+        {"name": "small laundry bag", "quantity": 1, "estPriceCents": 700}
+      ]
+    }
+  },
+  {
+    "request": "Prepare a welcome event for new members of our college club",
+    "reply": {
+      "title": "Club welcome event",
+      "kind": "party",
+      "items": [
+        {"name": "pizza", "quantity": 4, "estPriceCents": 6000},
+        {"name": "snacks", "quantity": 1, "estPriceCents": 1500},
+        {"name": "soda and water", "quantity": 1, "estPriceCents": 1800},
+        {"name": "paper plates and napkins", "quantity": 1, "estPriceCents": 1000},
+        {"name": "name tags", "quantity": 1, "estPriceCents": 500},
+        {"name": "markers", "quantity": 1, "estPriceCents": 700},
+        {"name": "club information flyers", "quantity": 1, "estPriceCents": 800},
+        {"name": "small welcome prizes", "quantity": 1, "estPriceCents": 2000, "note": "optional"}
+      ]
+    }
+  },
+  {
+    "request": "Prepare for a beach cleanup volunteer event with 10 people",
+    "reply": {
+      "title": "Beach cleanup",
+      "kind": "other",
+      "items": [
+        {"name": "reusable work gloves", "quantity": 10, "estPriceCents": 10000, "note": "coordinate with the event organizer first"},
+        {"name": "heavy-duty trash bags", "quantity": 1, "estPriceCents": 1000},
+        {"name": "reusable water bottles", "quantity": 10, "estPriceCents": 10000, "note": "only if participants need them"},
+        {"name": "sunscreen", "quantity": 2, "estPriceCents": 1800},
+        {"name": "sun hats", "quantity": 5, "estPriceCents": 5000, "note": "share or ask participants to bring their own"},
+        {"name": "hand sanitizer", "quantity": 2, "estPriceCents": 800},
+        {"name": "first aid kit", "quantity": 1, "estPriceCents": 1500},
+        {"name": "snack boxes", "quantity": 10, "estPriceCents": 5000}
+      ]
+    }
+  },
+  {
+    "request": "Get supplies ready for a full day of studying at a coffee shop",
+    "reply": {
+      "title": "Coffee shop study day",
+      "kind": "other",
+      "items": [
+        {"name": "notebook", "quantity": 1, "estPriceCents": 400},
+        {"name": "pens", "quantity": 1, "estPriceCents": 500},
+        {"name": "sticky notes", "quantity": 1, "estPriceCents": 400},
+        {"name": "laptop charger", "quantity": 1, "estPriceCents": 0, "note": "bring the charger you already own"},
+        {"name": "headphones", "quantity": 1, "estPriceCents": 0, "note": "bring your existing pair"},
+        {"name": "snack bar", "quantity": 2, "estPriceCents": 400},
+        {"name": "water bottle", "quantity": 1, "estPriceCents": 1000},
+        {"name": "portable charger", "quantity": 1, "estPriceCents": 2000, "note": "optional"}
+      ]
+    }
+  },
+  {
+    "request": "Make a grocery list for hosting a weekend brunch for four people",
+    "reply": {
+      "title": "Weekend brunch",
+      "kind": "groceries",
+      "items": [
+        {"name": "eggs", "quantity": 1, "estPriceCents": 400, "note": "one dozen"},
+        {"name": "pancake mix", "quantity": 1, "estPriceCents": 500},
+        {"name": "milk", "quantity": 1, "estPriceCents": 400},
+        {"name": "maple syrup", "quantity": 1, "estPriceCents": 800},
+        {"name": "bacon", "quantity": 1, "estPriceCents": 700},
+        {"name": "strawberries", "quantity": 1, "estPriceCents": 500},
+        {"name": "orange juice", "quantity": 1, "estPriceCents": 450},
+        {"name": "coffee", "quantity": 1, "estPriceCents": 700}
+      ]
+    }
+  },
+  {
+    "request": "Prepare a small home celebration for New Year's Eve with six friends",
+    "reply": {
+      "title": "New Year's Eve party",
+      "kind": "party",
+      "items": [
+        {"name": "sparkling juice", "quantity": 3, "estPriceCents": 1500},
+        {"name": "finger foods", "quantity": 1, "estPriceCents": 2500},
+        {"name": "chips and dip", "quantity": 2, "estPriceCents": 1200},
+        {"name": "dessert platter", "quantity": 1, "estPriceCents": 1800},
+        {"name": "paper cups", "quantity": 1, "estPriceCents": 500},
+        {"name": "party hats", "quantity": 6, "estPriceCents": 900},
+        {"name": "confetti-free party poppers", "quantity": 1, "estPriceCents": 1000, "note": "optional; check venue rules"},
+        {"name": "recycling and trash bags", "quantity": 1, "estPriceCents": 500}
+      ]
+    }
+  }
+]

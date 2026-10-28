@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { proofLabel, usd } from "../../../api";
+import { StoreSearch } from "../../../store-search";
 import { Check } from "../../../ui";
 import { row, useList } from "../list-context";
 
-// Items: each item's status, price, who bought it, and its proof of purchase.
+// Items: each item's status, price, who bought it, and its proof of purchase; and a real product to buy.
 export default function ItemsPage() {
-  const { list, memberName } = useList();
+  const { list, setList, memberName } = useList();
 
   return (
     <ul className="flex flex-col gap-2.5 lg:mx-auto lg:w-full lg:max-w-[760px]">
@@ -33,9 +34,10 @@ export default function ItemsPage() {
                   See the receipt
                 </Link>
               )}
+              <StoreSearch item={item} onChosen={(saved) => setList((current) => ({ ...current, items: current.items.map((i) => (i.id === saved.id ? saved : i)) }))} />
             </span>
             <span className={`mt-0.5 shrink-0 text-base font-medium tabular-nums ${item.checkedAt ? "text-list" : ""}`}>
-              {item.checkedAt ? usd(item.priceCents ?? 0) : item.estPriceCents !== null ? `~${usd(item.estPriceCents * item.quantity)}` : "—"}
+              {item.checkedAt ? usd(item.priceCents ?? 0) : item.estPriceCents !== null ? `${item.product ? "" : "~"}${usd(item.estPriceCents * item.quantity)}` : "—"}
             </span>
           </li>
         );

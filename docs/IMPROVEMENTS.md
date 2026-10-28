@@ -11,6 +11,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 3 | 2. AI reliability (narrow) | Done 2026-10-27, evaluated (see below) |
 | 4 | 5. Group accounting (narrow) | Done 2026-10-27 (see below) |
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
+| 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
 
 ### Phase 1 — purchase verification (done)
 
@@ -87,9 +88,104 @@ The questions from area 5, and where Settle up now answers them:
 - **Checks:** `tsc` and `eslint` clean; 70 backend tests pass (no backend change in this phase). **Not checked in a browser**, and the frontend has no tests, so try the tick prompt and the pay mode on a phone before recording.
 - **Not done:** voice (the "one big talk button", decision 7), the join form on every tab (issue 34), and timing the three measures with real users. The dark redesign is still the owner's call.
 
+### Phase 6 — real prices and real products (built, not yet checked live)
+
+**Goal:** the AI suggests what to buy, prices come from what people really paid through PayPal or from real stores, and a person can choose a real product and pay for it with PayPal. One story for judges: *Need → real product → PayPal → proof → settle*, each step feeding the next.
+
+**Not doing: fine-tuning a model.** Considered and dropped on 2026-10-27. The eval is already at 62/63 item recall, so there's little left to gain. There's no clean open dataset of "occasion → what to buy". A fine-tuned model can't run on Ollama's cloud, so it would need its own paid hosting. And it doesn't touch PayPal, which the rules say must be central ([HACKATHON.md](HACKATHON.md)). The three steps below get most of the benefit for much less.
+
+**Owner's choices (2026-10-27)**
+
+| Question | Answer |
+|---|---|
+| How is a found product bought? | With PayPal, at the product's real price: the price and store link are saved on the item, and the existing "Pay with PayPal" charges that price. The store link is shown too |
+| When does HeyList search stores? | On demand, per item ("Find in stores"), not automatically for every suggested item |
+| Which prices does price memory trust? | Proven prices (PayPal captures, confirmed receipts) first, then Channel3 store prices |
+
+#### Built (2026-10-27)
+
+| Part | What was built | Differs from the plan |
+|---|---|---|
+| 6A | `backend/examples.json`, sent as example turns by `starting_list()`; 10 new situation cases in the eval (30 in all); the "dozen eggs" quantity check dropped (1 carton and 12 eggs are both right); `eval_starter.py --examples` to compare (examples are off in the app after the eval) | **Three fixed examples, not "the 2 closest of 15".** Tried first: with 15 examples, word overlap gave near-random picks (the kids' party got "home office" because both say "home"). The examples teach the shape of an answer, so the same three are always sent (decision 48) |
+| 6B | `remember_prices()` in `backend/main.py` on every suggestion; `items.name_key` (generated, indexed); the review screen shows "paid before", "store price" or "AI guess"; Buy again uses the paid unit price (issue 30 closed) | The source shows on the review screen only. After the list is made, Items shows a store price without `~` |
+| 6C | `backend/market.py` (`httpx`, `POST /v1/search` and `GET /v1/products/{id}`), `GET /api/items/{id}/products`, `POST /api/items/{id}/product`, `items.product`, "Find in stores" on Items (`app/store-search.tsx`) | One cap of 100 searches an hour for everyone, not 30 per list (a per-list cap is easy to get round by making lists, as for suggestions). No SDK: two REST calls |
+
+- **Tests:** 84 backend tests pass (new: examples sent and valid, price memory sources and median, hand ticks ignored, a price memory failure still returns the list, product mapping with the cheapest in-stock USD offer and Decimal cents, unsafe links dropped, search capped at 5, price read from Channel3 and not the request, PayPal charges it, rename or re-price drops the product, bought or pending items refused, 502 and the cap). `tsc` and `eslint` are clean on the changed files.
+- **Not done yet:**
+  - A live Channel3 call, waiting for the owner's approval. The response shape was taken from Channel3's OpenAPI spec, not from a real reply.
+  - Running `supabase/schema.sql` on the live database (`items.name_key`, `items.product`).
+  - Trying "Find in stores" in a browser.
+  - The demo scene in SUBMISSION.md.
+
+#### 6A eval result (2026-10-27, `gemma4:31b`, owner-approved, 60 calls)
+
+The owner added 61 example lists, giving 64 in `backend/examples.json`. Their kinds were mapped onto the five app kinds. Each request is sent the 3 closest examples by word overlap. The 14 that are near-copies of eval cases are marked `evalOverlap` and left out of the eval, so it ran with 50.
+
+| Measure (30 cases) | Without examples | With the 3 closest |
+|---|---|---|
+| Item recall | **96/98** | 91/98 |
+| Quantity accuracy | 12/12 | 12/12 |
+| Conditions and unclear amounts kept | 8/8 | 8/8 |
+| Invented items on named lists | 0 | 0 |
+| Failed or malformed replies | 0 | 0, but one empty list |
+| Items per reply, on average | 7.7 | 6.2 |
+| Tokens (in / out) | 16,447 / 9,412 | 37,117 / 5,690 |
+
+**The examples did not help.** Most of the difference is one reply: "Basics for my first apartment kitchen" came back with no items (0/4). Its examples were a first aid kit, a dorm move and an apartment move, which share "first" and "basic". Leaving that case out, the two runs are nearly equal (93/94 without, 91/94 with). What the run shows:
+
+- **Word overlap picks off-topic examples.** Halloween got an earthquake kit; snow day got a day hike and a date night ("home", "two" and "day" dominate).
+- **The examples cap list length.** Every example has 6–8 items, and replies became shorter, dropping candles (kids' party) and pumpkins (Halloween).
+- **They cost more**: 2.3 times the input tokens.
+- **Named lists were unaffected**: 12/12 cases full marks in both runs.
+
+One run each, labelled by the team: indicative, not proof (issue 38). Reports: `backend/eval/eval_report.json` (without examples) and `backend/eval/eval_report_examples.json` (with examples; it also records which examples each case was given).
+
+**Decision (owner, 2026-10-27): examples are off.** `llm.EXAMPLE_COUNT = 0`, so requests are sent with no examples, as in the 96/98 run. The 64 lists stay in `backend/examples.json`. `eval_starter.py --yes` measures what the app does; `--examples` sends the 3 closest for a comparison. Before turning them back on: pick by embeddings rather than shared words, and lift the 8-item cap on the lists.
+
+#### 6A — curated examples in the prompt (about 1 day)
+
+- `backend/examples.json`: about 15 short examples (camping trip, kids' party, potluck, moving house, new baby, weekly groceries…) as request → the list we'd want, plus 2 named-list examples that show "nothing added". Written by the team; the owner reviews them.
+- `starting_list()` picks the 2 examples closest to the request by word overlap (plain Python, no embeddings, no extra AI call) and sends them as example turns before the real request. About 600 more input tokens per call.
+- **The eval must stay honest:** no example may repeat an eval case. Add about 10 new situation cases to `backend/eval/starter_cases.json` (there are only 8 today) and fix the "dozen eggs" label.
+- **Measure:** run the eval on the new 30 cases without examples, then with them: 2 × 30 = 60 paid Ollama calls, **only with the owner's approval** (RULES.md, decision 43). Report both runs here.
+- Decision 48.
+
+#### 6B — price memory (about 1–1.5 days)
+
+- **Where prices come from:** items checked off with proof (`order_id` or `receipt_id`) and a `price_cents`. The unit price is `price_cents ÷ quantity`. Hand ticks are not used: those prices are self-reported. Once 6C ships, the store price of a product someone chose on an item counts too, ranked below proven prices.
+- **How items are matched:** a new `items.name_key` column (`lower(btrim(name))`, generated by Postgres, indexed), and an exact match on it, across all lists. Only names and prices are read, never who bought what. `ponytail:` exact names only ("water bottle" ≠ "water bottles"); add plural or fuzzy matching if too few prices match.
+- **How it's used:** done in code, not in the prompt (decision 10). After the AI replies, each suggested item takes the median of the last 10 proven prices for its name; with none, the latest store price; with neither, the AI's estimate. One query per suggestion. Each item gets a `priceSource`: `paid`, `store` or `estimate`.
+- **On screen:** the review screen and Progress say where each price came from: "$3.49 · paid before", "$3.29 · at Target", "~$4.00 · AI guess". The over-budget check (decision 34) then works on real prices, which helps issue 14.
+- **Buy again** uses the paid price where there is one, which closes issue 30.
+- Tests: the median, proven-only (hand ticks ignored), the fallback order, Buy again.
+- Decision 49. `supabase/schema.sql` must be run again.
+
+#### 6C — find real products with Channel3 and pay with PayPal (about 2–3 days)
+
+- **What Channel3 can and can't do today** (checked on [trychannel3.com/developers](https://trychannel3.com/developers), 2026-10-27): product search with prices, merchant offers and buy links; a free tier. Its own checkout is "coming soon", so HeyList can't place an order with the store.
+- `backend/market.py`: `search(name)` returns up to 5 products (title, brand, image, store, unit price in cents, link, product ID), using the `channel3_sdk` package and `CHANNEL3_API_KEY`. Check the SDK's method names once it's installed; the docs disagree.
+- `GET /api/items/{id}/products`: searches by the item's name. Capped with `allow()` like scans (30 searches per list per hour). Errors map to `502 MARKET_UNAVAILABLE`.
+- `POST /api/items/{id}/product` with `{productId}`: **the server fetches the price from Channel3 again** and never takes it from the browser (decision 21). It then saves `items.product` (a jsonb with title, store, link, image, price and when it was fetched) and sets `est_price_cents` to that price. It refuses an item that's already checked off or held by a payment. Choosing nothing keeps the AI estimate.
+- **Frontend:** a "Find in stores" button on an item opens up to 5 product cards (photo, name, store, price). "Choose" saves the product. The item then shows the product, "$3.29 at Target" and "View at Target ↗". "Pay with PayPal" works as it does now, at the store price.
+- **Be honest in the demo and docs:** the PayPal sandbox payment goes to HeyList's sandbox merchant. No order is placed with the store. The pitch says: "When Channel3 checkout opens, HeyList places the order; today it gives the real price and the link." Channel3's affiliate links are a possible business model (Impact criterion).
+- Tests: a fake Channel3 client; search results mapped and capped at 5; the price taken from the server lookup, not the request; a checked-off or held item refused; the rate limit; a Channel3 failure gives 502.
+- Decision 50. `supabase/schema.sql` must be run again. Sponsor prize: Best Use of Channel3; it also supports Best Use of Agentic Commerce.
+
+#### Order and blockers
+
+1. **6A** first: no new services, and it gives a measured result.
+2. **6B** with proven prices only.
+3. **6C**, which then adds store prices to price memory.
+
+About 5 days in all, leaving about 10 for the hosted URL, the live sandbox payment (issue 25), the video and the write-up.
+
+- **Blocker:** `CHANNEL3_API_KEY` isn't in `.env.local` yet (variable names checked, not values). 6C can be built against a fake client first; the live test waits for the key.
+- **Approvals needed:** the two eval runs (60 Ollama calls), and the first live Channel3 calls.
+- **Demo script:** [SUBMISSION.md](SUBMISSION.md) gets a "find it in a store" scene before the PayPal payment.
+
 ## All phases
 
-All five recommended areas are done in their narrow versions. Left for the deadline (12 November 2026): the hosted URL, one live sandbox payment (issue 25), running `supabase/schema.sql` on the live database (`orders.capture_id`, `orders.refunds`, `items.note`), and the demo video ([SUBMISSION.md](SUBMISSION.md)).
+All five recommended areas are done in their narrow versions; phase 6 is planned above. Left for the deadline (12 November 2026): the hosted URL, one live sandbox payment (issue 25), running `supabase/schema.sql` on the live database (`orders.capture_id`, `orders.refunds`, `items.note`), and the demo video ([SUBMISSION.md](SUBMISSION.md)).
 
 ## Summary
 

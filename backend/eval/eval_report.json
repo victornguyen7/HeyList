@@ -1,0 +1,1948 @@
+{
+  "ranAt": "2026-10-28T00:46:02+00:00",
+  "model": "gemma4:31b",
+  "examples": 0,
+  "cases": 30,
+  "summary": {
+    "itemRecall": 0.98,
+    "quantityAccuracy": 1.0,
+    "notesKeptRate": 1.0,
+    "inventedItems": 0,
+    "failedCases": 0,
+    "counts": {
+      "found": 96,
+      "expected": 98,
+      "quantityOk": 12,
+      "quantityChecked": 12,
+      "notesKept": 8,
+      "notesChecked": 8
+    }
+  },
+  "usage": {
+    "promptTokens": 16447,
+    "outputTokens": 9412,
+    "calls": 30
+  },
+  "results": [
+    {
+      "id": "voice-camping",
+      "input": "Get two packs of water, some plates, enough snacks for four people, and maybe a flashlight if nobody has one already",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "water",
+          "quantity": 2,
+          "estPriceCents": 500,
+          "note": "packs"
+        },
+        {
+          "name": "plates",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "snacks",
+          "quantity": 4,
+          "estPriceCents": 600,
+          "note": "enough for 4 people"
+        },
+        {
+          "name": "flashlight",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": "only if nobody has one already"
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 1,
+        "quantityChecked": 1,
+        "notesKept": 2,
+        "notesChecked": 2,
+        "invented": []
+      }
+    },
+    {
+      "id": "typed-groceries-quantities",
+      "input": "3 avocados, a dozen eggs, 2 loaves of bread, milk",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "avocados",
+          "quantity": 3,
+          "estPriceCents": 150,
+          "note": null
+        },
+        {
+          "name": "eggs",
+          "quantity": 12,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "bread",
+          "quantity": 2,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "milk",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 2,
+        "quantityChecked": 2,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "voice-filler-words",
+      "input": "um ok so we need like paper towels, uh, dish soap, and oh yeah trash bags, the big ones",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "paper towels",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "dish soap",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "trash bags",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": "the big ones"
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 1,
+        "notesChecked": 1,
+        "invented": []
+      }
+    },
+    {
+      "id": "voice-repeat",
+      "input": "batteries, sunscreen, batteries, bug spray",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "batteries",
+          "quantity": 1,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "sunscreen",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "bug spray",
+          "quantity": 1,
+          "estPriceCents": 700,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "different-sizes-not-merged",
+      "input": "one big bottle of olive oil and two small bottles of olive oil for the gift baskets",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": "listed twice with different amounts; check how many"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "estPriceCents": 800,
+          "note": "listed twice with different amounts; check how many"
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 2,
+        "quantityOk": 2,
+        "quantityChecked": 2,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "condition-only-if",
+      "input": "charcoal, lighter fluid only if we use the old grill, burgers for 6",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "charcoal",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "lighter fluid",
+          "quantity": 1,
+          "estPriceCents": 700,
+          "note": "only if we use the old grill"
+        },
+        {
+          "name": "burgers",
+          "quantity": 6,
+          "estPriceCents": 200,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 1,
+        "quantityChecked": 1,
+        "notesKept": 1,
+        "notesChecked": 1,
+        "invented": []
+      }
+    },
+    {
+      "id": "vague-amount",
+      "input": "some ice and enough drinks for the whole team",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "ice",
+          "quantity": 2,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "drinks",
+          "quantity": 12,
+          "estPriceCents": 200,
+          "note": "enough for the whole team"
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 2,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 1,
+        "notesChecked": 1,
+        "invented": []
+      }
+    },
+    {
+      "id": "number-words",
+      "input": "four rolls of tape, ten balloons, a couple of markers",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "tape",
+          "quantity": 4,
+          "estPriceCents": 250,
+          "note": null
+        },
+        {
+          "name": "balloons",
+          "quantity": 10,
+          "estPriceCents": 10,
+          "note": null
+        },
+        {
+          "name": "markers",
+          "quantity": 2,
+          "estPriceCents": 150,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 3,
+        "quantityChecked": 3,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "pharmacy-list",
+      "input": "ibuprofen, band-aids, a thermometer if ours is still broken, cough drops",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "ibuprofen",
+          "quantity": 1,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "band-aids",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "thermometer",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": "if ours is still broken"
+        },
+        {
+          "name": "cough drops",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 1,
+        "notesChecked": 1,
+        "invented": []
+      }
+    },
+    {
+      "id": "voice-run-on",
+      "input": "pick up cat food and also litter and then the dry cleaning ticket no wait skip that just the cat stuff",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "cat food",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "cat litter",
+          "quantity": 1,
+          "estPriceCents": 2000,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 2,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "photo-list-transcript",
+      "input": "Shopping list:\n- flour 2kg\n- sugar\n- butter x2\n- vanilla (check cupboard first)",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "flour",
+          "quantity": 2,
+          "estPriceCents": 250,
+          "note": null
+        },
+        {
+          "name": "sugar",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "butter",
+          "quantity": 2,
+          "estPriceCents": 450,
+          "note": null
+        },
+        {
+          "name": "vanilla",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": "check cupboard first"
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 1,
+        "quantityChecked": 1,
+        "notesKept": 1,
+        "notesChecked": 1,
+        "invented": []
+      }
+    },
+    {
+      "id": "move-in-explicit",
+      "input": "shower curtain, 2 pillows, a lamp for my desk, hangers maybe 20",
+      "explicit": true,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "shower curtain",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "pillows",
+          "quantity": 2,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "desk lamp",
+          "quantity": 1,
+          "estPriceCents": 2500,
+          "note": null
+        },
+        {
+          "name": "hangers",
+          "quantity": 20,
+          "estPriceCents": 50,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 2,
+        "quantityChecked": 2,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-camping",
+      "input": "Weekend camping trip for 3 friends, 2 nights",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "Tent",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Sleeping Bag",
+          "quantity": 3,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Sleeping Pad",
+          "quantity": 3,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Flashlight",
+          "quantity": 3,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Camp Stove",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Fuel",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "Cooler",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Ice",
+          "quantity": 2,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Water Gallons",
+          "quantity": 3,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "Cookware",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Eating Utensils",
+          "quantity": 3,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "First Aid Kit",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Sunscreen",
+          "quantity": 1,
+          "estPriceCents": 1000,
+          "note": null
+        },
+        {
+          "name": "Bug Spray",
+          "quantity": 1,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "Toothbrush",
+          "quantity": 3,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Toothpaste",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Toilet Paper",
+          "quantity": 1,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "Trash Bags",
+          "quantity": 3,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Firewood",
+          "quantity": 2,
+          "estPriceCents": 700,
+          "note": null
+        },
+        {
+          "name": "Matches/Lighter",
+          "quantity": 1,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "Camp Chairs",
+          "quantity": 3,
+          "estPriceCents": null,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-kids-party",
+      "input": "Birthday party for 10 kids at home",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "cake",
+          "quantity": 1,
+          "estPriceCents": 3000,
+          "note": null
+        },
+        {
+          "name": "pizza",
+          "quantity": 4,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "juice boxes",
+          "quantity": 12,
+          "estPriceCents": 100,
+          "note": null
+        },
+        {
+          "name": "plates",
+          "quantity": 15,
+          "estPriceCents": 150,
+          "note": null
+        },
+        {
+          "name": "cups",
+          "quantity": 15,
+          "estPriceCents": 100,
+          "note": null
+        },
+        {
+          "name": "napkins",
+          "quantity": 20,
+          "estPriceCents": 50,
+          "note": null
+        },
+        {
+          "name": "balloons",
+          "quantity": 20,
+          "estPriceCents": 20,
+          "note": null
+        },
+        {
+          "name": "party hats",
+          "quantity": 10,
+          "estPriceCents": 120,
+          "note": null
+        },
+        {
+          "name": "snacks",
+          "quantity": 3,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "goodie bags",
+          "quantity": 10,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "candles",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-beach-day",
+      "input": "Beach day for a family of 4",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "beach towels",
+          "quantity": 4,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "sunscreen",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "beach umbrella",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "cooler",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "water bottles",
+          "quantity": 4,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "sand toys",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "snacks",
+          "quantity": 1,
+          "estPriceCents": 2000,
+          "note": null
+        },
+        {
+          "name": "beach chairs",
+          "quantity": 4,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "first aid kit",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-flight",
+      "input": "Packing for a work flight, one night",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "Business attire",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Change of clothes",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Underwear",
+          "quantity": 2,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Socks",
+          "quantity": 2,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Pyjamas",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Toothbrush",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Toothpaste",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Deodorant",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Laptop",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Charger",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Phone charger",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Notebook and pen",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "ID/Passport",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-sick-day",
+      "input": "Partner has the flu, need to stock up",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "thermometer",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": "if not already owned"
+        },
+        {
+          "name": "pain reliever",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "cough drops",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "tissues",
+          "quantity": 2,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "electrolyte drinks",
+          "quantity": 4,
+          "estPriceCents": 250,
+          "note": null
+        },
+        {
+          "name": "chicken soup",
+          "quantity": 3,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "orange juice",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-new-baby",
+      "input": "Friends just had a baby, bringing a care package",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "Diapers",
+          "quantity": 1,
+          "estPriceCents": 2500,
+          "note": "large pack"
+        },
+        {
+          "name": "Baby Wipes",
+          "quantity": 2,
+          "estPriceCents": 400,
+          "note": "unscented"
+        },
+        {
+          "name": "Burp Cloths",
+          "quantity": 3,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "Baby Lotion",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "Meal Delivery Gift Card",
+          "quantity": 1,
+          "estPriceCents": 5000,
+          "note": null
+        },
+        {
+          "name": "Snacks",
+          "quantity": 1,
+          "estPriceCents": 2000,
+          "note": "for the parents"
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 2,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-with-condition",
+      "input": "Picnic for 5 in the park, bring a speaker if Sam doesn't",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "picnic blanket",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "cooler",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "sandwiches",
+          "quantity": 5,
+          "estPriceCents": 700,
+          "note": null
+        },
+        {
+          "name": "chips",
+          "quantity": 2,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "fruit",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "drinks",
+          "quantity": 5,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "napkins",
+          "quantity": 1,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "speaker",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": "if Sam doesn't"
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 2,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 1,
+        "notesChecked": 1,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-groceries-week",
+      "input": "Weekly groceries for 2 adults, vegetarian",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "Milk",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Eggs",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "Butter",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "Bread",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Tofu",
+          "quantity": 2,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "Beans",
+          "quantity": 3,
+          "estPriceCents": 150,
+          "note": null
+        },
+        {
+          "name": "Rice",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "Pasta",
+          "quantity": 2,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "Pasta Sauce",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Spinach",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Broccoli",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "Carrots",
+          "quantity": 1,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "Onions",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "Garlic",
+          "quantity": 1,
+          "estPriceCents": 50,
+          "note": null
+        },
+        {
+          "name": "Apples",
+          "quantity": 6,
+          "estPriceCents": 100,
+          "note": null
+        },
+        {
+          "name": "Bananas",
+          "quantity": 6,
+          "estPriceCents": 30,
+          "note": null
+        },
+        {
+          "name": "Yogurt",
+          "quantity": 2,
+          "estPriceCents": 150,
+          "note": null
+        },
+        {
+          "name": "Cheese",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-housewarming",
+      "input": "Housewarming party for 15 people",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "Chips",
+          "quantity": 3,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Salsa",
+          "quantity": 2,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "Dip",
+          "quantity": 2,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "Vegetable Tray",
+          "quantity": 2,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "Cheese Platter",
+          "quantity": 2,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "Finger Foods",
+          "quantity": 5,
+          "estPriceCents": 1000,
+          "note": null
+        },
+        {
+          "name": "Case of Beer",
+          "quantity": 2,
+          "estPriceCents": 3000,
+          "note": null
+        },
+        {
+          "name": "Wine",
+          "quantity": 4,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "Soda",
+          "quantity": 3,
+          "estPriceCents": 700,
+          "note": null
+        },
+        {
+          "name": "Ice",
+          "quantity": 3,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "Paper Plates",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "Napkins",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "Plastic Cups",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-halloween",
+      "input": "Halloween party for 8 adults",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "Pumpkins",
+          "quantity": 3,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "Candy bowls",
+          "quantity": 2,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "Assorted candy",
+          "quantity": 4,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "Finger foods",
+          "quantity": 5,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "Beverages",
+          "quantity": 10,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "Cups",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "Plates",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Napkins",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "Halloween decorations",
+          "quantity": 1,
+          "estPriceCents": 2500,
+          "note": null
+        },
+        {
+          "name": "Ice",
+          "quantity": 2,
+          "estPriceCents": 300,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-zoo-toddler",
+      "input": "Taking our toddler to the zoo for the day",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "diapers",
+          "quantity": 5,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "wipes",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "diaper bag",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "stroller",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "water bottles",
+          "quantity": 3,
+          "estPriceCents": 150,
+          "note": null
+        },
+        {
+          "name": "snacks",
+          "quantity": 3,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "sunscreen",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "change of clothes",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "hand sanitizer",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-dinner-party",
+      "input": "Italian dinner party for 6",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "Pasta",
+          "quantity": 3,
+          "estPriceCents": 250,
+          "note": "assorted shapes"
+        },
+        {
+          "name": "Marinara Sauce",
+          "quantity": 3,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "Parmesan Cheese",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": "wedge"
+        },
+        {
+          "name": "Garlic Bread",
+          "quantity": 2,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Olive Oil",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": "extra virgin"
+        },
+        {
+          "name": "Fresh Basil",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "Garlic",
+          "quantity": 1,
+          "estPriceCents": 60,
+          "note": null
+        },
+        {
+          "name": "Wine",
+          "quantity": 3,
+          "estPriceCents": 1500,
+          "note": "Chianti or Pinot Grigio"
+        },
+        {
+          "name": "Tiramisu",
+          "quantity": 1,
+          "estPriceCents": 2000,
+          "note": "large cake"
+        },
+        {
+          "name": "Salad Greens",
+          "quantity": 2,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "Balsamic Vinegar",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "Napkins",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-study-group",
+      "input": "Snacks for a late-night study group of 5",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "chips",
+          "quantity": 2,
+          "estPriceCents": 450,
+          "note": null
+        },
+        {
+          "name": "salsa",
+          "quantity": 1,
+          "estPriceCents": 399,
+          "note": null
+        },
+        {
+          "name": "pretzels",
+          "quantity": 1,
+          "estPriceCents": 350,
+          "note": null
+        },
+        {
+          "name": "mixed nuts",
+          "quantity": 1,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "fruit platter",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "energy drinks",
+          "quantity": 5,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "bottled water",
+          "quantity": 5,
+          "estPriceCents": 150,
+          "note": null
+        },
+        {
+          "name": "chocolate",
+          "quantity": 2,
+          "estPriceCents": 400,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 2,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-first-kitchen",
+      "input": "Basics for my first apartment kitchen",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "pots and pans set",
+          "quantity": 1,
+          "estPriceCents": 8000,
+          "note": null
+        },
+        {
+          "name": "knife set",
+          "quantity": 1,
+          "estPriceCents": 4000,
+          "note": null
+        },
+        {
+          "name": "cutting board",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "plates",
+          "quantity": 4,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "bowls",
+          "quantity": 4,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "silverware set",
+          "quantity": 1,
+          "estPriceCents": 2000,
+          "note": null
+        },
+        {
+          "name": "glasses",
+          "quantity": 4,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "spatula",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "mixing bowl",
+          "quantity": 1,
+          "estPriceCents": 1000,
+          "note": null
+        },
+        {
+          "name": "can opener",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "colander",
+          "quantity": 1,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "oven mitts",
+          "quantity": 2,
+          "estPriceCents": 700,
+          "note": null
+        },
+        {
+          "name": "dish towels",
+          "quantity": 3,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "trash can",
+          "quantity": 1,
+          "estPriceCents": 2500,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-snow-day",
+      "input": "Snow day at home with two kids",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "hot cocoa mix",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "marshmallows",
+          "quantity": 1,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "milk",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "snow gear",
+          "quantity": 4,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "sled",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "board games",
+          "quantity": 2,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "movie snacks",
+          "quantity": 2,
+          "estPriceCents": 600,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-fishing",
+      "input": "Fishing trip for 2 at the lake",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "fishing rods",
+          "quantity": 2,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "tackle box",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "bait",
+          "quantity": 2,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "fishing license",
+          "quantity": 2,
+          "estPriceCents": 2000,
+          "note": null
+        },
+        {
+          "name": "cooler",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "ice",
+          "quantity": 2,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "water bottles",
+          "quantity": 4,
+          "estPriceCents": 150,
+          "note": null
+        },
+        {
+          "name": "snacks",
+          "quantity": 2,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "sunscreen",
+          "quantity": 1,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "insect repellent",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "folding chairs",
+          "quantity": 2,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "pliers",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-soccer-snacks",
+      "input": "Half-time snacks for a soccer team of 12 kids",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "orange slices",
+          "quantity": 12,
+          "estPriceCents": 150,
+          "note": "one serving per kid"
+        },
+        {
+          "name": "granola bars",
+          "quantity": 12,
+          "estPriceCents": 120,
+          "note": "one per kid"
+        },
+        {
+          "name": "water bottles",
+          "quantity": 12,
+          "estPriceCents": 100,
+          "note": "one per kid"
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-bathroom-cleaning",
+      "input": "Deep cleaning the bathroom",
+      "explicit": false,
+      "examples": [],
+      "error": null,
+      "items": [
+        {
+          "name": "all-purpose cleaner",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "glass cleaner",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "toilet bowl cleaner",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "disinfecting wipes",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "scrub brush",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "microfiber cloths",
+          "quantity": 3,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "sponge",
+          "quantity": 2,
+          "estPriceCents": 100,
+          "note": null
+        },
+        {
+          "name": "rubber gloves",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "vacuum",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "mop",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    }
+  ]
+}

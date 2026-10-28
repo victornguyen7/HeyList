@@ -1,32 +1,38 @@
 {
-  "ranAt": "2026-10-27T20:29:54+00:00",
+  "ranAt": "2026-10-28T00:46:32+00:00",
   "model": "gemma4:31b",
-  "cases": 20,
+  "examples": 50,
+  "cases": 30,
   "summary": {
-    "itemRecall": 0.984,
-    "quantityAccuracy": 0.923,
+    "itemRecall": 0.929,
+    "quantityAccuracy": 1.0,
     "notesKeptRate": 1.0,
     "inventedItems": 0,
     "failedCases": 0,
     "counts": {
-      "found": 62,
-      "expected": 63,
+      "found": 91,
+      "expected": 98,
       "quantityOk": 12,
-      "quantityChecked": 13,
+      "quantityChecked": 12,
       "notesKept": 8,
       "notesChecked": 8
     }
   },
   "usage": {
-    "promptTokens": 11007,
-    "outputTokens": 5483,
-    "calls": 20
+    "promptTokens": 37117,
+    "outputTokens": 5690,
+    "calls": 30
   },
   "results": [
     {
       "id": "voice-camping",
       "input": "Get two packs of water, some plates, enough snacks for four people, and maybe a flashlight if nobody has one already",
       "explicit": true,
+      "examples": [
+        "Pack a healthy lunch and snacks to take to work tomorrow",
+        "Prepare a day hike for two people on a moderate trail",
+        "Pack for a weekend ski trip with one day on the slopes"
+      ],
       "error": null,
       "items": [
         {
@@ -44,14 +50,14 @@
         {
           "name": "snacks",
           "quantity": 4,
-          "estPriceCents": 500,
-          "note": "enough for four people"
+          "estPriceCents": 600,
+          "note": "enough for 4 people"
         },
         {
           "name": "flashlight",
           "quantity": 1,
           "estPriceCents": 1200,
-          "note": "only if nobody has one already"
+          "note": "if nobody has one already"
         }
       ],
       "score": {
@@ -68,6 +74,11 @@
       "id": "typed-groceries-quantities",
       "input": "3 avocados, a dozen eggs, 2 loaves of bread, milk",
       "explicit": true,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow",
+        "Get everything needed for moving into a college dorm for the first time"
+      ],
       "error": null,
       "items": [
         {
@@ -79,7 +90,7 @@
         {
           "name": "eggs",
           "quantity": 12,
-          "estPriceCents": 25,
+          "estPriceCents": 30,
           "note": null
         },
         {
@@ -99,7 +110,7 @@
         "found": 4,
         "expected": 4,
         "quantityOk": 2,
-        "quantityChecked": 3,
+        "quantityChecked": 2,
         "notesKept": 0,
         "notesChecked": 0,
         "invented": []
@@ -109,12 +120,17 @@
       "id": "voice-filler-words",
       "input": "um ok so we need like paper towels, uh, dish soap, and oh yeah trash bags, the big ones",
       "explicit": true,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Bring a dish and supplies to a potluck dinner with coworkers",
+        "Pack for a weekend ski trip with one day on the slopes"
+      ],
       "error": null,
       "items": [
         {
           "name": "paper towels",
           "quantity": 1,
-          "estPriceCents": 500,
+          "estPriceCents": 600,
           "note": null
         },
         {
@@ -144,18 +160,23 @@
       "id": "voice-repeat",
       "input": "batteries, sunscreen, batteries, bug spray",
       "explicit": true,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow",
+        "Get everything needed for moving into a college dorm for the first time"
+      ],
       "error": null,
       "items": [
         {
           "name": "batteries",
-          "quantity": 1,
+          "quantity": 2,
           "estPriceCents": 800,
           "note": null
         },
         {
           "name": "sunscreen",
           "quantity": 1,
-          "estPriceCents": 1200,
+          "estPriceCents": 1000,
           "note": null
         },
         {
@@ -179,6 +200,11 @@
       "id": "different-sizes-not-merged",
       "input": "one big bottle of olive oil and two small bottles of olive oil for the gift baskets",
       "explicit": true,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Prepare a day hike for two people on a moderate trail",
+        "Pack for a weekend ski trip with one day on the slopes"
+      ],
       "error": null,
       "items": [
         {
@@ -190,7 +216,7 @@
         {
           "name": "olive oil",
           "quantity": 2,
-          "estPriceCents": 700,
+          "estPriceCents": 800,
           "note": "listed twice with different amounts; check how many"
         }
       ],
@@ -208,12 +234,17 @@
       "id": "condition-only-if",
       "input": "charcoal, lighter fluid only if we use the old grill, burgers for 6",
       "explicit": true,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow",
+        "Get everything needed for moving into a college dorm for the first time"
+      ],
       "error": null,
       "items": [
         {
           "name": "charcoal",
           "quantity": 1,
-          "estPriceCents": 1500,
+          "estPriceCents": 1200,
           "note": null
         },
         {
@@ -225,7 +256,7 @@
         {
           "name": "burgers",
           "quantity": 6,
-          "estPriceCents": 200,
+          "estPriceCents": 250,
           "note": null
         }
       ],
@@ -243,12 +274,17 @@
       "id": "vague-amount",
       "input": "some ice and enough drinks for the whole team",
       "explicit": true,
+      "examples": [
+        "Pack supplies for a 24-hour college hackathon with a team of four",
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow"
+      ],
       "error": null,
       "items": [
         {
           "name": "ice",
-          "quantity": 2,
-          "estPriceCents": 300,
+          "quantity": 1,
+          "estPriceCents": 500,
           "note": null
         },
         {
@@ -272,24 +308,29 @@
       "id": "number-words",
       "input": "four rolls of tape, ten balloons, a couple of markers",
       "explicit": true,
+      "examples": [
+        "Host a movie night at home for four friends",
+        "Pack supplies for a 24-hour college hackathon with a team of four",
+        "Make a grocery list for hosting a weekend brunch for four people"
+      ],
       "error": null,
       "items": [
         {
           "name": "tape",
           "quantity": 4,
-          "estPriceCents": 200,
+          "estPriceCents": 300,
           "note": null
         },
         {
           "name": "balloons",
           "quantity": 10,
-          "estPriceCents": 10,
+          "estPriceCents": 20,
           "note": null
         },
         {
           "name": "markers",
           "quantity": 2,
-          "estPriceCents": 100,
+          "estPriceCents": 150,
           "note": null
         }
       ],
@@ -307,6 +348,11 @@
       "id": "pharmacy-list",
       "input": "ibuprofen, band-aids, a thermometer if ours is still broken, cough drops",
       "explicit": true,
+      "examples": [
+        "Restock a basic home first aid kit for two roommates",
+        "Put together a winter emergency kit for my car before temperatures drop",
+        "Prepare meal prep lunches and dinners for one person for five days"
+      ],
       "error": null,
       "items": [
         {
@@ -324,13 +370,13 @@
         {
           "name": "thermometer",
           "quantity": 1,
-          "estPriceCents": 1500,
+          "estPriceCents": 1200,
           "note": "if ours is still broken"
         },
         {
           "name": "cough drops",
           "quantity": 1,
-          "estPriceCents": 400,
+          "estPriceCents": 300,
           "note": null
         }
       ],
@@ -348,6 +394,11 @@
       "id": "voice-run-on",
       "input": "pick up cat food and also litter and then the dry cleaning ticket no wait skip that just the cat stuff",
       "explicit": true,
+      "examples": [
+        "Get the essentials before adopting a cat from the shelter",
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow"
+      ],
       "error": null,
       "items": [
         {
@@ -359,7 +410,7 @@
         {
           "name": "cat litter",
           "quantity": 1,
-          "estPriceCents": 2000,
+          "estPriceCents": 1200,
           "note": null
         }
       ],
@@ -377,6 +428,11 @@
       "id": "photo-list-transcript",
       "input": "Shopping list:\n- flour 2kg\n- sugar\n- butter x2\n- vanilla (check cupboard first)",
       "explicit": true,
+      "examples": [
+        "Get everything needed for moving into a college dorm for the first time",
+        "Restock a basic home first aid kit for two roommates",
+        "Get ready for my first 5K race this Saturday"
+      ],
       "error": null,
       "items": [
         {
@@ -388,13 +444,13 @@
         {
           "name": "sugar",
           "quantity": 1,
-          "estPriceCents": 250,
+          "estPriceCents": 400,
           "note": null
         },
         {
           "name": "butter",
           "quantity": 2,
-          "estPriceCents": 450,
+          "estPriceCents": 500,
           "note": null
         },
         {
@@ -418,6 +474,11 @@
       "id": "move-in-explicit",
       "input": "shower curtain, 2 pillows, a lamp for my desk, hangers maybe 20",
       "explicit": true,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow",
+        "Get everything needed for moving into a college dorm for the first time"
+      ],
       "error": null,
       "items": [
         {
@@ -429,13 +490,13 @@
         {
           "name": "pillows",
           "quantity": 2,
-          "estPriceCents": 2000,
+          "estPriceCents": 1200,
           "note": null
         },
         {
           "name": "desk lamp",
           "quantity": 1,
-          "estPriceCents": 2500,
+          "estPriceCents": 2000,
           "note": null
         },
         {
@@ -459,114 +520,95 @@
       "id": "situation-camping",
       "input": "Weekend camping trip for 3 friends, 2 nights",
       "explicit": false,
+      "examples": [
+        "Host a movie night at home for four friends",
+        "Pack for a weekend ski trip with one day on the slopes",
+        "Host a backyard barbecue for six people this weekend"
+      ],
       "error": null,
       "items": [
         {
-          "name": "Tent",
+          "name": "tent",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Sleeping Bag",
+          "name": "sleeping bags",
           "quantity": 3,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Sleeping Pad",
+          "name": "sleeping pads",
           "quantity": 3,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Flashlight",
-          "quantity": 3,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
-          "name": "Camp Stove",
+          "name": "stove",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Fuel",
+          "name": "fuel",
           "quantity": 1,
           "estPriceCents": 1500,
           "note": null
         },
         {
-          "name": "Cookware",
+          "name": "cooler",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Water Bottles",
-          "quantity": 3,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
-          "name": "Water Gallons",
-          "quantity": 3,
-          "estPriceCents": 600,
-          "note": null
-        },
-        {
-          "name": "Cooler",
-          "quantity": 1,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
-          "name": "Ice",
+          "name": "ice",
           "quantity": 2,
-          "estPriceCents": 400,
+          "estPriceCents": 500,
           "note": null
         },
         {
-          "name": "Food",
-          "quantity": 6,
+          "name": "water bottles",
+          "quantity": 3,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "flashlight",
+          "quantity": 3,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "batteries",
+          "quantity": 1,
           "estPriceCents": 1200,
-          "note": "meals for 3 people"
+          "note": null
         },
         {
-          "name": "First Aid Kit",
+          "name": "first aid kit",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Sunscreen",
+          "name": "sunscreen",
           "quantity": 1,
-          "estPriceCents": 800,
+          "estPriceCents": 900,
           "note": null
         },
         {
-          "name": "Insect Repellent",
+          "name": "insect repellent",
           "quantity": 1,
-          "estPriceCents": 600,
-          "note": null
-        },
-        {
-          "name": "Toiletries",
-          "quantity": 3,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
-          "name": "Camping Chairs",
-          "quantity": 3,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
-          "name": "Firewood",
-          "quantity": 2,
           "estPriceCents": 700,
+          "note": null
+        },
+        {
+          "name": "toothpaste",
+          "quantity": 1,
+          "estPriceCents": 400,
           "note": null
         }
       ],
@@ -584,66 +626,71 @@
       "id": "situation-kids-party",
       "input": "Birthday party for 10 kids at home",
       "explicit": false,
+      "examples": [
+        "Plan a graduation party for 15 people at home",
+        "Get ready to host friends for a football watch party at home",
+        "Host a movie night at home for four friends"
+      ],
       "error": null,
       "items": [
         {
-          "name": "Cake",
+          "name": "birthday cake",
           "quantity": 1,
           "estPriceCents": 3000,
           "note": null
         },
         {
-          "name": "Juice boxes",
-          "quantity": 10,
-          "estPriceCents": 100,
-          "note": null
-        },
-        {
-          "name": "Pizza",
+          "name": "pizza",
           "quantity": 4,
           "estPriceCents": 1500,
           "note": null
         },
         {
-          "name": "Paper plates",
-          "quantity": 1,
-          "estPriceCents": 500,
+          "name": "juice boxes",
+          "quantity": 2,
+          "estPriceCents": 800,
+          "note": "10-packs"
+        },
+        {
+          "name": "chips",
+          "quantity": 3,
+          "estPriceCents": 600,
           "note": null
         },
         {
-          "name": "Napkins",
+          "name": "fruit platter",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "balloons",
+          "quantity": 1,
+          "estPriceCents": 1000,
+          "note": null
+        },
+        {
+          "name": "paper plates",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "napkins",
           "quantity": 1,
           "estPriceCents": 300,
           "note": null
         },
         {
-          "name": "Cups",
-          "quantity": 1,
-          "estPriceCents": 400,
-          "note": null
-        },
-        {
-          "name": "Balloons",
-          "quantity": 1,
-          "estPriceCents": 500,
-          "note": null
-        },
-        {
-          "name": "Party hats",
+          "name": "party hats",
           "quantity": 10,
           "estPriceCents": 150,
           "note": null
         },
         {
-          "name": "Goodie bags",
+          "name": "goodie bags",
           "quantity": 10,
-          "estPriceCents": 400,
-          "note": null
-        },
-        {
-          "name": "Snacks",
-          "quantity": 3,
-          "estPriceCents": 600,
+          "estPriceCents": 500,
           "note": null
         }
       ],
@@ -661,6 +708,11 @@
       "id": "situation-beach-day",
       "input": "Beach day for a family of 4",
       "explicit": false,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Prepare everything for laundry day because I am running low on supplies",
+        "Prepare a day hike for two people on a moderate trail"
+      ],
       "error": null,
       "items": [
         {
@@ -676,16 +728,10 @@
           "note": null
         },
         {
-          "name": "beach umbrella",
-          "quantity": 1,
-          "estPriceCents": 2500,
-          "note": null
-        },
-        {
           "name": "cooler",
           "quantity": 1,
-          "estPriceCents": null,
-          "note": null
+          "estPriceCents": 3000,
+          "note": "only if nobody has one"
         },
         {
           "name": "water bottles",
@@ -694,21 +740,27 @@
           "note": null
         },
         {
-          "name": "sand toys",
-          "quantity": 1,
-          "estPriceCents": 1500,
-          "note": null
-        },
-        {
           "name": "snacks",
           "quantity": 1,
-          "estPriceCents": 2000,
+          "estPriceCents": 2500,
+          "note": "enough for 4 people"
+        },
+        {
+          "name": "beach umbrella",
+          "quantity": 1,
+          "estPriceCents": 2500,
           "note": null
         },
         {
           "name": "beach chairs",
           "quantity": 4,
-          "estPriceCents": null,
+          "estPriceCents": 2000,
+          "note": null
+        },
+        {
+          "name": "sand toys",
+          "quantity": 1,
+          "estPriceCents": 1500,
           "note": null
         }
       ],
@@ -726,82 +778,63 @@
       "id": "situation-flight",
       "input": "Packing for a work flight, one night",
       "explicit": false,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow",
+        "Host a movie night at home for four friends"
+      ],
       "error": null,
       "items": [
         {
-          "name": "Suitcase",
+          "name": "business outfit",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Business Attire",
+          "name": "pajamas",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Change of Clothes",
-          "quantity": 1,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
-          "name": "Underwear",
+          "name": "underwear",
           "quantity": 2,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Socks",
+          "name": "socks",
           "quantity": 2,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Toiletries",
+          "name": "toiletries",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Toothbrush",
+          "name": "toothbrush",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Toothpaste",
+          "name": "laptop",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Deodorant",
+          "name": "laptop charger",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
         },
         {
-          "name": "Laptop",
-          "quantity": 1,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
-          "name": "Chargers",
-          "quantity": 1,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
-          "name": "Phone",
-          "quantity": 1,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
-          "name": "ID/Passport",
+          "name": "phone charger",
           "quantity": 1,
           "estPriceCents": null,
           "note": null
@@ -821,55 +854,54 @@
       "id": "situation-sick-day",
       "input": "Partner has the flu, need to stock up",
       "explicit": false,
+      "examples": [
+        "Plan a simple Valentine's Day surprise for my partner",
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow"
+      ],
       "error": null,
       "items": [
         {
-          "name": "Tylenol",
-          "quantity": 1,
-          "estPriceCents": 1200,
-          "note": null
-        },
-        {
-          "name": "DayQuil/NyQuil",
-          "quantity": 1,
-          "estPriceCents": 1800,
-          "note": null
-        },
-        {
-          "name": "Tissues",
-          "quantity": 2,
+          "name": "chicken noodle soup",
+          "quantity": 3,
           "estPriceCents": 300,
           "note": null
         },
         {
-          "name": "Gatorade",
+          "name": "tissues",
+          "quantity": 2,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "orange juice",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "electrolyte drink",
           "quantity": 4,
           "estPriceCents": 250,
           "note": null
         },
         {
-          "name": "Chicken Soup",
-          "quantity": 3,
+          "name": "pain reliever",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "cough drops",
+          "quantity": 1,
           "estPriceCents": 400,
           "note": null
         },
         {
-          "name": "Thermometer",
+          "name": "thermometer",
           "quantity": 1,
           "estPriceCents": 1500,
-          "note": "if you don't have one"
-        },
-        {
-          "name": "Cough Drops",
-          "quantity": 1,
-          "estPriceCents": 600,
-          "note": null
-        },
-        {
-          "name": "Orange Juice",
-          "quantity": 1,
-          "estPriceCents": 500,
-          "note": null
+          "note": "only if you don't have one"
         }
       ],
       "score": {
@@ -886,49 +918,60 @@
       "id": "situation-new-baby",
       "input": "Friends just had a baby, bringing a care package",
       "explicit": false,
+      "examples": [
+        "Host a movie night at home for four friends",
+        "Prepare supplies for bringing home a newly adopted puppy",
+        "Wrap Christmas presents for my family and friends"
+      ],
       "error": null,
       "items": [
         {
           "name": "diapers",
           "quantity": 1,
-          "estPriceCents": 2500,
-          "note": "large pack"
+          "estPriceCents": 3000,
+          "note": "one large pack"
         },
         {
           "name": "baby wipes",
           "quantity": 2,
           "estPriceCents": 400,
-          "note": "unscented"
-        },
-        {
-          "name": "burp cloths",
-          "quantity": 3,
-          "estPriceCents": 500,
           "note": null
         },
         {
-          "name": "baby lotion",
+          "name": "baby blanket",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "baby onesies",
+          "quantity": 3,
+          "estPriceCents": 1000,
+          "note": null
+        },
+        {
+          "name": "burp cloths",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": "multi-pack"
+        },
+        {
+          "name": "diaper cream",
           "quantity": 1,
           "estPriceCents": 800,
           "note": null
         },
         {
-          "name": "meals",
+          "name": "meals for parents",
           "quantity": 2,
           "estPriceCents": 1500,
-          "note": "frozen or ready-to-eat"
+          "note": null
         },
         {
-          "name": "snacks",
+          "name": "snacks for parents",
           "quantity": 1,
           "estPriceCents": 2000,
-          "note": "easy one-handed eating"
-        },
-        {
-          "name": "gift card",
-          "quantity": 1,
-          "estPriceCents": 2500,
-          "note": "food delivery"
+          "note": null
         }
       ],
       "score": {
@@ -945,6 +988,11 @@
       "id": "situation-with-condition",
       "input": "Picnic for 5 in the park, bring a speaker if Sam doesn't",
       "explicit": false,
+      "examples": [
+        "Bring a dish and supplies to a potluck dinner with coworkers",
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow"
+      ],
       "error": null,
       "items": [
         {
@@ -954,15 +1002,9 @@
           "note": null
         },
         {
-          "name": "cooler",
-          "quantity": 1,
-          "estPriceCents": null,
-          "note": null
-        },
-        {
           "name": "sandwiches",
           "quantity": 5,
-          "estPriceCents": 700,
+          "estPriceCents": 500,
           "note": null
         },
         {
@@ -974,7 +1016,7 @@
         {
           "name": "fruit",
           "quantity": 1,
-          "estPriceCents": 600,
+          "estPriceCents": 700,
           "note": null
         },
         {
@@ -986,7 +1028,7 @@
         {
           "name": "napkins",
           "quantity": 1,
-          "estPriceCents": 300,
+          "estPriceCents": 200,
           "note": null
         },
         {
@@ -1010,66 +1052,29 @@
       "id": "situation-groceries-week",
       "input": "Weekly groceries for 2 adults, vegetarian",
       "explicit": false,
+      "examples": [
+        "Prepare a basic emergency kit for an earthquake-prone area for two adults",
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow"
+      ],
       "error": null,
       "items": [
         {
-          "name": "milk",
-          "quantity": 1,
-          "estPriceCents": 400,
-          "note": null
-        },
-        {
-          "name": "eggs",
-          "quantity": 1,
-          "estPriceCents": 350,
-          "note": null
-        },
-        {
-          "name": "bread",
-          "quantity": 1,
-          "estPriceCents": 300,
-          "note": null
-        },
-        {
-          "name": "butter",
-          "quantity": 1,
-          "estPriceCents": 450,
-          "note": null
-        },
-        {
           "name": "tofu",
-          "quantity": 2,
+          "quantity": 3,
           "estPriceCents": 300,
           "note": null
         },
         {
           "name": "black beans",
-          "quantity": 2,
+          "quantity": 4,
           "estPriceCents": 120,
           "note": null
         },
         {
-          "name": "rice",
-          "quantity": 1,
-          "estPriceCents": 200,
-          "note": null
-        },
-        {
-          "name": "pasta",
-          "quantity": 2,
-          "estPriceCents": 150,
-          "note": null
-        },
-        {
-          "name": "marinara sauce",
-          "quantity": 1,
-          "estPriceCents": 400,
-          "note": null
-        },
-        {
           "name": "spinach",
-          "quantity": 1,
-          "estPriceCents": 350,
+          "quantity": 2,
+          "estPriceCents": 400,
           "note": null
         },
         {
@@ -1080,26 +1085,50 @@
         },
         {
           "name": "broccoli",
-          "quantity": 1,
-          "estPriceCents": 250,
+          "quantity": 2,
+          "estPriceCents": 300,
           "note": null
         },
         {
           "name": "bell peppers",
           "quantity": 3,
-          "estPriceCents": 120,
+          "estPriceCents": 150,
           "note": null
         },
         {
-          "name": "onions",
+          "name": "avocados",
+          "quantity": 4,
+          "estPriceCents": 150,
+          "note": null
+        },
+        {
+          "name": "brown rice",
           "quantity": 1,
           "estPriceCents": 300,
           "note": null
         },
         {
-          "name": "garlic",
+          "name": "quinoa",
           "quantity": 1,
-          "estPriceCents": 60,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "eggs",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "greek yogurt",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "almond milk",
+          "quantity": 1,
+          "estPriceCents": 400,
           "note": null
         },
         {
@@ -1115,21 +1144,15 @@
           "note": null
         },
         {
-          "name": "yogurt",
-          "quantity": 2,
-          "estPriceCents": 150,
+          "name": "bread",
+          "quantity": 1,
+          "estPriceCents": 400,
           "note": null
         },
         {
-          "name": "cheese",
+          "name": "hummus",
           "quantity": 1,
-          "estPriceCents": 500,
-          "note": null
-        },
-        {
-          "name": "olive oil",
-          "quantity": 1,
-          "estPriceCents": 800,
+          "estPriceCents": 400,
           "note": null
         }
       ],
@@ -1142,10 +1165,633 @@
         "notesChecked": 0,
         "invented": []
       }
+    },
+    {
+      "id": "situation-housewarming",
+      "input": "Housewarming party for 15 people",
+      "explicit": false,
+      "examples": [
+        "Plan a graduation party for 15 people at home",
+        "Prepare Thanksgiving dinner for eight people",
+        "Host a backyard barbecue for six people this weekend"
+      ],
+      "error": null,
+      "items": [
+        {
+          "name": "appetizer platter",
+          "quantity": 3,
+          "estPriceCents": 3000,
+          "note": null
+        },
+        {
+          "name": "chips and dip",
+          "quantity": 3,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "soda",
+          "quantity": 3,
+          "estPriceCents": 1000,
+          "note": "12-packs"
+        },
+        {
+          "name": "sparkling water",
+          "quantity": 2,
+          "estPriceCents": 1200,
+          "note": "multi-packs"
+        },
+        {
+          "name": "disposable plates",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "disposable cups",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "napkins",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "ice",
+          "quantity": 2,
+          "estPriceCents": 600,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-halloween",
+      "input": "Halloween party for 8 adults",
+      "explicit": false,
+      "examples": [
+        "Plan a graduation party for 15 people at home",
+        "Get ready to host friends for a football watch party at home",
+        "Prepare a basic emergency kit for an earthquake-prone area for two adults"
+      ],
+      "error": null,
+      "items": [
+        {
+          "name": "themed snacks",
+          "quantity": 4,
+          "estPriceCents": 1200,
+          "note": null
+        },
+        {
+          "name": "drinks",
+          "quantity": 3,
+          "estPriceCents": 1500,
+          "note": "bottles or packs"
+        },
+        {
+          "name": "Halloween decorations",
+          "quantity": 1,
+          "estPriceCents": 2500,
+          "note": null
+        },
+        {
+          "name": "candy bowls",
+          "quantity": 2,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "assorted candy",
+          "quantity": 3,
+          "estPriceCents": 1100,
+          "note": null
+        },
+        {
+          "name": "paper plates",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "napkins",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "plastic cups",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-zoo-toddler",
+      "input": "Taking our toddler to the zoo for the day",
+      "explicit": false,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Prepare everything for laundry day because I am running low on supplies",
+        "Prepare a day hike for two people on a moderate trail"
+      ],
+      "error": null,
+      "items": [
+        {
+          "name": "stroller",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "diapers",
+          "quantity": 1,
+          "estPriceCents": 1000,
+          "note": "enough for the day"
+        },
+        {
+          "name": "baby wipes",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "water bottles",
+          "quantity": 3,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "snacks",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": "toddler friendly"
+        },
+        {
+          "name": "change of clothes",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "sunscreen",
+          "quantity": 1,
+          "estPriceCents": 800,
+          "note": null
+        },
+        {
+          "name": "hand sanitizer",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-dinner-party",
+      "input": "Italian dinner party for 6",
+      "explicit": false,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Plan a graduation party for 15 people at home",
+        "Prepare Thanksgiving dinner for eight people"
+      ],
+      "error": null,
+      "items": [
+        {
+          "name": "pasta",
+          "quantity": 3,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "marinara sauce",
+          "quantity": 3,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "garlic bread",
+          "quantity": 2,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "mozzarella cheese",
+          "quantity": 2,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "parmesan cheese",
+          "quantity": 1,
+          "estPriceCents": 700,
+          "note": null
+        },
+        {
+          "name": "mixed salad greens",
+          "quantity": 2,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "balsamic vinaigrette",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "wine",
+          "quantity": 3,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "tiramisu",
+          "quantity": 1,
+          "estPriceCents": 2500,
+          "note": "large cake"
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-study-group",
+      "input": "Snacks for a late-night study group of 5",
+      "explicit": false,
+      "examples": [
+        "Pack a healthy lunch and snacks to take to work tomorrow",
+        "Host a movie night at home for four friends",
+        "Get snacks and essentials ready for a six-hour road trip"
+      ],
+      "error": null,
+      "items": [
+        {
+          "name": "coffee",
+          "quantity": 1,
+          "estPriceCents": 1200,
+          "note": "large pot or carafe"
+        },
+        {
+          "name": "energy drinks",
+          "quantity": 5,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "trail mix",
+          "quantity": 2,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "fruit platter",
+          "quantity": 1,
+          "estPriceCents": 1000,
+          "note": null
+        },
+        {
+          "name": "chips and dip",
+          "quantity": 2,
+          "estPriceCents": 700,
+          "note": null
+        },
+        {
+          "name": "bottled water",
+          "quantity": 5,
+          "estPriceCents": 150,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 2,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-first-kitchen",
+      "input": "Basics for my first apartment kitchen",
+      "explicit": false,
+      "examples": [
+        "Restock a basic home first aid kit for two roommates",
+        "Get everything needed for moving into a college dorm for the first time",
+        "Prepare to move from one apartment to another next weekend"
+      ],
+      "error": null,
+      "items": [],
+      "score": {
+        "found": 0,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-snow-day",
+      "input": "Snow day at home with two kids",
+      "explicit": false,
+      "examples": [
+        "Prepare a day hike for two people on a moderate trail",
+        "Restock a basic home first aid kit for two roommates",
+        "Plan a relaxing date night at home for two"
+      ],
+      "error": null,
+      "items": [
+        {
+          "name": "hot cocoa mix",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "marshmallows",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "board games",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": "if you don't have any"
+        },
+        {
+          "name": "coloring books",
+          "quantity": 2,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "crayons",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "movie snacks",
+          "quantity": 3,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "snow gear",
+          "quantity": 4,
+          "estPriceCents": null,
+          "note": "boots, gloves, hats for everyone"
+        }
+      ],
+      "score": {
+        "found": 2,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-fishing",
+      "input": "Fishing trip for 2 at the lake",
+      "explicit": false,
+      "examples": [
+        "Pack for a weekend ski trip with one day on the slopes",
+        "Get snacks and essentials ready for a six-hour road trip",
+        "Prepare meal prep lunches and dinners for one person for five days"
+      ],
+      "error": null,
+      "items": [
+        {
+          "name": "fishing rods",
+          "quantity": 2,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "tackle box",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "bait",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "fishing licenses",
+          "quantity": 2,
+          "estPriceCents": 2000,
+          "note": null
+        },
+        {
+          "name": "cooler",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        },
+        {
+          "name": "ice",
+          "quantity": 2,
+          "estPriceCents": 300,
+          "note": null
+        },
+        {
+          "name": "water",
+          "quantity": 2,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "snacks",
+          "quantity": 1,
+          "estPriceCents": 1500,
+          "note": null
+        },
+        {
+          "name": "sunscreen",
+          "quantity": 1,
+          "estPriceCents": 900,
+          "note": null
+        },
+        {
+          "name": "bug spray",
+          "quantity": 1,
+          "estPriceCents": 700,
+          "note": null
+        },
+        {
+          "name": "pliers",
+          "quantity": 1,
+          "estPriceCents": null,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-soccer-snacks",
+      "input": "Half-time snacks for a soccer team of 12 kids",
+      "explicit": false,
+      "examples": [
+        "Pack a healthy lunch and snacks to take to work tomorrow",
+        "Get everything needed for moving into a college dorm for the first time",
+        "Get snacks and essentials ready for a six-hour road trip"
+      ],
+      "error": null,
+      "items": [
+        {
+          "name": "orange slices",
+          "quantity": 12,
+          "estPriceCents": 100,
+          "note": null
+        },
+        {
+          "name": "banana",
+          "quantity": 12,
+          "estPriceCents": 30,
+          "note": null
+        },
+        {
+          "name": "water bottles",
+          "quantity": 12,
+          "estPriceCents": 50,
+          "note": null
+        },
+        {
+          "name": "granola bars",
+          "quantity": 12,
+          "estPriceCents": 75,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 3,
+        "expected": 3,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
+    },
+    {
+      "id": "situation-bathroom-cleaning",
+      "input": "Deep cleaning the bathroom",
+      "explicit": false,
+      "examples": [
+        "Prepare meal prep lunches and dinners for one person for five days",
+        "Pack a healthy lunch and snacks to take to work tomorrow",
+        "Get everything needed for moving into a college dorm for the first time"
+      ],
+      "error": null,
+      "items": [
+        {
+          "name": "glass cleaner",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "disinfectant spray",
+          "quantity": 1,
+          "estPriceCents": 500,
+          "note": null
+        },
+        {
+          "name": "toilet bowl cleaner",
+          "quantity": 1,
+          "estPriceCents": 400,
+          "note": null
+        },
+        {
+          "name": "scrub brush",
+          "quantity": 1,
+          "estPriceCents": 600,
+          "note": null
+        },
+        {
+          "name": "microfiber cloths",
+          "quantity": 3,
+          "estPriceCents": 200,
+          "note": null
+        },
+        {
+          "name": "sponges",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": "multi-pack"
+        },
+        {
+          "name": "rubber gloves",
+          "quantity": 1,
+          "estPriceCents": 300,
+          "note": null
+        }
+      ],
+      "score": {
+        "found": 4,
+        "expected": 4,
+        "quantityOk": 0,
+        "quantityChecked": 0,
+        "notesKept": 0,
+        "notesChecked": 0,
+        "invented": []
+      }
     }
-  ],
-  "notes": [
-    "typed-groceries-quantities: 'a dozen eggs' came back as eggs x 12; the label expected 1 (one carton). Both readings are defensible, so this miss is about the label rather than clearly the model.",
-    "situation-kids-party: candles were left out (a real miss on a situation description)."
   ]
 }

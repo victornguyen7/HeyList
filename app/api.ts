@@ -12,7 +12,10 @@ export type Item = {
   checkedAt: string | null;
   orderId: string | null;
   receiptId: string | null;
+  // A real product chosen from a store search (Channel3, decision 50); its price is estPriceCents.
+  product: Product | null;
 };
+export type Product = { productId: string; title: string; store: string; url: string; imageUrl: string | null; priceCents: number };
 export type ReceiptLine = { text: string; priceCents: number; lowConfidence: boolean; itemId: string | null };
 export type Receipt = {
   id: string;
@@ -87,6 +90,9 @@ const MESSAGES: Record<string, string> = {
   RECEIPT_TOO_LONG: "That receipt is too long to match in one go.",
   PAYMENT_PENDING: "A payment for one of those items is still pending at PayPal.",
   ORDER_NOT_PENDING: "That payment is no longer pending. Reload the page to see it.",
+  MARKET_UNAVAILABLE: "Store search is not available right now. Try again in a moment.",
+  PRODUCT_NOT_FOUND: "That product is no longer available. Search again.",
+  ITEM_CHECKED: "That item has already been bought.",
 };
 
 /** JSON in, JSON out. A Blob body is sent as-is with its own type (receipt photos). */

@@ -35,8 +35,8 @@ class ScoreTest(unittest.TestCase):
     def test_every_case_file_entry_is_well_formed(self):
         cases = json.loads(eval_starter.CASES.read_text())
 
-        self.assertEqual(len(cases), 20)
-        self.assertEqual(len({case["id"] for case in cases}), 20)
+        self.assertEqual(len(cases), 30)
+        self.assertEqual(len({case["id"] for case in cases}), 30)
         for case in cases:
             self.assertTrue(case["input"] and case["expect"] and isinstance(case["explicit"], bool), case["id"])
 

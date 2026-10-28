@@ -5,7 +5,13 @@ import { useState, useSyncExternalStore } from "react";
 import { api, usd, type List } from "./api";
 import { Brand, button, card, chip, row } from "./ui";
 
-type Suggestion = { title: string; kind: string; items: { name: string; quantity: number; estPriceCents: number | null; note: string | null }[] };
+// priceSource (decision 49): paid = what people paid for it before, store = a store product chosen for it, estimate = the AI's guess.
+type Suggestion = {
+  title: string;
+  kind: string;
+  items: { name: string; quantity: number; estPriceCents: number | null; note: string | null; priceSource?: "paid" | "store" | "estimate" | null }[];
+};
+const sourceLabel = { paid: "paid before", store: "store price", estimate: "AI guess" };
 
 // Idea chips (Figma "Ideas"): each fills the prompt with an example to start from.
 const IDEAS = [
@@ -248,7 +254,10 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                   {item.note && <span className="truncate text-money">· {item.note}</span>}
                 </span>
               </span>
-              <span className="shrink-0 text-base font-medium tabular-nums">{item.estPriceCents ? `~${usd(item.estPriceCents * item.quantity)}` : "—"}</span>
+              <span className="flex shrink-0 flex-col items-end text-base font-medium tabular-nums">
+                {item.estPriceCents ? `${item.priceSource === "estimate" ? "~" : ""}${usd(item.estPriceCents * item.quantity)}` : "—"}
+                {item.estPriceCents && item.priceSource ? <span className="text-[13px] font-normal text-muted">{sourceLabel[item.priceSource]}</span> : null}
+              </span>
             </li>
           );
         })}

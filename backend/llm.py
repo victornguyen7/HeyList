@@ -1,6 +1,8 @@
 import json
 import os
+import re
 from functools import cache
+from pathlib import Path
 
 from ollama import Client
 
@@ -77,11 +79,38 @@ Reply with only a JSON object matching this schema:
 """ + json.dumps(STARTER_SCHEMA)
 
 
+# Hand-written requests and the lists we'd want back (decision 48). Off: in the first measured run the 3 closest
+# lowered item recall (96/98 without, 91/98 with) at 2.3 times the input tokens. Kept as data; eval_starter.py
+# --examples measures them again. Ones marked evalOverlap are near-copies of eval cases, which the eval leaves out.
+EXAMPLES = json.loads((Path(__file__).parent / "examples.json").read_text())
+EXAMPLE_COUNT = 0
+# Words that say nothing about what to buy.
+SMALL_WORDS = set(
+    "a an and the for of to my our we i at on in with is are if or up some get need so like um uh ok oh yeah this"
+    " that it be have has from about just all prepare ready everything thing make plan go do want next".split()
+)
+
+
+def words(text: str) -> set[str]:
+    return {word.rstrip("s") for word in re.findall(r"[a-z]+", text.lower())} - SMALL_WORDS
+
+
+def closest_examples(description: str) -> list[dict]:
+    """The EXAMPLE_COUNT examples whose requests share the most words with this one; ties keep the file's order.
+    ponytail: word overlap, which picked off-topic examples in the eval; use embeddings before turning this on."""
+    asked = words(description)
+    return sorted(EXAMPLES, key=lambda example: -len(asked & words(example["request"])))[:EXAMPLE_COUNT]
+
+
 def starting_list(description: str, budget_cents: int | None = None) -> dict:
     """A suggested list for the user to confirm or edit (decision 5); nothing is saved here.
     The reply is checked field by field, because the schema only shapes it."""
     request = description if budget_cents is None else f"{description}\nBudget: {budget_cents} cents"
-    text = chat([{"role": "system", "content": STARTER_PROMPT}, {"role": "user", "content": request}], STARTER_SCHEMA)
+    shown = []
+    for example in closest_examples(description):
+        shown += [{"role": "user", "content": example["request"]}, {"role": "assistant", "content": json.dumps(example["reply"])}]
+    messages = [{"role": "system", "content": STARTER_PROMPT}, *shown, {"role": "user", "content": request}]
+    text = chat(messages, STARTER_SCHEMA)
     reply = json_reply(text)
     items: list[dict] = []
     for item in reply.get("items", [])[:100]:

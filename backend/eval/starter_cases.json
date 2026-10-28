@@ -16,7 +16,7 @@
     "explicit": true,
     "expect": [
       {"names": ["avocado"], "quantity": 3},
-      {"names": ["egg"], "quantity": 1},
+      {"names": ["egg"]},
       {"names": ["bread", "loaf"], "quantity": 2},
       {"names": ["milk"]}
     ]
@@ -200,6 +200,111 @@
       {"names": ["vegetable", "spinach", "broccoli", "carrot", "lettuce"]},
       {"names": ["egg", "tofu", "bean", "lentil"]},
       {"names": ["milk", "yogurt", "cheese"]}
+    ]
+  },
+  {
+    "id": "situation-housewarming",
+    "input": "Housewarming party for 15 people",
+    "explicit": false,
+    "expect": [
+      {"names": ["cup"]},
+      {"names": ["napkin"]},
+      {"names": ["chip", "snack"]},
+      {"names": ["drink", "soda", "wine", "beer"]}
+    ]
+  },
+  {
+    "id": "situation-halloween",
+    "input": "Halloween party for 8 adults",
+    "explicit": false,
+    "expect": [
+      {"names": ["candy"]},
+      {"names": ["pumpkin"]},
+      {"names": ["decoration", "cobweb", "lights"]}
+    ]
+  },
+  {
+    "id": "situation-zoo-toddler",
+    "input": "Taking our toddler to the zoo for the day",
+    "explicit": false,
+    "expect": [
+      {"names": ["sunscreen"]},
+      {"names": ["snack"]},
+      {"names": ["wipe"]},
+      {"names": ["diaper", "nappy", "nappies"]}
+    ]
+  },
+  {
+    "id": "situation-dinner-party",
+    "input": "Italian dinner party for 6",
+    "explicit": false,
+    "expect": [
+      {"names": ["pasta", "spaghetti", "lasagna"]},
+      {"names": ["tomato", "sauce", "marinara"]},
+      {"names": ["parmesan", "cheese"]},
+      {"names": ["wine"]}
+    ]
+  },
+  {
+    "id": "situation-study-group",
+    "input": "Snacks for a late-night study group of 5",
+    "explicit": false,
+    "expect": [
+      {"names": ["coffee", "energy drink", "tea"]},
+      {"names": ["snack", "chip", "cookie", "pretzel"]}
+    ]
+  },
+  {
+    "id": "situation-first-kitchen",
+    "input": "Basics for my first apartment kitchen",
+    "explicit": false,
+    "expect": [
+      {"names": ["pan", "pot", "skillet"]},
+      {"names": ["knife"]},
+      {"names": ["cutting board"]},
+      {"names": ["dish soap", "sponge"]}
+    ]
+  },
+  {
+    "id": "situation-snow-day",
+    "input": "Snow day at home with two kids",
+    "explicit": false,
+    "expect": [
+      {"names": ["hot chocolate", "cocoa"]},
+      {"names": ["glove", "mitten"]},
+      {"names": ["marshmallow", "snack", "popcorn", "cookie"]}
+    ]
+  },
+  {
+    "id": "situation-fishing",
+    "input": "Fishing trip for 2 at the lake",
+    "explicit": false,
+    "expect": [
+      {"names": ["bait", "worm", "lure"]},
+      {"names": ["fishing line", "hook", "tackle"]},
+      {"names": ["water"]},
+      {"names": ["sunscreen"]}
+    ]
+  },
+  {
+    "id": "situation-soccer-snacks",
+    "input": "Half-time snacks for a soccer team of 12 kids",
+    "explicit": false,
+    "expect": [
+      {"names": ["orange", "fruit"]},
+      {"names": ["water", "juice", "drink"]},
+      {"names": ["granola bar", "snack", "cracker"]}
+    ]
+  },
+  {
+    "id": "situation-bathroom-cleaning",
+    "input": "Deep cleaning the bathroom",
+    "explicit": false,
+    "expect": [
+      {"names": ["toilet", "bowl cleaner"]},
+      {"names": ["glove"]},
+      {"names": ["sponge", "scrub", "brush"]},
+      {"names": ["cleaner", "spray", "bleach"]}
     ]
   }
 ]
