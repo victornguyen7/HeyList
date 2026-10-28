@@ -12,7 +12,8 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 4 | 5. Group accounting (narrow) | Done 2026-10-27 (see below) |
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
-| 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7D built 2026-10-28; 7E–7F planned (see below) |
+| 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7C built 2026-10-28; 7D built and removed (decision 63); 7E optional; 7F dropped |
+| 8 | Effortless core loop, ready for judges | Planned 2026-10-28 (see below) |
 
 ### Phase 1 — purchase verification (done)
 
@@ -202,11 +203,11 @@ Written 2026-10-28, after a review of the code, [HACKATHON.md](HACKATHON.md) and
 | 7A | Realtime list updates | 0.5–1 day | Design, Presentation, Best Demo Delivery | Do, first |
 | 7B | Settle up with PayPal: pay the person you owe | 1.5–2 days | Best Use of PayPal + AI, Technical, Presentation | Do |
 | 7C | "Shop this list for me" agent | 2–3 days | Best Use of Agentic Commerce, Best Use of Channel3, Innovation | Do |
-| 7D | AG Studio money dashboard: custom widgets, theming, and an analyst agent | 2–3 days | Best Use of AG Grid | If time allows |
+| 7D | AG Studio money dashboard | — | — | Dropped (decision 63) |
 | 7E | PayPal webhooks on Render | About 1 day | Technical, Best Use of Render | If time allows |
-| 7F | APIMatic portal or SDK, and a Postman collection, for HeyList's API | About 0.5 day | Best Use of APIMatic, documentation | If time allows |
+| 7F | APIMatic portal or SDK, and a Postman collection | — | — | Dropped |
 
-Order: 7A, 7B, 7C, then 7D–7F as time allows. 7A–7C come to about 4–6 days.
+Order: 7A, 7B, 7C, then 7E if time allows (7D and 7F were dropped). 7A–7C come to about 4–6 days.
 
 #### 7A — realtime list updates (issue 31)
 
@@ -292,70 +293,9 @@ Order: 7A, 7B, 7C, then 7D–7F as time allows. 7A–7C come to about 4–6 days
   - a Channel3 failure on one item doesn't stop the rest;
   - bought or pending items are left out.
 
-#### 7D — AG Studio money dashboard, with a nudge widget and an analyst agent (if time allows)
+#### 7D — AG Studio money dashboard (dropped)
 
-**Built 2026-10-28** (decision 62). The **Dashboard** page (nav link on the laptop) shows one AG Studio dashboard over every list this browser has opened.
-
-| Plan | Built |
-|---|---|
-| Tables built in the browser | `app/dashboard/data.ts`: `ledger` (money lines from each list's split, plus refunds), `balances`, `transfers` (open payments and settle-up payments), `items`. Field names, descriptions and dollar formats are set for Studio and its agents |
-| Starting layout | Page "Where our money went": 4 KPI tiles (spent, proven, refunded, still owed), the two custom widgets, 4 charts (by person, proof mix, by month, by list type) and the ledger grid; a blank "Your charts" page for the assistant. Edit mode, panels collapsed |
-| Custom widgets | **Who owes whom** (`settle-scoreboard`): friendly scoreboard, **Pay with PayPal** opens the list's Settle up. **Proof meter** (`proof-meter`): data-mapped and read with `widgetApi.getData`, so filters apply. Both in a "HeyList" group of the widget menu |
-| Theming | `studioTheme.withParams`: AI blue accent, Geist font, soft canvas, 24px widget corners, chart palette blue, clay, ink |
-| Agent | `heylist` agent (primary) with `view_schema`, `view_page`, `execute_query`, a custom `who_owes_whom` tool, and `delegate_to` Studio's built-in `page` and `widget` agents. Prompt starters: who owes what, spending by person, draft a friendly nudge |
-| Model | `app/dashboard/ollama-adapter.ts` (`AgLlmAdapter`) → `POST /api/studio/chat` → `llm.agent_turn()` (Ollama with tools). 60 turns an hour for everyone, not 30: one question takes several turns once it delegates |
-
-- **Checks:**
-  - 140 backend tests pass. New ones cover: a turn forwarded and returned, bad conversations refused before any call, the cap, a failure returning 502 without details, and `agent_turn`'s mapping.
-  - `tsc`, `eslint` and `next build` pass.
-  - A one-off check of `dashboardData()` and the message conversion: spending equals the split's total, hand ticks are unproven, and refunds and settle-up payments come through.
-- **Build memory:** `next build` peaked at about 905 MB on this Mac, against about 840 MB without the Dashboard. The Starter plan is 512 MB, but the build was already above that and deploys today. Watch the first Render deploy.
-- **Not done yet:**
-  - **Opened in a browser:** the layout sizes, the theme and the custom widgets haven't been seen rendering.
-  - **The agent live:** this costs Ollama calls and needs the owner's OK. Whether `gemma4:31b` handles Studio's tool schemas well is still unknown. If not, give the HeyList agent fewer tools or switch the model.
-  - **Saving the layout:** a rearranged dashboard isn't saved yet; it resets on reload.
-  - The demo scene in [SUBMISSION.md](SUBMISSION.md).
-
-Rewritten 2026-10-28 after reading the AG Grid prize brief. The first plan was a plain AG Grid table, but the prize asks for more: "custom widgets, theming, and layout tools, not just AG Grid or AG Charts on their own", plus the **Studio Agent Framework** ("a custom agent talking to Studio's built-in agents, or a swapped-in harness"). AG Studio is AG Grid's dashboard component: grids, charts and a data engine in one, which people can rearrange without code.
-
-- **What:** a **Dashboard** page in the website layout. It is one AG Studio dashboard over the money of every list this browser has opened, and it answers "where did our money go, and who still owes whom" across lists. It extends History, Money and Settle up rather than being added for the prize. Their own idea list includes a "Nudge-bot" (unpaid amounts, friendly reminders, a scoreboard), which is what HeyList's settle-up already does.
-- **Data, all already loaded:** History fetches every list in one request (decision 54). The page turns those lists into Studio data sources in the browser, so no new backend route is needed for the data.
-
-  | Source | One row per | Columns |
-  |---|---|---|
-  | `ledger` | money event: PayPal capture, refund, receipt line, receipt fee (tax, tip, discount), hand tick, settle-up payment (7B) | date, list, list type, item, who, amount, kind, proof, PayPal order or receipt ID |
-  | `balances` | person per list, from each list's `split` | list, person, paid, share, settled, balance |
-  | `items` | list item | list, item, status (needed, pending, paid with PayPal, on a receipt, by hand), estimate, price paid, store product |
-
-- **Layout: a starting dashboard,** which people can then rearrange in edit mode.
-  - KPI tiles: spent, refunded, still owed, share of spending with proof (PayPal or receipt).
-  - Charts: spending by person, by list type, by month; proof mix (PayPal, receipt, hand tick).
-  - The ledger grid, grouped by list or person, with totals and CSV export (Enterprise grid features are included in AG Studio).
-- **Custom widgets (the "polish" part of the prize):**
-  1. **Settle-up scoreboard:** who still owes whom, as a friendly scoreboard rather than a collections report: avatars, amounts, and **Pay with PayPal** on your own rows, which opens 7B's payment. Settled payments show as done.
-  2. **Proof meter:** for each list, how much of the spending is proven (PayPal, receipt) versus someone's word (hand tick). It shows HeyList's main idea, "know what really got done", in one widget.
-- **Theming:** the dashboard uses HeyList's colour variables from `globals.css` (list green, money clay, AI blue), fonts and rounded cards, so it looks like part of the app, not an embedded tool.
-- **Agent (the Studio Agent Framework):** a custom **HeyList analyst** agent, working with Studio's built-in tools (view the schema, run a query, add a widget).
-  - "Show what we spent on trips this month by person" → it adds a live widget.
-  - "Draft a friendly nudge for Ben" → it reads the scoreboard and writes a short, kind reminder ("hey, just a heads-up: $30 for the camping trip whenever you get a minute"). The person copies or shares it; **nothing is sent automatically**.
-  - **Model:** Studio has no model of its own; every call goes through an adapter we supply. Ours calls a new backend route, `POST /api/studio/chat`, which forwards to Ollama. The Ollama key never reaches the browser (RULES.md).
-  - **Cost:** every agent turn is a paid Ollama call. The route is capped with `allow()` like the others (for example 30 turns an hour for everyone), and every live test needs the owner's approval.
-  - **Data sent to Ollama:** the schema, plus the query results the agent asks for. That's only names and amounts from lists this browser has opened, the same kind of data the starting-list and receipt calls already send.
-- **Setup:**
-  - `npm install ag-studio-react ag-studio`: version 3.0.0, React 17–19, so React 19.3 is fine. Add both to [ARCHITECTURE.md](ARCHITECTURE.md#stack).
-  - **Licence:** commercial, with a free 45-day trial key from AG Grid. It runs locally without a key but shows a watermark. The owner requests the key; it goes in `.env.local` and Render as `AG_STUDIO_LICENSE_KEY`, which `next.config.ts` passes to the browser as `NEXT_PUBLIC_AG_STUDIO_LICENSE_KEY` at build time, as for Supabase (a frontend key is visible in the bundle anyway, but keep it out of the repo). Installed 2026-10-28: `ag-studio` and `ag-studio-react` 3.0.0, pinned; `render.yaml` has the key with `sync: false`. `AgStudioLicenseManager.setLicenseKey()` is called once before rendering. The trial may end during judging; the watermark then comes back.
-  - **Next.js 16:** AG Studio runs only in the browser. Load it on the Dashboard page with `next/dynamic` and `ssr: false`, in a `"use client"` component; read the Next.js guide in `node_modules/next/dist/docs/` first (AGENTS.md).
-  - **Size:** `ag-studio` is about 33 MB unpacked and brings AG Grid Enterprise and AG Charts Enterprise. Loading it only on its own page keeps it out of every other page.
-- **Phones:** laptop layout only (decision 46). Phones keep History's cards and get a short note pointing to the laptop view.
-- **Check first:**
-  - the adapter interface for `directLlmRunner`, and whether `gemma4:31b` on Ollama does tool calls reliably. If it doesn't, use `clientToolRunner` with the loop on our server;
-  - that the web build fits Render's Starter plan (512 MB) with the new packages;
-  - that AG Grid's boilerplate (AG Studio with PayPal set up) has nothing we should reuse.
-- **Tests:**
-  - **Backend:** the chat route forwards to Ollama, is capped, never returns the key, and turns an Ollama failure into a 502.
-  - **Frontend:** there are no frontend tests in the project, so the ledger rows are built by one plain function. Check its totals by hand against Money and Settle up for one list, before recording.
-- **Size:** about 2–3 days, not 1: about 1 for the data, layout and theming, 1 for the two custom widgets, and 0.5–1 for the agent.
-- **Demo:** a short scene after Settle up, on the laptop. Open the Dashboard, ask the agent "who still owes what across our trips?", and it adds the scoreboard; tap **Pay with PayPal** from it.
+Built on 2026-10-28, then removed the same day at the owner's request (decision 63). It was a cross-list AG Studio dashboard with two custom widgets and an assistant. It didn't fit HeyList's spec, an easy checklist for any occasion shared with others, and it made the app feel like a bunch of features. The code is in git history (commit `60f7aba`). The AG Grid prize is no longer a goal.
 
 #### 7E — PayPal webhooks on Render (if time allows)
 
@@ -372,11 +312,9 @@ Rewritten 2026-10-28 after reading the AG Grid prize brief. The first plan was a
   - pending to denied;
   - an outside refund.
 
-#### 7F — APIMatic portal or SDK, and a Postman collection (if time allows)
+#### 7F — APIMatic portal or SDK, and a Postman collection (dropped)
 
-- **APIMatic:** import FastAPI's `/openapi.json` into APIMatic and generate a developer portal (and optionally a TypeScript SDK) for HeyList's own API. Link it from the README. Today APIMatic shows up only as the generator of PayPal's SDK and the Context Plugin (decision 23). This is a direct use, for the Best Use of APIMatic prize.
-- **Before generating:** give the FastAPI routes summaries and response models where they're missing, so the portal is readable.
-- **Postman:** export the same OpenAPI file as a public Postman collection, with a sandbox environment (no keys in it). It helps judges try the API, and the README already lists Postman as a tool.
+Dropped on 2026-10-28 with 7D: it targets a sponsor prize rather than the people using HeyList. A project can win only one sponsor prize, and Channel3 (7C) already fits naturally.
 
 #### Not doing in this phase
 
@@ -393,11 +331,131 @@ One sentence → AI list → **the agent shops the rest within budget (7C)** →
 
 #### Blockers and approvals
 
-- **Paid calls:** live tests of 7C (Channel3 and Ollama) and of 7D's agent (Ollama) need the owner's approval ([RULES.md](RULES.md)).
-- **AG Studio trial key:** 7D needs the owner to request the 45-day trial licence; until then it runs with a watermark.
+- **Paid calls:** live tests of 7C (Channel3 and Ollama) need the owner's approval ([RULES.md](RULES.md)).
 - **Live sandbox:** 7B's payee check needs a second sandbox personal account. 7E needs the deployed Render URL.
 - **Schema:** 7B adds a settlements table, or changes `invoices`. Run `supabase/schema.sql` again on the live database.
 - **Decisions to record:** the realtime approach (7A), payee orders over invoices (7B), the agent's budget rule and human approval (7C).
+
+### Phase 8 — effortless core loop, ready for judges (planned)
+
+Written 2026-10-28, after the owner's review of the updated [HACKATHON.md](HACKATHON.md) and the removal of the Dashboard (decision 63). About 15 days are left: the early eligibility check is **Thu 5 November** and submissions close **Thu 12 November, 12:00 pm PT**.
+
+**Why this phase:** HeyList's purpose is an easy checklist for any occasion, shared with others and settled with PayPal. The organisers' own ideas include "splitting a group dinner bill automatically by scanning a receipt", a "request money flow inside a chat app" and "a simpler checkout for … families". That is HeyList's loop already. The features are built; what's missing is a loop that feels effortless, and proof that it works live. Judges may score from the video and description alone, so a smooth loop that's easy to follow counts for more than another feature.
+
+**Rule for this phase:** nothing new unless it makes the loop (**need → share → buy → settle with PayPal**) easier to start, easier to use with other people, or makes PayPal and AI clearer. Everything else waits until after the hackathon.
+
+#### Overview
+
+| Part | What | Size | Criteria it helps | When |
+|---|---|---|---|---|
+| 8A | Ready for judges: live checks, hosted URL, a judge's sandbox login, README | 1–1.5 days (plus owner tasks) | Stage One pass/fail, Technical | First, by 5 Nov |
+| 8B | "Try a sample list" on Home | About 0.5 day | Design, Impact, Presentation | After 8A |
+| 8C | A calmer Progress page: one main action at a time | About 1 day | Design | After 8B |
+| 8D | "Remind" on Settle up: a friendly AI message with a PayPal pay link | 0.5–1 day | Best Use of PayPal + AI, Impact | After 8C |
+| 8E | The story: demo script, description, video | About 1 day | Presentation, Best Demo Delivery | Last, from about 9 Nov |
+
+About 4–5 days in all, which leaves room for fixes found in the live checks. 7E (webhooks) only if all of this is done.
+
+#### 8A — ready for judges (by 5 November)
+
+The only part that can fail Stage One, so it comes first.
+
+- **Live checks**, each one recorded in [ISSUES.md](ISSUES.md) or closed:
+  - run `supabase/schema.sql` on the live database (`settlements`, `members.user_id`, `items.product`, …);
+  - redeploy both Render services from the current `main`;
+  - 7A: two browsers on one list; a claim and a tick show on the other within a moment;
+  - 7B: one settle-up payment to a **second sandbox personal account** (the payee check), then the split is even;
+  - 7C: one "Shop this list for me" run on a few items (paid calls: owner's approval);
+  - one full checkout and a receipt scan on the hosted URL (issue 25).
+- **A judge can pay.** The Official Rules ask for test accounts and sandbox logins in the README. Create a **separate sandbox personal account for judges**, never the owner's, and put its email and password in the README. Sandbox money isn't real, but nothing else of the owner's goes in.
+- **README:**
+  - replace the stale status line (it says history and invoices aren't built);
+  - add a "Try it in 2 minutes" section at the top: the hosted URL, the judge's sandbox login, and the four steps of the loop;
+  - name PayPal (Orders API: create, capture, refund, payee) and the AI (Ollama `gemma4:31b`, AWS Textract) plainly, as the organisers ask.
+- **Repo public**, with "MIT license" showing in the About section.
+- **Submit a draft on Devpost by 5 November** for the early eligibility check; it stays editable until the deadline.
+
+#### 8B — "Try a sample list" on Home
+
+- **Problem:** HeyList shines with several people, but a new user (or a judge) is alone. Today they must invent a list, then pretend to be friends in other browsers before Settle up shows anything.
+- **Plan:** a quiet link under the starter, **See how it works with a sample trip**. It creates a real, normal list:
+  - "Weekend camping trip (sample)" with Ann, Ben and You;
+  - 6 items with estimates: some claimed, the tent marked bought by Ann at $90 and the snacks by Ben at $24;
+  - You become the member "You" in this browser.
+
+  The person lands on Progress with everything working: claim, pay with PayPal, scan a receipt, and Settle up already shows "You → Ann". Nothing about it is fake, so every button works.
+- **Backend:** `POST /api/lists/sample`, built from a fixed template in code. It makes **no AI call and no PayPal call**, and is capped with `allow()` like list creation.
+- **Tests:**
+  - the sample has its members, items and prices;
+  - its split shows the transfers we expect;
+  - the cap.
+
+#### 8C — a calmer Progress page
+
+- **Problem:** Progress now shows Scan receipt, Pay, Shop this list for me, Share out the rest and Mark finished at the same time. Ticking an item by hand opens the browser's own pop-up asking for a price. The join form appears on every tab (issue 34).
+- **Plan:**
+  - **One main button, chosen by where the list is:**
+    1. Not joined: **Join**.
+    2. You have open claimed items: **Pay for your 3 items · $42 with PayPal**.
+    3. Open items nobody has claimed: **Share out the rest**.
+    4. Everything bought: **Settle up**.
+
+    The rest (Scan receipt, Shop this list for me, Pay for other items, Mark finished) sits under **More**.
+  - **Hand tick:** the price is asked inline in the row (a small field with the estimate filled in, and Done), not in a pop-up.
+  - **Issue 34:** the full join form shows only on Progress and Receipts; other tabs show a one-line "Join to take part" link.
+- **Nothing is removed:** every action stays one tap away under More. It's layout and wording only, with no backend change.
+- **Check:** walk the camping demo on a phone and count the taps from opening the link to paying. Aim for fewer than today.
+
+#### 8D — "Remind" on Settle up, with a PayPal pay link
+
+- **Problem:** Settle up works out who owes whom, and 7B lets the debtor pay with PayPal, but only if they open the list. In real groups, someone has to send an awkward "you owe me" message.
+- **Plan:** each open payment on Settle up gets **Remind Ben**.
+  - The AI drafts two or three warm sentences ("hey Ben, just a heads-up: $30 for the camping trip, whenever you get a minute 🙂").
+  - The message ends with a link that opens the list's Settle up with that payment highlighted and **Pay Ann $30 with PayPal** ready.
+  - The person sends it with the phone's own share sheet (WhatsApp, SMS, iMessage), or copies it.
+  - HeyList never sends anything itself.
+- **Backend:** `POST /api/lists/{id}/reminders` with `{fromId, toId}`.
+  - The amount and names come from the current split on the server, never from the browser (decision 21).
+  - One Ollama call, capped with `allow()`.
+  - If the AI fails, a plain template is used, so the button always works.
+- **Why this one:** it is the organisers' "request money inside a chat app" idea, and it joins HeyList's AI to PayPal at the moment money moves. It builds on 7B; nothing new on PayPal's side.
+- **Tests:**
+  - the amount comes from the split;
+  - a stale or unknown pair is refused;
+  - the AI's text is length-checked;
+  - a failed AI call falls back to the template;
+  - the cap.
+- Record as a new decision.
+
+#### 8E — the story
+
+- **[SUBMISSION.md](SUBMISSION.md):** rewrite the 2:40 script around the loop, one scene per step, each showing PayPal or AI working:
+  1. One sentence → AI list.
+  2. Share the link → a friend joins and claims live (7A).
+  3. **Shop this list for me** → one PayPal payment (7C).
+  4. A receipt scan checks items off.
+  5. Settle up → **Remind** → Ben pays Ann with PayPal (8D, 7B).
+- **Devpost text:** problem, who it's for (families, flatmates, trip groups), how PayPal and AI each work, and what was built after 1 October. Built With: PayPal Orders API, PayPal Server SDK, Ollama, AWS Textract, Channel3, Supabase, Render.
+- **Video:** recorded on a phone, under 3:00, public on YouTube. Paid calls during takes need the owner's approval ([RULES.md](RULES.md)).
+
+#### Not doing in this phase
+
+| Idea | Why not |
+|---|---|
+| Analytics dashboard (AG Grid) | Built and removed (decision 63): not part of the checklist workflow |
+| APIMatic portal, Postman collection (7F) | For a sponsor prize, not for the people using HeyList |
+| PayPal invoices, Payouts | Money would come from or go to HeyList's merchant account, not between friends; 7B already pays the person owed |
+| Weighted shares (issue 18), item categories, dark theme | Real but not needed to show the loop; after the hackathon |
+| Photo recognition, more list types | Too big for the time left, and the loop doesn't need them |
+
+#### Blockers and approvals
+
+- **Owner tasks:**
+  - run the schema;
+  - create the judge's sandbox personal account and a second one for the 7B payee check;
+  - make the repo public;
+  - approve paid calls for 7C, 8D and the recording.
+- **Deadlines:** the 8A items by 5 November; video and final text by 11 November, a day before the close.
 
 ## All phases
 

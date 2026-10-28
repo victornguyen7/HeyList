@@ -24,22 +24,6 @@ def chat(messages: list[dict], format: dict | None = None) -> str:
     return client().chat(model=model, messages=messages, format=format).message.content or ""
 
 
-def agent_turn(messages: list[dict], tools: list[dict], format: dict | None = None) -> dict:
-    """One turn for the Dashboard's analyst agent (AG Studio, decision 62): Ollama-format messages and function
-    tools in, the reply's text and tool calls out. Studio runs the tools in the browser and sends the results back
-    on the next turn, so nothing here acts on them."""
-    model = os.environ.get("OLLAMA_MODEL")
-    if not model:
-        raise RuntimeError("OLLAMA_MODEL must be set")
-    reply = client().chat(model=model, messages=messages, tools=tools or None, format=format)
-    calls = reply.message.tool_calls or []
-    return {
-        "content": reply.message.content or "",
-        "toolCalls": [{"name": call.function.name, "arguments": dict(call.function.arguments or {})} for call in calls],
-        "usage": {"inputTokens": reply.prompt_eval_count or 0, "outputTokens": reply.eval_count or 0},
-    }
-
-
 def json_reply(text: str) -> dict:
     # Ollama's cloud models don't always honour format: the JSON can come wrapped in a ```json fence,
     # or be followed by more text (even a second object), so only the first whole object is read.

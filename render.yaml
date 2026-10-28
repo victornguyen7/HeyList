@@ -47,5 +47,3 @@ services:
         sync: false
       - key: SUPABASE_PUBLISHABLE_KEY
         sync: false
-      - key: AG_STUDIO_LICENSE_KEY # AG Studio trial licence (Dashboard); read at build time, so a change needs a redeploy
-        sync: false

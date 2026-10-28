@@ -4,14 +4,6 @@
 
 ### Added
 
-- **Dashboard** (decision 62, phase 7D): a new page on the laptop, built with AG Studio, covering the money of every list you've opened.
-  - **Tiles:** spent, proven by PayPal or a receipt, refunded, and still owed.
-  - **Charts:** spending by person, by proof, by month and by list type.
-  - **A grid** of every money line.
-  - **Two HeyList widgets:** a settle-up scoreboard with **Pay with PayPal**, and a proof meter.
-  - **An assistant** that answers with real numbers, adds charts, and drafts friendly payment reminders (it never sends them).
-
-  Everything uses HeyList's colours and can be rearranged. The assistant's model calls go through the new `POST /api/studio/chat` (Ollama, capped at 60 turns an hour). Packages: `ag-studio` and `ag-studio-react` 3.0.0, with the trial key in `AG_STUDIO_LICENSE_KEY`.
 - **Remove a list from History**: each list in History has **Remove**, which takes it off this browser's Home and History (after a confirmation). The list isn't deleted: it stays for everyone else on the link, and opening the link again brings it back.
 - **"Shop this list for me"** (decision 61, phase 7C): on Progress, the button puts a circle on each open item; tick the ones to shop for (any number; none are ticked to start), and the agent searches stores for them, checks each match with the AI, and proposes a cart that fits what is left of the budget. Items it can't fill are listed with a reason (not sold online, over budget, search failed). You remove or swap products, then pay for the whole cart with one PayPal payment; each price is read again from Channel3 first, and a changed total is shown before anything is charged. No order is placed with the stores.
 - **Settle up with PayPal** (decision 60, phase 7B): each payment you owe on Settle up has **Pay Ann $X with PayPal**. The order's payee is Ann's PayPal account, so the money goes to her, not to HeyList. The amount comes from the current split on the server, and a stale one is refused (`409 SPLIT_CHANGED`). The first payment to someone asks for their PayPal email. A completed payment evens the balances, and Settle up lists it ("Ben paid Ann $30 · with PayPal"), with **Check again** for a pending one. **Schema:** a `settlements` table replaces the never-used `invoices`; run `supabase/schema.sql` again.
@@ -19,6 +11,10 @@
 - **Unreadable prices are asked, not guessed** (decision 57): a receipt line whose price Textract isn't sure of (under 90%) or couldn't read comes back blank, and the review screen asks for it ("The price couldn't be read. Type it from the receipt, or leave it blank"). A typed price is marked typed (`items.price_typed`), shown "(typed)" on Receipts, and left out of price memory. The Ollama reader is told to give no price rather than guess one.
 - **Tax, tip and fees** (decision 57): receipts now read tax, tip, service charges, delivery fees and discounts (`receipts.fees`). The review screen lists them (asking for any it couldn't read) and checks that lines and fees add up to the receipt total. On Money and in the split, a receipt's fees are shared in proportion to the list items on it; the part for extras stays with the buyer. **Schema:** `receipts.fees` and `items.price_typed`; run `supabase/schema.sql` again.
 - **English receipt eval** (`eval_receipts.py --english`, `eval_receipts.py compare`): 189 English receipts from [docjay131/receipts-ocr-dataset](https://huggingface.co/datasets/docjay131/receipts-ocr-dataset), scored per category, side by side with ReceiptQA in `backend/eval/receipts/comparison.json`. Results in [RECEIPT_EVAL.md](RECEIPT_EVAL.md).
+
+### Removed
+
+- **Dashboard (AG Studio)** (decision 63): added and taken out the same day. It didn't fit HeyList's purpose, an easy shared checklist that ends in PayPal; see phase 8 in [IMPROVEMENTS.md](IMPROVEMENTS.md). Gone with it: the `/dashboard` page, `POST /api/studio/chat`, `llm.agent_turn()`, the `ag-studio` packages and `AG_STUDIO_LICENSE_KEY`.
 
 ### Fixed
 
