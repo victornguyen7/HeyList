@@ -5,6 +5,7 @@ import statistics
 import time
 import uuid
 from collections import defaultdict, deque
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, Request
@@ -137,29 +138,46 @@ def new_items(list_id: str, items, start: int = 0) -> list[dict]:
 
 
 def lists_state(list_ids: list[str]) -> list[dict]:
-    """Everything a list page shows, for each of these lists that exists: six queries however many lists."""
+    """Everything a list page shows, for each of these lists that exists: six queries however many lists,
+    run at the same time (db.py's client is safe across threads)."""
 
     def rows(table: str, order: str = "created_at", **filters) -> dict[str, list[dict]]:
         by_list = defaultdict(list)
         for row in db.select(table, order, list_id=list_ids, **filters):
-            by_list[row["list_id"]].append(camel(row))
+            by_list[row["list_id"]].append(row)
         return by_list
 
-    members, items, receipts = rows("members"), rows("items", "position"), rows("receipts")
-    # Captured orders are proof; pending ones hold their items until PayPal decides. An order the buyer
-    # walked away from (CREATED) or that was declined is not shown.
-    orders, invoices = rows("orders", status=["COMPLETED", "PENDING"]), rows("invoices")
-    return [
-        {
-            **camel(row),
-            "members": members[row["id"]],
-            "items": items[row["id"]],
-            "receipts": receipts[row["id"]],
-            "orders": orders[row["id"]],
-            "invoices": invoices[row["id"]],
+    with ThreadPoolExecutor(6) as pool:
+        found = pool.submit(db.select, "lists", id=list_ids)
+        members, items, receipts = pool.submit(rows, "members"), pool.submit(rows, "items", "position"), pool.submit(rows, "receipts")
+        # Captured orders are proof; pending ones hold their items until PayPal decides. An order the buyer
+        # walked away from (CREATED) or that was declined is not shown.
+        orders, invoices = pool.submit(rows, "orders", status=["COMPLETED", "PENDING"]), pool.submit(rows, "invoices")
+    def state(row: dict) -> dict:
+        list_id = row["id"]
+        parts = {
+            "members": members.result()[list_id],
+            "items": items.result()[list_id],
+            "receipts": receipts.result()[list_id],
+            "orders": orders.result()[list_id],
+            "invoices": invoices.result()[list_id],
         }
-        for row in db.select("lists", id=list_ids)
+        # Sent with the list, so Money and Settle up don't wait for a second request.
+        split = settled(parts["items"], parts["members"], parts["orders"])
+        return {**camel(row), **{key: [camel(r) for r in rs] for key, rs in parts.items()}, "split": split}
+
+    return [state(row) for row in found.result()]
+
+
+def settled(items: list[dict], members: list[dict], orders: list[dict]) -> dict:
+    """What each member paid, their equal share, and who pays whom, from the list's rows."""
+    paid = [
+        # A refunded charge was given back, so it is not money the buyer spent.
+        order | {"prices": {k: v for k, v in order["prices"].items() if order["refunds"].get(k, {}).get("status", "FAILED") in REFUND_FAILED}}
+        for order in orders
+        if order["status"] == "COMPLETED"
     ]
+    return money.split(items, [member["id"] for member in members], paid)
 
 
 def list_state(list_id: str) -> dict:
@@ -612,12 +630,7 @@ def split_list(list_id: str):
     """What each member paid, their equal share, and who pays whom to settle up."""
     if not find("lists", list_id):
         return error("LIST_NOT_FOUND", 404)
-    members = [member["id"] for member in db.select("members", list_id=list_id)]
-    orders = db.select("orders", list_id=list_id, status="COMPLETED")
-    for order in orders:
-        # A refunded charge was given back, so it is not money the buyer spent.
-        order["prices"] = {k: v for k, v in order["prices"].items() if order["refunds"].get(k, {}).get("status", "FAILED") in REFUND_FAILED}
-    return money.split(db.select("items", list_id=list_id), members, orders)
+    return list_state(list_id)["split"]
 
 
 # Receipts

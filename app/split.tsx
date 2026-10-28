@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, proofLabel, usd, type List } from "./api";
 import { Avatar, card, chip } from "./ui";
 
@@ -20,16 +20,25 @@ export type Split = {
   transfers: { from: string; to: string; amountCents: number }[];
 };
 
-// Refetched when the list changes.
+// The split comes with the list, so it shows at once. A change made on this page (an item ticked, someone
+// joined) updates the list without a new split, so then it is asked for again.
 export function useSplit(list: List) {
-  const [split, setSplit] = useState<Split | null>(null);
+  const [split, setSplit] = useState<Split | null>(list.split ?? null);
+  const last = useRef(list);
 
   useEffect(() => {
+    const previous = last.current;
+    if (list === previous) return;
+    last.current = list;
+    if (list.split && list.split !== previous.split) {
+      setSplit(list.split);
+      return;
+    }
     // Only the latest list's answer counts; an earlier, slower one is dropped.
     let latest = true;
     api<Split>(`/api/lists/${list.id}/split`).then(
       (result) => latest && setSplit(result),
-      () => latest && setSplit(null),
+      () => {},
     );
     return () => {
       latest = false;

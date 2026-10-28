@@ -1,4 +1,5 @@
 import { supabase } from "./auth";
+import type { Split } from "./split";
 
 // userId is set for someone who joined logged in; null for a guest.
 export type Member = { id: string; name: string; userId: string | null };
@@ -49,6 +50,8 @@ export type List = {
   receipts: Receipt[];
   orders: Order[];
   invoices: Invoice[];
+  // Missing on a list saved in this browser before it was sent with the list.
+  split?: Split;
 };
 
 // List IDs this browser has opened, newest first. There are no accounts (decision 6), so this is what History shows.
@@ -63,6 +66,24 @@ export function seenLists(): string[] {
 export function rememberList(id: string) {
   try {
     localStorage.setItem(SEEN, JSON.stringify([id, ...seenLists().filter((seen) => seen !== id)].slice(0, 50)));
+  } catch {}
+}
+
+// The last copy of each list this browser loaded, shown at once on the next visit while a fresh one loads
+// (Home, History, a list's own pages). A per-browser convenience only: it can be missing or blocked, and the
+// fresh copy always replaces it.
+const CACHE = "heylist:lists-cache";
+export function cachedLists(): List[] {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE) ?? "[]") ?? [];
+  } catch {
+    return [];
+  }
+}
+export function cacheLists(lists: List[]) {
+  const ids = new Set(lists.map((list) => list.id));
+  try {
+    localStorage.setItem(CACHE, JSON.stringify([...lists, ...cachedLists().filter((list) => !ids.has(list.id))].slice(0, 50)));
   } catch {}
 }
 

@@ -64,7 +64,7 @@ Currently installed:
 | `app/history/page.tsx` | History: lists this browser has opened, spending by type and month, buy again |
 | `app/starter.tsx` | Describe the situation, review the AI's starting list and budget, create it |
 | `app/receipt-scan.tsx` | Camera capture, shrink, scan, review and correct matches, confirm |
-| `app/split.tsx` | `useSplit()` fetches the split; `SplitPanel` shows paid and share per person |
+| `app/split.tsx` | `useSplit()` takes the split sent with the list (`split` on every list response) and fetches `/split` only after a change made on the page; `WhoPaid`, `SettleUp`, `EqualShare` show it |
 | `app/api.ts` | Shared types, `api()` fetch helper with readable error messages, `usd()` |
 | `next.config.ts` | Rewrites `/api/*` to `BACKEND_URL` (default `http://127.0.0.1:8000`) |
 

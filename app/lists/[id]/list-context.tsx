@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { createContext, use, useEffect, useState } from "react";
-import { api, refundNote, rememberList, type List, type Member } from "../../api";
+import { createContext, use, useEffect, useRef, useState } from "react";
+import { api, cachedLists, cacheLists, refundNote, rememberList, type List, type Member } from "../../api";
 import { accountName, supabase, useSession } from "../../auth";
 import { Avatar, button, card } from "../../ui";
 
@@ -51,6 +51,8 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
   const approved = params.has("PayerID");
 
   const [list, setListState] = useState<List | null>(null);
+  // The saved copy shown while the fresh list loads; kept across effect runs so the load knows to replace it.
+  const saved = useRef<List | null>(null);
   // Set on join, for browsers where localStorage is unavailable.
   const [joined, setJoined] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -60,9 +62,19 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     rememberList(listId);
-    // The first load only fills an empty page: if a join or a change already set a newer list, a slow
-    // response (dev compile, Strict Mode's second run) must not overwrite it.
-    const load = () => api<List>(`/api/lists/${encodeURIComponent(listId)}`).then((loaded) => setListState((current) => (current?.id === loaded.id ? current : loaded)));
+    // The copy saved in this browser shows at once; the fresh load then replaces it.
+    const cached = cachedLists().find((copy) => copy.id === listId);
+    if (cached && saved.current?.id !== listId) {
+      saved.current = cached;
+      setListState((current) => (current?.id === listId ? current : cached));
+    }
+    // The fresh load fills an empty page or replaces the saved copy: if a join or a change already set a newer
+    // list, a slow response (dev compile, Strict Mode's second run) must not overwrite it.
+    const load = () =>
+      api<List>(`/api/lists/${encodeURIComponent(listId)}`).then((loaded) => {
+        cacheLists([loaded]);
+        setListState((current) => (current?.id === loaded.id && current !== saved.current ? current : loaded));
+      });
     if (!orderId || !approved) {
       load().catch((e) => setStatus(`Could not load the list: ${e.message}`));
       return;

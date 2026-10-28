@@ -2,20 +2,28 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api, seenLists, usd, type List } from "./api";
+import { api, cachedLists, cacheLists, seenLists, usd, type List } from "./api";
 import { card, Ring } from "./ui";
 
 export const spent = (list: List) => list.items.reduce((sum, item) => sum + (item.checkedAt ? (item.priceCents ?? 0) : 0), 0);
 
 // The lists this browser has opened (no accounts, decision 6), loaded in full in one request, most recently
-// opened first. null while loading; "failed" if the backend can't be reached, so that never looks like no lists.
+// opened first. null while loading; "failed" if the backend can't be reached and nothing was cached, so that
+// never looks like no lists.
 export function useSeenLists() {
   const [lists, setLists] = useState<List[] | null | "failed">(null);
   useEffect(() => {
     const ids = seenLists();
+    const cached = cachedLists().filter((list) => ids.includes(list.id));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage, readable only after hydration
+    if (cached.length) setLists(cached.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)));
     api<{ lists: List[] }>(`/api/lists?ids=${ids.map(encodeURIComponent).join(",")}`).then(
-      (found) => setLists(found.lists.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))),
-      () => setLists("failed"),
+      (found) => {
+        const fresh = found.lists.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+        setLists(fresh);
+        cacheLists(fresh);
+      },
+      () => setLists((current) => current ?? "failed"),
     );
   }, []);
   return lists;
