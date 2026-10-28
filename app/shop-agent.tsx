@@ -6,26 +6,31 @@ import { useList } from "./lists/[id]/list-context";
 import { buttonAi, buttonGlass, card } from "./ui";
 
 type Line = { itemId: string; quantity: number; product: Product; options: Product[] };
-type Plan = { cart: Line[]; skipped: { itemId: string; reason: string }[]; totalCents: number; budgetLeftCents: number | null; moreItems: number };
+type Plan = { cart: Line[]; skipped: { itemId: string; reason: string }[]; totalCents: number; budgetLeftCents: number | null };
 
-// "Shop this list for me" (decision 61): the agent finds a real product for each open item and proposes a cart that
-// fits what is left of the budget. It never pays: the person removes or swaps products, then approves one PayPal
-// payment. Prices are read from the stores again on the server; nothing is ordered from the stores.
-export function ShopAgent() {
+// "Shop this list for me" (decision 61): the person ticks items on Progress, and the agent finds a real product for
+// each and proposes a cart that fits what is left of the budget. It never pays: the person removes or swaps products,
+// then approves one PayPal payment. Prices are read from the stores again on the server; nothing is ordered from them.
+// onPlanned tells Progress when a cart is shown, so the ticked items stay as they were searched.
+export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; onPlanned: (planned: boolean) => void; onClose: () => void }) {
   const { list, me, setList, setStatus } = useList();
   const [plan, setPlan] = useState<Plan | null>(null);
   // The product chosen for each item in the cart; an item taken out of the cart has none.
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<"plan" | "pay" | null>(null);
   const itemName = (id: string) => list.items.find((item) => item.id === id)?.name ?? "An item";
-  const mineOpen = Boolean(me) && list.items.some((item) => !item.checkedAt && item.claimedBy === me);
 
-  async function shop(mine: boolean) {
+  function show(next: Plan | null) {
+    setPlan(next);
+    onPlanned(next !== null);
+  }
+
+  async function shop() {
     setBusy("plan");
     setStatus(null);
     try {
-      const found = await api<Plan>(`/api/lists/${list.id}/shop`, { method: "POST", body: JSON.stringify({ memberId: me, mine }) });
-      setPlan(found);
+      const found = await api<Plan>(`/api/lists/${list.id}/shop`, { method: "POST", body: JSON.stringify({ itemIds }) });
+      show(found);
       setPicked(Object.fromEntries(found.cart.map((line) => [line.itemId, line.product.productId])));
     } catch (err) {
       setStatus(`Could not shop the list: ${(err as Error).message}`);
@@ -52,7 +57,7 @@ export function ShopAgent() {
       setStatus(message);
       // The new prices are saved on the items: show them, and pay from the list with the usual button.
       if (code === "PRICE_CHANGED" || code === "ITEM_CHECKED") {
-        setPlan(null);
+        onClose();
         setList(await api<List>(`/api/lists/${list.id}`).catch(() => list));
       }
       setBusy(null);
@@ -60,17 +65,15 @@ export function ShopAgent() {
   }
 
   if (!plan) {
-    if (!list.items.some((item) => !item.checkedAt)) return null;
     return (
-      <div className="flex flex-col gap-1.5">
-        <button type="button" onClick={() => shop(false)} disabled={busy !== null} className={buttonAi}>
-          {busy ? "Finding products…" : "Shop this list for me"}
+      <div className="flex flex-col gap-2.5">
+        <p className="text-base text-muted">Tick the items HeyList should find in online stores.</p>
+        <button type="button" onClick={shop} disabled={itemIds.length === 0 || busy !== null} className={buttonAi}>
+          {busy ? "Finding products…" : itemIds.length === 0 ? "Tick items to shop for" : `Find products for ${itemIds.length} ${itemIds.length === 1 ? "item" : "items"}`}
         </button>
-        {mineOpen && (
-          <button type="button" onClick={() => shop(true)} disabled={busy !== null} className="self-center text-[13px] text-muted underline">
-            Only the items I claimed
-          </button>
-        )}
+        <button type="button" onClick={onClose} disabled={busy !== null} className={buttonGlass}>
+          Cancel
+        </button>
       </div>
     );
   }
@@ -148,15 +151,19 @@ export function ShopAgent() {
           ))}
         </ul>
       )}
-      {plan.moreItems > 0 && <p className="text-[13px] text-muted">{plan.moreItems} more open items weren&apos;t searched. Shop again after this payment for those.</p>}
       {over && <p className="text-[13px] text-money">This is {usd(total - plan.budgetLeftCents!)} over what&apos;s left in the budget.</p>}
 
       <button type="button" onClick={pay} disabled={chosen.length === 0 || busy !== null || !me} className={buttonAi}>
         {busy === "pay" ? "Opening PayPal…" : !me ? "Join the list to pay" : chosen.length === 0 ? "Nothing in the cart" : `Pay ${usd(total)} with PayPal`}
       </button>
-      <button type="button" onClick={() => setPlan(null)} disabled={busy !== null} className="self-center text-[13px] text-muted">
-        Cancel
-      </button>
+      <div className="flex justify-center gap-5">
+        <button type="button" onClick={() => show(null)} disabled={busy !== null} className="text-[13px] text-muted">
+          Change the items
+        </button>
+        <button type="button" onClick={onClose} disabled={busy !== null} className="text-[13px] text-muted">
+          Cancel
+        </button>
+      </div>
       <p className="text-[12px] text-muted">No order is placed with the stores yet: the sandbox payment goes to HeyList, and each product&apos;s store link is saved on its item.</p>
     </section>
   );

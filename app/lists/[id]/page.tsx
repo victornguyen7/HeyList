@@ -7,11 +7,14 @@ import { ShopAgent } from "../../shop-agent";
 import { Check, Ring } from "../../ui";
 import { buttonAi, card, outline, row, useList } from "./list-context";
 
-// Progress: the checklist itself. The tick means "done"; paying with PayPal is a separate mode, so a plain
-// checklist never shows payment controls unless someone asks to pay.
+// Progress: the checklist itself. The tick means "done"; paying with PayPal and shopping in stores are separate modes
+// that put a circle on each item to choose, so a plain checklist never shows payment controls unless someone asks.
 export default function ProgressPage() {
   const { list, setList, me, memberName, setStatus } = useList();
-  const [paying, setPaying] = useState(false);
+  // "pay": choose items to pay for with PayPal; "shop": choose items for the shopping agent to find in stores.
+  const [mode, setMode] = useState<"pay" | "shop" | null>(null);
+  // Set while the agent's cart is shown, so the items it searched for can't change under it.
+  const [planned, setPlanned] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const { items, members } = list;
@@ -100,9 +103,25 @@ export default function ProgressPage() {
   const mine = me ? items.filter((item) => item.claimedBy === me && payable(item)) : [];
   const spent = done.reduce((sum, item) => sum + (item.priceCents ?? 0), 0);
 
+  // Bought items and items held by a pending payment can't be shopped; prices aren't needed, the stores give them.
+  const shoppable = (item: Item) => !item.checkedAt && !held(item);
+  const choosable = (item: Item) => (mode === "pay" ? payable(item) : shoppable(item));
+
   function startPaying() {
     setSelected(new Set(mine.map((item) => item.id)));
-    setPaying(true);
+    setMode("pay");
+  }
+
+  // Starts with what you said you'd buy.
+  function startShopping() {
+    setSelected(new Set(items.filter((item) => item.claimedBy === me && shoppable(item)).map((item) => item.id)));
+    setMode("shop");
+  }
+
+  function stopChoosing() {
+    setMode(null);
+    setPlanned(false);
+    setSelected(new Set());
   }
 
   function itemRow(item: Item) {
@@ -113,10 +132,17 @@ export default function ProgressPage() {
     const who = item.claimedBy ? (item.claimedBy === me ? "You claimed" : memberName(item.claimedBy)) : "Nobody yet";
     return (
       <li key={item.id} className={`${row} items-start`}>
-        <label className={`mt-0.5 flex shrink-0 ${paying ? (payable(item) ? "cursor-pointer" : "opacity-30") : tickable ? "cursor-pointer" : ""}`}>
-          {paying ? (
+        <label className={`mt-0.5 flex shrink-0 ${mode ? (choosable(item) && !planned ? "cursor-pointer" : "opacity-30") : tickable ? "cursor-pointer" : ""}`}>
+          {mode ? (
             <>
-              <input type="checkbox" className="peer sr-only" aria-label={`Pay for ${item.name}`} checked={selected.has(item.id)} disabled={!payable(item) || busy} onChange={() => toggle(item.id)} />
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                aria-label={mode === "pay" ? `Pay for ${item.name}` : `Shop for ${item.name}`}
+                checked={selected.has(item.id)}
+                disabled={!choosable(item) || busy || planned}
+                onChange={() => toggle(item.id)}
+              />
               <span className={`size-7 rounded-full border-2 ${selected.has(item.id) ? "border-ai bg-ai" : "border-muted"} peer-focus-visible:outline-2`} />
             </>
           ) : (
@@ -129,7 +155,7 @@ export default function ProgressPage() {
           )}
         </label>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          {isDone || held(item) || paying ? (
+          {isDone || held(item) || mode ? (
             <span className={`text-[17px] font-medium lg:font-semibold ${isDone ? "text-muted line-through" : ""}`}>{item.name}</span>
           ) : (
             // Tap the name to change how many, or who buys it.
@@ -211,7 +237,9 @@ export default function ProgressPage() {
           </div>
         ))}
 
-        {paying ? (
+        {mode === "shop" ? (
+          <ShopAgent itemIds={[...selected]} onPlanned={setPlanned} onClose={stopChoosing} />
+        ) : mode === "pay" ? (
           <div className="flex flex-col gap-2.5">
             <p className="text-base text-muted">Choose what you&apos;re paying for.</p>
             <button type="button" onClick={pay} disabled={total === 0 || busy || !me} className={buttonAi}>
@@ -219,10 +247,7 @@ export default function ProgressPage() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setPaying(false);
-                setSelected(new Set());
-              }}
+              onClick={stopChoosing}
               disabled={busy}
               className={outline}
             >
@@ -241,7 +266,11 @@ export default function ProgressPage() {
                 </button>
               )}
             </div>
-            <ShopAgent />
+            {items.some(shoppable) && (
+              <button type="button" onClick={startShopping} className={buttonAi}>
+                Shop this list for me
+              </button>
+            )}
             {members.length > 0 && open.some((item) => !item.claimedBy) && (
               <button type="button" onClick={assign} className={outline}>
                 Share out the rest evenly

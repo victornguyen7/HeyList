@@ -616,33 +616,32 @@ REFUND_FAILED = ("FAILED", "CANCELLED")
 
 # Shopping agent
 
-SHOP_RUN = 10  # items searched in one run, at the same time
+SHOP_THREADS = 10  # items searched at the same time; any number can be ticked
 NOT_SOLD = "No online store we search sells this. Buy it in person and scan the receipt."
 
 
 @app.post("/api/lists/{list_id}/shop")
 def shop_list(list_id: str, body=Depends(json_body)):
-    """The shopping agent (decision 61), {memberId?, mine?}: finds a real product for each open item (the member's
-    claimed ones with mine), checks the matches, and proposes a cart that fits what is left of the budget. It never
-    pays and saves nothing: the person edits the cart, then pays for it with PayPal (POST .../shop/checkout).
-    Each item searched costs one Channel3 search and one Ollama call, so a run takes at most 10 items."""
+    """The shopping agent (decision 61), {itemIds}: finds a real product for each item the person ticked, checks the
+    matches, and proposes a cart that fits what is left of the budget. It never pays and saves nothing: the person
+    edits the cart, then pays for it with PayPal (POST .../shop/checkout). Each item searched costs one Channel3
+    search and one Ollama call; the hourly search cap (100) bounds what a run can spend."""
     found = find("lists", list_id)
     if not found:
         return error("LIST_NOT_FOUND", 404)
-    body = body or {}
-    try:
-        member_id = member_of(list_id, body.get("memberId"))
-        mine = body.get("mine") is True
-        if mine and not member_id:
-            raise ValueError("whose items?")
-    except BAD_INPUT:
-        return error("INVALID_BODY", 400)
-
     items = db.select("items", "position", list_id=list_id)
     held = {item_id for order in db.select("orders", list_id=list_id, status="PENDING") for item_id in order["item_ids"]}
-    wanted = [i for i in items if not i["checked_at"] and i["id"] not in held and (not mine or i["claimed_by"] == member_id)]
-    run = wanted[:SHOP_RUN]
-    run_ids = {item["id"] for item in run}
+    try:
+        item_ids = body["itemIds"]
+        if not isinstance(item_ids, list) or not item_ids or len(set(item_ids)) != len(item_ids):
+            raise ValueError("tick at least one item, each once")
+        run_ids = {an_id(item_id) for item_id in item_ids}
+        run = [item for item in items if item["id"] in run_ids]
+        # Every item on this list, not bought, and not held by a payment pending at PayPal.
+        if len(run) != len(run_ids) or any(item["checked_at"] or item["id"] in held for item in run):
+            raise ValueError("an item cannot be shopped")
+    except BAD_INPUT:
+        return error("INVALID_ITEMS", 400)
     # The budget left for this run: the budget, less what was spent and what the rest of the list is expected to cost.
     budget = None
     if found["budget_cents"] is not None:
@@ -660,7 +659,7 @@ def shop_list(list_id: str, body=Depends(json_body)):
             log.exception("Shopping search failed for %s", item["id"])
             return None
 
-    with ThreadPoolExecutor(SHOP_RUN) as pool:
+    with ThreadPoolExecutor(SHOP_THREADS) as pool:
         results = dict(zip((item["id"] for item in allowed), pool.map(options, allowed)))
 
     lines, skipped = [], []
@@ -681,8 +680,6 @@ def shop_list(list_id: str, body=Depends(json_body)):
         "skipped": skipped,
         "totalCents": sum(line["product"]["priceCents"] * line["quantity"] for line in cart),
         "budgetLeftCents": budget,
-        # Open items beyond this run, for another one.
-        "moreItems": len(wanted) - len(run),
     }
 
 
@@ -696,7 +693,7 @@ def shop_checkout(list_id: str, request: Request, body=Depends(json_body)):
         return error("LIST_NOT_FOUND", 404)
     try:
         picks = body["picks"]
-        if not isinstance(picks, list) or not 1 <= len(picks) <= SHOP_RUN:
+        if not isinstance(picks, list) or not picks:
             raise ValueError("bad picks")
         chosen = {an_id(pick["itemId"]): pick["productId"] for pick in picks}
         if len(chosen) != len(picks) or not all(isinstance(p, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,100}", p) for p in chosen.values()):
@@ -716,7 +713,7 @@ def shop_checkout(list_id: str, request: Request, body=Depends(json_body)):
         return error("TOO_MANY_REQUESTS", 429)
 
     try:
-        with ThreadPoolExecutor(SHOP_RUN) as pool:
+        with ThreadPoolExecutor(SHOP_THREADS) as pool:
             fresh = dict(zip(chosen, pool.map(market.get, chosen.values())))
     except Exception:
         log.exception("Product lookup failed")

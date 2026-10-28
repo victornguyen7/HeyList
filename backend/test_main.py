@@ -684,10 +684,11 @@ class ShopTest(RoutesTest):
         mock.patch.object(llm, "store_matches", side_effect=lambda name, note, title, found: found).start()
         self.addCleanup(mock.patch.stopall)
 
-    def plan(self, **body):
-        return self.client.post(f"/api/lists/{self.list['id']}/shop", json=body).json()
+    def plan(self, *items):
+        items = items or (self.tent, self.lamp, self.milk)
+        return self.client.post(f"/api/lists/{self.list['id']}/shop", json={"itemIds": [item["id"] for item in items]}).json()
 
-    def test_each_open_item_gets_a_checked_product_and_misses_say_why(self):
+    def test_each_ticked_item_gets_a_checked_product_and_misses_say_why(self):
         self.client.patch(f"/api/items/{self.gas['id']}", json={"checked": True, "priceCents": 3000})
 
         plan = self.plan()
@@ -704,10 +705,7 @@ class ShopTest(RoutesTest):
     def test_the_cart_fits_what_is_left_of_the_budget(self):
         self.client.patch(f"/api/lists/{self.list['id']}", json={"budgetCents": 10000})
         # Only the tent and the lamps are shopped; the milk and gas still need ~3400 of the budget.
-        self.client.patch(f"/api/items/{self.tent['id']}", json={"claimedBy": self.ann})
-        self.client.patch(f"/api/items/{self.lamp['id']}", json={"claimedBy": self.ann})
-
-        plan = self.plan(memberId=self.ann, mine=True)
+        plan = self.plan(self.tent, self.lamp)
 
         self.assertEqual(plan["budgetLeftCents"], 10000 - 3400)
         self.assertEqual([l["product"]["productId"] for l in plan["cart"]], ["L1"])
@@ -721,23 +719,23 @@ class ShopTest(RoutesTest):
 
         self.search.side_effect = search
         with self.assertLogs(main.log, "ERROR"):
-            plan = self.plan()
+            plan = self.plan(self.tent, self.lamp, self.gas)
 
         self.assertEqual(len(plan["cart"]), 2)
         self.assertIn("didn't answer", next(s["reason"] for s in plan["skipped"] if s["itemId"] == self.lamp["id"]))
 
-    def test_bought_or_pending_items_are_left_out_and_a_run_takes_ten(self):
+    def test_only_open_items_from_this_list_can_be_shopped_and_any_number_of_them(self):
         self.client.patch(f"/api/items/{self.tent['id']}", json={"checked": True})
         self.db.insert("orders", [{"id": "O1", "list_id": self.list["id"], "item_ids": [self.lamp["id"]], "status": "PENDING"}])
-        self.client.post(f"/api/lists/{self.list['id']}/items", json={"items": [{"name": "Gas"}] * 12})
+        other = self.new_list([{"name": "Gas"}])["items"][0]
+        many = self.client.post(f"/api/lists/{self.list['id']}/items", json={"items": [{"name": "Gas"}] * 11}).json()
 
-        plan = self.plan()
-
-        shopped = {l["itemId"] for l in plan["cart"]} | {s["itemId"] for s in plan["skipped"]}
-        self.assertNotIn(self.tent["id"], shopped)
-        self.assertNotIn(self.lamp["id"], shopped)
-        self.assertEqual(len(shopped), 10)
-        self.assertEqual(plan["moreItems"], 4)
+        for items in ((self.tent,), (self.lamp,), (other,), (self.gas, self.gas), ()):
+            with self.subTest(items=[i["name"] for i in items]):
+                self.assertEqual(self.client.post(f"/api/lists/{self.list['id']}/shop", json={"itemIds": [i["id"] for i in items]}).status_code, 400)
+        self.search.assert_not_called()
+        plan = self.plan(*many)
+        self.assertEqual(len(plan["cart"]) + len(plan["skipped"]), 11)
 
     def checkout(self, picks, total, **body):
         picks = [{"itemId": item["id"], "productId": product} for item, product in picks]
