@@ -109,6 +109,30 @@ class PayPalTest(unittest.TestCase):
         self.assertEqual(request.headers["paypal-request-id"], "ORDER1-item")
         self.assertEqual(json.loads(request.body)["amount"], {"currency_code": "USD", "value": "14.99"})
 
+    def test_a_refund_still_in_progress_is_asked_for_again_with_the_same_request_id(self):
+        in_progress = (409, {"name": "CONFLICT", "details": [{"issue": "PREVIOUS_REQUEST_IN_PROGRESS"}]})
+        self.fake_paypal(in_progress, (201, {"id": "REF1", "status": "COMPLETED"}))
+
+        with self.assertLogs(paypal.log, "ERROR"), mock.patch.object(paypal.time, "sleep") as sleep:
+            self.assertEqual(paypal.refund("CAP1", 1499, "ORDER1-item"), {"refundId": "REF1", "status": "COMPLETED"})
+        sleep.assert_called_once_with(0.5)
+        self.assertEqual([r.headers["paypal-request-id"] for r in self.fake.requests[1:]], ["ORDER1-item", "ORDER1-item"])
+
+    def test_a_refund_in_progress_for_too_long_fails(self):
+        in_progress = (409, {"name": "CONFLICT", "details": [{"issue": "PREVIOUS_REQUEST_IN_PROGRESS"}]})
+        self.fake_paypal(*[in_progress] * 4)
+
+        with self.assertLogs(paypal.log, "ERROR"), mock.patch.object(paypal.time, "sleep") as sleep, self.assertRaises(paypal.PayPalError):
+            paypal.refund("CAP1", 1499, "ORDER1-item")
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [0.5, 1, 2])
+
+    def test_other_refund_failures_are_not_retried(self):
+        self.fake_paypal((422, {"name": "UNPROCESSABLE_ENTITY", "details": [{"issue": "CAPTURE_FULLY_REFUNDED"}]}))
+
+        with self.assertLogs(paypal.log, "ERROR"), mock.patch.object(paypal.time, "sleep") as sleep, self.assertRaises(paypal.PayPalError):
+            paypal.refund("CAP1", 1499, "ORDER1-item")
+        sleep.assert_not_called()
+
     def test_one_429_is_retried(self):
         self.fake_paypal((429, {"name": "RATE_LIMIT_REACHED"}), (201, captured("COMPLETED")))
 

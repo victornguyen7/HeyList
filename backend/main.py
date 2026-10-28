@@ -549,6 +549,9 @@ def record_capture(order: dict, result: dict) -> dict:
                 # Not refunded: the charge stays counted toward the buyer, so the split is still right.
                 log.exception("Refund for order %s item %s failed", order_id, item["id"])
     if refunds != order["refunds"]:
+        # Merged with what is saved now: a capture running at the same moment may have recorded a refund this one
+        # couldn't (issue 45).
+        refunds = db.select("orders", id=order_id)[0]["refunds"] | refunds
         db.update("orders", {"refunds": refunds}, id=order_id)
     return {"orderId": order_id, "status": status, "refundedCents": sum(r["cents"] for r in refunds.values() if r["status"] not in REFUND_FAILED)}
 

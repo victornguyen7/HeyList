@@ -1,5 +1,13 @@
 # HeyList — Changelog
 
+## 2026-10-28
+
+### Changed
+
+- **Stack documented** (issue 2, decision 56): [ARCHITECTURE.md](ARCHITECTURE.md#stack) now lists every framework, library, service, browser API and tool in use, with its pinned version and what it's for; the README's Stack section matches. The browser uses Supabase only for login, and checkout keeps PayPal's hosted page.
+- **PayPal tested live** (issues 25 and 37): on the sandbox, a payment approved on PayPal's page came back to the list page and was captured, and an item ticked by hand during checkout was refunded ($1.75, `COMPLETED`). The test showed that two captures at the same moment could lose a refund record (issue 45): a refund still in progress at PayPal is now asked for again, and refunds are merged into the order rather than overwritten.
+- **Issue 3 closed**: no API key in any tracked file or in git history; every key is read from the environment.
+
 ## 2026-10-27
 
 Phases 1 to 6 of [IMPROVEMENTS.md](IMPROVEMENTS.md): trustworthy purchase verification through real prices and real products.

@@ -4,22 +4,56 @@ Planned architecture, with what is built so far marked in [Built so far](#built-
 
 ## Stack
 
-| Layer | Choice |
+Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `package.json` and `backend/requirements.txt`.
+
+### Frontend (`app/`, `package.json`)
+
+| What | Used for |
 |---|---|
-| App | Next.js website, mobile-first so it works in phone browsers (native app later) |
-| Backend | FastAPI (Python) in `backend/`; Next.js proxies `/api/*` to it, so the browser stays same-origin |
-| Data | Supabase — lists, receipts storage, realtime |
-| Payments | PayPal sandbox — Orders API (built, via the Python PayPal Server SDK), Checkout JS SDK and Invoicing API (planned) |
-| AI | One LLM with vision for lists and receipts, served through the Ollama API |
-| Voice | Web Speech API |
-| Hosting | Render |
-| Store products | Channel3 product search (`backend/market.py`), results checked by the LLM (decision 51) |
-| Sponsor tools | APIMatic Context Plugin, Postman, Render |
+| Node.js 24 | Runs Next.js locally and on Render |
+| Next.js 16.4.3 (App Router, Turbopack) | The website, mobile-first (native app later). `next.config.ts` proxies `/api/*` to the backend so the browser stays same-origin, and redirects old `/?list=` links |
+| React 19.3.0 | UI |
+| TypeScript 5 | All frontend code |
+| Tailwind CSS 4 (`@tailwindcss/turbopack`) | Styles; the soft glass classes live in `app/ui.tsx` (decision 46) |
+| Geist and Geist Mono (`next/font/google`) | Fonts (`app/layout.tsx`) |
+| `@supabase/supabase-js` 2.117.3 | Login only: the email magic link and the session token sent to the backend (`app/auth.ts`, decision 52). All list data goes through the backend (decision 56) |
+| ESLint 9 (`eslint-config-next`) | `npm run lint` |
+| Browser APIs | Web Speech API (`SpeechRecognition`) for voice; camera capture (`<input capture="environment">`) and `<canvas>` to shrink receipt photos; `localStorage` for lists this browser has opened and their saved copies (decision 55) |
 
-Currently installed:
+### Backend (`backend/`, `backend/requirements.txt`)
 
-- Frontend (`package.json`): Next.js 16.4.0, React 19.3.0, Tailwind CSS 4, TypeScript 5, `@supabase/supabase-js` (login only).
-- Backend (`backend/requirements.txt`): FastAPI, uvicorn, `paypal-server-sdk` 2.4.0 (pulls in `apimatic-core`), Supabase client, Ollama client, `httpx` (Channel3, and the Supabase connection).
+| What | Used for |
+|---|---|
+| Python 3.14.9 | Same version locally and on Render |
+| FastAPI 0.143.0 | The API (`backend/main.py`) |
+| uvicorn 0.54.0 | Serves it |
+| `supabase` 2.32.0 | Database and receipt photo storage, with the secret key (`backend/db.py`); checks login tokens |
+| `httpx` 0.28.1 | Channel3 REST calls (`backend/market.py`), and the HTTP/1.1 connection to Supabase (decision 54) |
+| `paypal-server-sdk` 2.4.0 | PayPal Orders and refunds (`backend/paypal.py`); APIMatic-generated, pulls in `apimatic-core` (decision 23) |
+| `ollama` 0.6.3 | The LLM: starting lists, receipt matching, receipt reading while Textract is unavailable, checking store results (`backend/llm.py`, `backend/receipts.py`) |
+| `boto3` 1.43.114 | AWS Textract `AnalyzeExpense` for receipts (`backend/receipts.py`) |
+| `unittest` (standard library) | Tests; botocore's `Stubber` and mocks, so no paid calls |
+
+### Services
+
+| Service | Used for | Status |
+|---|---|---|
+| Supabase | Postgres tables, the private `receipts` bucket (`supabase/schema.sql`), Auth (magic link) | Built. Realtime planned |
+| PayPal sandbox | Orders API: create, capture, read, refund. The buyer approves on PayPal's hosted page and is sent back to `APP_URL` (decision 56) | Built. Checkout JS SDK and Invoicing API planned |
+| Ollama API (cloud) | One LLM with vision (`OLLAMA_MODEL`, measured on `gemma4:31b`) | Built |
+| AWS Textract | Reading receipts, with a confidence per line | Built; the IAM user still lacks permission (issue 15), so Ollama reads receipts for now |
+| Channel3 | Real store products and prices (`backend/market.py`), results checked by the LLM (decision 51) | Built |
+| Render | Hosting both services from `render.yaml`: `heylist-api` (Python) and `heylist-web` (Node) | Built |
+| Anthropic (Claude Haiku) | Not used for now (decision 38); the key stays in `.env.local` for when it comes back | Off |
+
+### Tools
+
+| Tool | Used for |
+|---|---|
+| APIMatic Context Plugin | PayPal SDK context while building (sponsor tool) |
+| Postman | Trying the PayPal and backend APIs by hand (sponsor tool) |
+| Figma | The soft glass and Midnight designs (see README links) |
+| Git and GitHub | Source control |
 
 ## Overview
 

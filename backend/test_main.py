@@ -343,6 +343,29 @@ class CheckoutTest(RoutesTest):
         split = self.client.get(f"/api/lists/{self.list['id']}/split").json()
         self.assertEqual([b["cents"] for b in split["boughtTwice"]], [1499])
 
+    def test_a_refund_recorded_by_a_capture_at_the_same_moment_is_kept(self):
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.order(self.sunscreen, self.adapter)
+        for item in (self.sunscreen, self.adapter):
+            self.db.update("items", {"checked_at": "earlier", "receipt_id": "R1", "price_cents": 500}, id=item["id"])
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
+
+        def refund(capture_id, cents, request_id):
+            if request_id.endswith(self.sunscreen["id"]):
+                return {"refundId": "REF1", "status": "COMPLETED"}
+            # The other capture refunded the adapter and saved it; this one's call was still in progress.
+            other = {self.adapter["id"]: {"refundId": "REF2", "status": "COMPLETED", "cents": 1499}}
+            self.db.update("orders", {"refunds": other}, id="ORDER1")
+            raise paypal.PayPalError(409, "PREVIOUS_REQUEST_IN_PROGRESS")
+
+        self.refund.side_effect = refund
+        with self.assertLogs(main.log, "ERROR"):
+            response = self.client.post("/api/orders/ORDER1/capture").json()
+
+        refunds = self.db.tables["orders"][0]["refunds"]
+        self.assertEqual({key: value["refundId"] for key, value in refunds.items()}, {self.sunscreen["id"]: "REF1", self.adapter["id"]: "REF2"})
+        self.assertEqual(response["refundedCents"], 899 * 2 + 1499)
+
     def test_a_receipt_confirmed_while_capture_runs_keeps_its_item(self):
         self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
         self.order(self.adapter)

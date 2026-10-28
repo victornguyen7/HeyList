@@ -86,7 +86,7 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 ## 6. Planned, not built
 
 - **PayPal Invoicing API for settle-up** (decision 9). The app already works out the fewest payments that even out what everyone paid (`backend/money.py`). Next: send each payment as a PayPal invoice from the person owed to the person who owes, and track its status. Ready for it: the `invoices` table (PayPal invoice ID, debtor, creditor, amount, status such as `DRAFT`/`SENT`/`PAID`/`CANCELLED`, and `pay_url`), `members.email` (where an invoice is sent), and the Settle up page, which lists invoices with their pay link and shows "Sending these as PayPal invoices is coming soon" until then. Not built: the API calls, the routes, and asking for emails.
-- **PayPal Checkout JS SDK** (decision 17). Checkout uses PayPal's hosted page and a redirect for now (issue 2). The JS SDK would keep the buyer on the list page with PayPal's own buttons.
+- **PayPal Checkout JS SDK** (decision 17). Checkout uses PayPal's hosted page and a redirect for now (decision 56). The JS SDK would keep the buyer on the list page with PayPal's own buttons.
 - **Dark redesign.** The Figma draft puts a blue "Pay <name> with PayPal" button on each payment in Settle up ([ROADMAP](ROADMAP.md)). It depends on the invoices above.
 
 ## 7. Testing

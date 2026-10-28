@@ -154,11 +154,19 @@ def get_order(order_id: str) -> dict:
 
 def refund(capture_id: str, cents: int, request_id: str) -> dict:
     """Refunds part of a capture to the buyer. request_id is the idempotency key, so a repeated call (a retried
-    capture) refunds once."""
+    capture) refunds once. A call made while the same refund is still in progress waits for its result, so two
+    captures at the same moment both see it (issue 45)."""
     body = RefundRequest(amount=_usd(cents), note_to_payer="Someone on your list had already bought this item.")
-    result = _call(
-        "refund_captured_payment",
-        {"capture_id": capture_id, "body": body, "paypal_request_id": request_id, "prefer": "return=representation"},
-        "payments",
-    )
-    return {"refundId": result.id, "status": result.status}
+    for wait in (0.5, 1, 2, None):
+        try:
+            result = _call(
+                "refund_captured_payment",
+                {"capture_id": capture_id, "body": body, "paypal_request_id": request_id, "prefer": "return=representation"},
+                "payments",
+            )
+            return {"refundId": result.id, "status": result.status}
+        except PayPalError as exc:
+            if exc.issue != "PREVIOUS_REQUEST_IN_PROGRESS" or wait is None:
+                raise
+            time.sleep(wait)
+    raise AssertionError("unreachable")

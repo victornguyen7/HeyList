@@ -71,14 +71,19 @@ Progress · Items · Money · Receipts · History · Settle-up — see [docs/SPE
 
 ## Stack
 
-- **App:** Next.js website, mobile-first (native app later); `/api/*` is proxied to the backend
-- **Backend:** FastAPI (Python) in `backend/`
-- **Data:** Supabase — lists, receipts storage, realtime
-- **Payments:** PayPal sandbox — Orders API through the PayPal Server SDK (Python, APIMatic-generated); Checkout JS SDK and Invoicing API planned
-- **AI:** one LLM with vision for lists and receipts (Ollama API); Web Speech API for voice
-- **Hosting:** Render
-- **Store products:** Channel3 product search
+- **Frontend:** Next.js 16 (App Router, Turbopack), React 19, TypeScript 5, Tailwind CSS 4, Geist fonts, on Node.js 24; mobile-first website (native app later); `/api/*` is proxied to the backend
+- **Backend:** Python 3.14, FastAPI on uvicorn, in `backend/`; tests with `unittest`
+- **Data and login:** Supabase — Postgres, receipt photo storage, Auth (email magic link, through `@supabase/supabase-js` in the browser and the `supabase` Python client in the backend). Realtime planned
+- **Payments:** PayPal sandbox — Orders API (create, capture, refund) through the PayPal Server SDK (Python, APIMatic-generated), with PayPal's hosted approval page. Checkout JS SDK and Invoicing API planned
+- **AI:** one LLM with vision through the Ollama API (`ollama` client) for starting lists, receipt matching and checking store results
+- **Receipts:** AWS Textract `AnalyzeExpense` (`boto3`), falling back to the Ollama vision model
+- **Store products:** Channel3 product search (`httpx`)
+- **Browser:** Web Speech API for voice, camera capture and canvas for receipt photos, `localStorage` for lists you've opened
+- **Hosting:** Render (`render.yaml`: one Python and one Node web service)
+- **Tools:** ESLint, APIMatic Context Plugin, Postman, Figma
 - **Sponsor tools:** APIMatic Context Plugin, Postman, Render, Channel3
+
+Versions and what each piece is used for: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#stack).
 
 ## Getting started
 
