@@ -90,6 +90,14 @@ export function cachedLists(): List[] {
     return [];
   }
 }
+// Takes a list off this browser's Home and History, with its saved copy. The list itself stays for everyone on the
+// link; opening the link again brings it back.
+export function forgetList(id: string) {
+  try {
+    localStorage.setItem(SEEN, JSON.stringify(seenLists().filter((seen) => seen !== id)));
+    localStorage.setItem(CACHE, JSON.stringify(cachedLists().filter((list) => list.id !== id)));
+  } catch {}
+}
 export function cacheLists(lists: List[]) {
   const ids = new Set(lists.map((list) => list.id));
   try {

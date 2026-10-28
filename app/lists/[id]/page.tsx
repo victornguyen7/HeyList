@@ -112,9 +112,9 @@ export default function ProgressPage() {
     setMode("pay");
   }
 
-  // Starts with what you said you'd buy.
+  // Starts with nothing ticked: the person chooses every item the agent searches for.
   function startShopping() {
-    setSelected(new Set(items.filter((item) => item.claimedBy === me && shoppable(item)).map((item) => item.id)));
+    setSelected(new Set());
     setMode("shop");
   }
 

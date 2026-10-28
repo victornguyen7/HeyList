@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { api, usd, type List } from "../api";
+import { api, forgetList, usd, type List } from "../api";
 import { ListCard, spent, useSeenLists } from "../recent";
 import { buttonGlass, card } from "../ui";
 
@@ -34,8 +34,17 @@ function Totals({ heading, rows }: { heading: string; rows: [string, number][] }
 // History: the lists this browser has opened (no accounts, decision 6), spending by type and month, and buy again.
 export default function HistoryPage() {
   const router = useRouter();
-  const lists = useSeenLists();
+  const seen = useSeenLists();
+  // Lists removed from History on this page, hidden at once.
+  const [removed, setRemoved] = useState<Set<string>>(new Set());
+  const lists = Array.isArray(seen) ? seen.filter((list) => !removed.has(list.id)) : seen;
   const [status, setStatus] = useState<string | null>(null);
+
+  function remove(list: List) {
+    if (!window.confirm(`Remove "${list.title}" from your History? It stays for everyone else on the list; open its link again to bring it back.`)) return;
+    forgetList(list.id);
+    setRemoved(new Set(removed).add(list.id));
+  }
 
   // Buy again: a fresh copy of the list with the same items, all unchecked.
   async function again(list: List) {
@@ -87,9 +96,14 @@ export default function HistoryPage() {
             {lists.map((list) => (
               <li key={list.id}>
                 <ListCard list={list}>
-                  <button type="button" onClick={() => again(list)} className={`${buttonGlass} h-10 shrink-0 px-4 text-sm`}>
-                    Buy again
-                  </button>
+                  <div className="flex shrink-0 flex-col items-center gap-1.5">
+                    <button type="button" onClick={() => again(list)} className={`${buttonGlass} h-10 px-4 text-sm`}>
+                      Buy again
+                    </button>
+                    <button type="button" onClick={() => remove(list)} aria-label={`Remove ${list.title} from History`} className="text-[13px] text-muted">
+                      Remove
+                    </button>
+                  </div>
                 </ListCard>
               </li>
             ))}
