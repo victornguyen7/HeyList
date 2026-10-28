@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   experimental: {
     agentFeedback: true,
     agentUpgrade: "security",
+    // The free Render backend sleeps after 15 idle minutes and can take over a minute to wake. At the default
+    // 30 s the first request after a break failed, and Home and History came back empty.
+    proxyTimeout: 120_000,
   },
   cacheComponents: true,
   partialPrefetching: true,

@@ -14,6 +14,7 @@ def offer(price, currency="USD", availability="InStock", url="https://shop.examp
 SUNSCREEN = {
     "id": "P1",
     "title": "SPF 50 Sunscreen",
+    "category": {"title": "Sunscreen", "path": [{"title": "Health & Beauty"}, {"title": "Sunscreen"}]},
     "images": [{"url": "https://img.example/side.jpg"}, {"url": "https://img.example/main.jpg", "is_main_image": True}],
     "offers": [offer(12.99), offer(9.5, domain="cheap.example"), offer(3.0, availability="OutOfStock"), offer(2.0, currency="EUR")],
 }
@@ -36,7 +37,7 @@ class MarketTest(unittest.TestCase):
         self.assertEqual(
             market.product(SUNSCREEN),
             {"productId": "P1", "title": "SPF 50 Sunscreen", "store": "cheap.example", "url": "https://shop.example/p",
-             "imageUrl": "https://img.example/main.jpg", "priceCents": 950},
+             "imageUrl": "https://img.example/main.jpg", "priceCents": 950, "category": "Health & Beauty > Sunscreen"},
         )
         # Decimal, not float: 0.29 * 100 is 28.999... as a float.
         self.assertEqual(market.product({**SUNSCREEN, "offers": [offer(0.29)]})["priceCents"], 29)
@@ -51,13 +52,14 @@ class MarketTest(unittest.TestCase):
             with self.subTest(raw=raw["offers"]):
                 self.assertIsNone(market.product(raw))
         self.assertIsNone(market.product({**SUNSCREEN, "images": [{"url": "javascript:x"}]})["imageUrl"])
+        self.assertEqual(market.product({**SUNSCREEN, "category": None})["category"], "")
 
-    def test_search_sends_the_name_and_returns_at_most_five(self):
+    def test_search_sends_the_name_and_keeps_the_usable_products(self):
         requests = self.fake(lambda request: httpx.Response(200, json={"products": [SUNSCREEN] * 7 + [{"id": "P2", "offers": []}]}))
 
         found = market.search("sunscreen")
 
-        self.assertEqual(len(found), 5)
+        self.assertEqual(len(found), 7)
         self.assertEqual(json.loads(requests[0].content), {"query": "sunscreen", "limit": 10})
         self.assertEqual(requests[0].url.path, "/v1/search")
 

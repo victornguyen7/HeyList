@@ -340,12 +340,23 @@ class ProductRoutesTest(RoutesTest):
     def choose(self, body):
         return self.client.post(f"/api/items/{self.item['id']}/product", json=body)
 
-    def test_search_uses_the_item_name_and_saves_nothing(self):
-        search = self.mock_market("search", return_value=[self.PRODUCT])
+    def test_search_uses_the_item_name_shows_only_checked_matches_and_saves_nothing(self):
+        found = [self.PRODUCT | {"productId": f"P{n}"} for n in range(7)]
+        search = self.mock_market("search", return_value=found)
+        check = mock.patch.object(llm, "store_matches", return_value=found[1:]).start()
+        self.addCleanup(mock.patch.stopall)
 
-        self.assertEqual(self.client.get(f"/api/items/{self.item['id']}/products").json(), {"products": [self.PRODUCT]})
+        self.assertEqual(self.client.get(f"/api/items/{self.item['id']}/products").json(), {"products": found[1:6]})
         search.assert_called_once_with("Sunscreen")
+        check.assert_called_once_with("Sunscreen", None, "Trip", found)
         self.assertIsNone(self.db.tables["items"][0]["product"])
+
+    def test_a_failed_match_check_shows_nothing_unchecked(self):
+        self.mock_market("search", return_value=[self.PRODUCT])
+        mock.patch.object(llm, "store_matches", side_effect=ValueError("bad reply")).start()
+        self.addCleanup(mock.patch.stopall)
+        with self.assertLogs(main.log):
+            self.assertEqual(self.client.get(f"/api/items/{self.item['id']}/products").json(), {"error": "MARKET_UNAVAILABLE"})
 
     def test_the_price_comes_from_channel3_not_the_request_and_paypal_charges_it(self):
         lookup = self.mock_market("get", return_value=self.PRODUCT)

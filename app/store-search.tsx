@@ -27,7 +27,7 @@ export function StoreSearch({ item, onChosen }: { item: Item; onChosen: (item: I
       () => api<{ products: Product[] }>(`/api/items/${item.id}/products`),
       (found) => {
         setProducts(found.products);
-        if (!found.products.length) setStatus("No store has this right now.");
+        if (!found.products.length) setStatus("No online store we search sells this. Buy it in person and scan the receipt.");
       },
     );
   const choose = (product: Product) =>

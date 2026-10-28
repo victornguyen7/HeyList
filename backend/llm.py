@@ -142,3 +142,31 @@ def starting_list(description: str, budget_cents: int | None = None) -> dict:
         "kind": reply.get("kind") if reply.get("kind") in KINDS else "other",
         "items": items,
     }
+
+
+STORE_MATCH_SCHEMA = {
+    "type": "object",
+    "properties": {"matches": {"type": "array", "items": {"type": "integer"}}},
+    "required": ["matches"],
+}
+
+STORE_MATCH_PROMPT = """You check store search results for HeyList, a shared shopping list app.
+Someone needs to buy one item for a list. The store search matches words, not meaning, so many results only
+share a word with the item: a "milk" face cleanser or a milk bottle for milk, toy or decorative eggs for eggs.
+Reply with the numbers of the results that are the item itself, something a person buying it for this list would
+accept. Leave out containers, accessories, toys, decor, clothing with the word on it, and anything else only named
+after the item. A special kind (toddler milk, a pet version) fits only if the item, note or list asks for it.
+Use each result's category to tell.
+Reply with JSON only, like {"matches": [2, 5]}, or {"matches": []} if none fit."""
+
+
+def store_matches(name: str, note: str | None, list_title: str, products: list[dict]) -> list[dict]:
+    """The products that really are the item, in the order given (decision 51). Raises when the model fails, so
+    word-only matches are never shown as if they were checked."""
+    if not products:
+        return []
+    lines = "\n".join(f"{n}. {p['title']} ({p.get('category') or 'no category'})" for n, p in enumerate(products, 1))
+    request = f"Item: {name}\n" + (f"Note: {note}\n" if note else "") + f"List: {list_title}\nResults:\n{lines}"
+    reply = json_reply(chat([{"role": "system", "content": STORE_MATCH_PROMPT}, {"role": "user", "content": request}], STORE_MATCH_SCHEMA))
+    chosen = {n for n in reply.get("matches", []) if type(n) is int}
+    return [p for n, p in enumerate(products, 1) if n in chosen]

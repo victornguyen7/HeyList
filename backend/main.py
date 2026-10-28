@@ -308,7 +308,9 @@ def find_products(item_id: str):
     if not allow("market", 100, 3600):
         return error("TOO_MANY_REQUESTS", 429)
     try:
-        return {"products": market.search(item["name"])}
+        found = market.search(item["name"])
+        title = db.select("lists", id=item["list_id"])[0]["title"]
+        return {"products": llm.store_matches(item["name"], item["note"], title, found)[:5]}
     except Exception:
         log.exception("Product search failed")
         return error("MARKET_UNAVAILABLE", 502)

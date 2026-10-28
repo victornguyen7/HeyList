@@ -33,6 +33,8 @@
 
 | # | Issue | Resolution |
 |---|---|---|
+| 43 | Home and History came back empty after a break | The lists were all saved. The free Render backend sleeps after 15 idle minutes, the web proxy gave up after 30 s, and every list that failed to load was hidden. Now the proxy waits 2 minutes (`next.config.ts`), each list is tried 4 times, and only a list the backend no longer has drops out (`app/recent.tsx`) |
+| 44 | Store search showed wrong products (a "milk" face cleanser, toy eggs) | Channel3 matches words and sells no food. Each search is now checked by one Ollama call that keeps only products that are the item (decision 51); groceries now say no online store sells them |
 | 30 | Buy again copied the old estimates, not what was paid | Buy again now uses the paid unit price when the item has proof (PayPal or a receipt), else the old estimate (decision 49) |
 | 32 | Unconfirmed receipt scans were invisible | The scan section on Receipts lists scans not confirmed yet, with "Finish checking" to review and confirm them later; a line matched to an item checked off since starts as an extra. They still count toward the 10-scans-per-hour limit, since that caps the paid Textract/Ollama calls already made. There is no way to throw a wrong scan away yet |
 | 24 | Old `/?list=<id>` links landed on the home page | `next.config.ts` redirects `/?list=<id>` to `/lists/<id>` and passes the query through, so a PayPal return (`token`, `PayerID`) still captures. Checked with curl: both forms redirect (308); a `list` value that isn't an ID stays on the home page |

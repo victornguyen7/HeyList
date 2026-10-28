@@ -27,7 +27,7 @@ def assign_unclaimed(items: list[dict], member_ids: list[str]) -> dict[str, str]
     return assigned
 
 
-def split(items: list[dict], member_ids: list[str], orders: list[dict] = ()) -> dict:
+def split(items: list[dict], member_ids: list[str], orders: list[dict] = ()) -> dict: # pyright: ignore[reportArgumentType]
     """Who paid what for the list's items, each member's equal share, and the transfers that settle it.
     Only bought items count (price_cents is what was paid for all of them). Receipt extras are personal and not split.
     orders are the list's captured PayPal orders: a charge for an item that something else checked off first

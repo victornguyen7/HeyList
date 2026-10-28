@@ -7,14 +7,23 @@ import { card, Ring } from "./ui";
 
 export const spent = (list: List) => list.items.reduce((sum, item) => sum + (item.checkedAt ? (item.priceCents ?? 0) : 0), 0);
 
+// One remembered list. Only a list the backend no longer has drops out; any other failure (the backend still
+// waking up, a dropped connection) is tried again, so a slow start never looks like an empty history.
+async function loadSeen(id: string, tries = 4): Promise<List | null> {
+  try {
+    return await api<List>(`/api/lists/${encodeURIComponent(id)}`);
+  } catch (e) {
+    if ((e as { code?: string }).code === "LIST_NOT_FOUND" || tries <= 1) return null;
+    await new Promise((wait) => setTimeout(wait, 5000));
+    return loadSeen(id, tries - 1);
+  }
+}
+
 // The lists this browser has opened (no accounts, decision 6), loaded in full. null while loading.
 export function useSeenLists() {
   const [lists, setLists] = useState<List[] | null>(null);
   useEffect(() => {
-    // A list deleted since it was opened just drops out.
-    Promise.allSettled(seenLists().map((id) => api<List>(`/api/lists/${encodeURIComponent(id)}`))).then((results) =>
-      setLists(results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []))),
-    );
+    Promise.all(seenLists().map((id) => loadSeen(id))).then((loaded) => setLists(loaded.filter((list) => list !== null)));
   }, []);
   return lists;
 }

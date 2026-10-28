@@ -35,6 +35,7 @@ def product(raw: dict) -> dict | None:
     cents, offer = min(offers, key=lambda pair: pair[0])
     images = raw.get("images") or [{}]
     image = next((i for i in images if i.get("is_main_image")), images[0])
+    category = raw.get("category") or {}
     return {
         "productId": str(raw["id"]),
         "title": str(raw["title"])[:200],
@@ -42,15 +43,18 @@ def product(raw: dict) -> dict | None:
         "url": offer["url"],
         "imageUrl": web(image.get("url")),
         "priceCents": cents,
+        # "Health & Beauty > Skin Care > Facial Cleansers": what tells a "milk" cleanser from milk (llm.store_matches).
+        "category": " > ".join(str(c.get("title", "")) for c in category.get("path") or [category] if c.get("title"))[:300],
     }
 
 
 def search(name: str) -> list[dict]:
-    """Up to 5 products for an item name. Asks for 10, since some have no in-stock USD offer."""
+    """Up to 10 products for an item name, in Channel3's order. Search matches words, not meaning (a "milk" face
+    cleanser for milk), so the route has them checked by llm.store_matches before showing any."""
     response = client().post("/v1/search", json={"query": name, "limit": 10})
     response.raise_for_status()
     found = (product(raw) for raw in response.json().get("products") or [])
-    return [p for p in found if p][:5]
+    return [p for p in found if p]
 
 
 def get(product_id: str) -> dict | None:

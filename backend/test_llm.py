@@ -102,5 +102,21 @@ class StartingListTest(unittest.TestCase):
             llm.starting_list("Picnic")
 
 
+class StoreMatchTest(unittest.TestCase):
+    PRODUCTS = [{"title": "Essential Milk", "category": "Health & Beauty > Skin Care > Facial Cleansers"}, {"title": "Whole Milk", "category": ""}]
+
+    def test_only_the_numbered_matches_are_kept_in_order_and_odd_numbers_ignored(self):
+        with mock.patch.object(llm, "chat", return_value='{"matches": [2, 9, "1", true]}') as chat:
+            self.assertEqual(llm.store_matches("Milk", "2%", "Weekly Groceries", self.PRODUCTS), self.PRODUCTS[1:])
+        request = chat.call_args.args[0][-1]["content"]
+        self.assertIn("Item: Milk\nNote: 2%\nList: Weekly Groceries", request)
+        self.assertIn("1. Essential Milk (Health & Beauty > Skin Care > Facial Cleansers)\n2. Whole Milk (no category)", request)
+
+    def test_no_products_need_no_call(self):
+        with mock.patch.object(llm, "chat") as chat:
+            self.assertEqual(llm.store_matches("Milk", None, "", []), [])
+        chat.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

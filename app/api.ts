@@ -95,13 +95,14 @@ const MESSAGES: Record<string, string> = {
   ITEM_CHECKED: "That item has already been bought.",
 };
 
-/** JSON in, JSON out. A Blob body is sent as-is with its own type (receipt photos). */
+/** JSON in, JSON out. A Blob body is sent as-is with its own type (receipt photos). A failure throws an Error
+ * with the readable message, and the backend's error code (or the HTTP status text) as `code`. */
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = init?.body instanceof Blob ? { "Content-Type": init.body.type } : init?.body ? { "Content-Type": "application/json" } : undefined;
   const res = await fetch(path, { ...init, headers });
   if (!res.ok) {
     const code = (await res.json().catch(() => null))?.error ?? res.statusText;
-    throw new Error(MESSAGES[code] ?? code);
+    throw Object.assign(new Error(MESSAGES[code] ?? code), { code });
   }
   return res.json();
 }
