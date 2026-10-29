@@ -421,7 +421,7 @@ export default function ProgressPage() {
             )}
             {sheet && (
               <div className="fixed inset-0 z-20 lg:hidden" role="dialog" aria-modal="true" aria-label="More actions">
-                <button type="button" aria-label="Close" onClick={() => setSheet(false)} className="absolute inset-0 bg-text/30" />
+                <button type="button" aria-label="Close" onClick={() => setSheet(false)} className="no-press absolute inset-0 bg-text/30" />
                 <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[28px] bg-surface-2 px-4 pt-2.5 pb-7 shadow-[0_-10px_30px_rgb(30_40_60/0.12)] backdrop-blur-xl">
                   <span className="mx-auto h-[5px] w-10 rounded-full bg-muted/40" />
                   <span className="px-[18px] pt-2 pb-1.5 text-lg font-medium">More actions</span>

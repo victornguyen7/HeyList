@@ -39,6 +39,44 @@
   box-shadow: 0 10px 30px 0 rgb(30 40 60 / 0.08);
 }
 
+/* Click feedback for everything you can press: buttons, links, tabs, selects, the tick circles and summaries.
+   Hover dims a little (pointer devices only), pressing shrinks it slightly, and keyboard focus gets a ring.
+   :where() keeps this at zero specificity, so any utility on an element (disabled:opacity-40, a colour) still wins.
+   Add no-press to opt out, as the full-screen scrim behind the phone sheet does. */
+@layer base {
+  :where(button, a, summary, select, [role="button"], label:has(> input[type="checkbox"]), label:has(> input[type="file"])) {
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      transform 120ms ease,
+      opacity 150ms ease,
+      background-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  @media (hover: hover) {
+    :where(button:not(:disabled), a, summary, select:not(:disabled), [role="button"], label:has(> input:not(:disabled))):hover {
+      opacity: 0.82;
+    }
+  }
+  :where(button:not(:disabled), a, summary, select:not(:disabled), [role="button"], label:has(> input:not(:disabled))):active {
+    transform: scale(0.97);
+    opacity: 0.7;
+  }
+  :where(button, a, summary, select, [role="button"], label):focus-visible {
+    outline: 2px solid var(--ai);
+    outline-offset: 2px;
+  }
+  .no-press:hover,
+  .no-press:active {
+    transform: none;
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :where(button, a, summary, select, [role="button"], label):active {
+      transform: none;
+    }
+  }
+}
+
 body {
   background: linear-gradient(180deg, #86a5b8 0%, #aec2cf 28%, #d8dee6 60%, var(--bg) 100%) fixed;
   color: var(--text);
