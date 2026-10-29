@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { supabase, useSession } from "../auth";
+import { accountName, supabase, useSession } from "../auth";
 import { button, buttonGlass, card, field } from "../ui";
 
 // Email and password accounts (Supabase Auth). Sign up and "forgot password" are confirmed with a code
@@ -27,6 +27,8 @@ export default function Login() {
   const [code, setCode] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // The name every list you open joins you as; null until edited, so it shows the saved one.
+  const [newName, setNewName] = useState<string | null>(null);
 
   function go(next: Step, message: string | null = null) {
     setStep(next);
@@ -100,6 +102,14 @@ export default function Login() {
       window.location.assign(nextPath());
     });
 
+  const saveName = (e: React.FormEvent) =>
+    run(e, async () => {
+      const { error } = await supabase.auth.updateUser({ data: { name: newName!.trim() } });
+      if (error) throw error;
+      setNewName(null);
+      setStatus("Saved. Lists you join from now on use this name.");
+    });
+
   const resend = () => {
     setBusy(true);
     const sent = step === "verify" ? supabase.auth.resend({ type: "signup", email }) : supabase.auth.resetPasswordForEmail(email);
@@ -145,6 +155,21 @@ export default function Login() {
       <main className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:max-w-[440px] lg:p-8`}>
         <h1 className="text-[28px] tracking-[-0.015em]">Your account</h1>
         <p className="text-base">You are logged in as {session.user.email}.</p>
+        <form onSubmit={saveName} className="flex gap-2">
+          <input
+            className={`${field} min-w-0 flex-1`}
+            value={newName ?? accountName(session) ?? ""}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Your name"
+            aria-label="Your name"
+            autoComplete="name"
+            maxLength={40}
+            required
+          />
+          <button type="submit" className={`${buttonGlass} px-5`} disabled={busy || newName === null || !newName.trim()}>
+            Save
+          </button>
+        </form>
         <div className="flex gap-2">
           <Link href="/" className={button}>
             Your lists
@@ -153,6 +178,11 @@ export default function Login() {
             Log out
           </button>
         </div>
+        {status && (
+          <p role="status" className="text-base">
+            {status}
+          </p>
+        )}
       </main>
     );
   }

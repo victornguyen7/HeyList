@@ -129,7 +129,9 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
     await joinAs(savedName ? null : name);
   }
 
-  async function joinAs(asName: string | null) {
+  // auto: the join made for a logged-in person on opening the list. If the account has no name yet (INVALID_BODY),
+  // it stays quiet and the join card asks for one, once.
+  async function joinAs(asName: string | null, auto = false) {
     try {
       const member = await api<Member>(`/api/lists/${list!.id}/members`, { method: "POST", body: JSON.stringify(asName ? { name: asName } : {}) });
       if (session && !savedName) await supabase.auth.updateUser({ data: { name: member.name } });
@@ -138,6 +140,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       setListState({ ...list!, members: [...list!.members.filter((m) => m.id !== member.id), member] });
       listChanged(list!.id);
     } catch (err) {
+      if (auto && (err as Error & { code?: string }).code === "INVALID_BODY") return;
       setStatus(`Could not add you: ${(err as Error).message}`);
     }
   }
@@ -148,7 +151,18 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
     list?.members.find((member) => session && member.userId === session.user.id)?.id ??
     // A remembered member who joined with an account only counts while logged in as it (found above).
     (list?.members.some((member) => member.id === remembered && !member.userId) ? remembered : null);
-  const message = status ?? (orderId ? (approved ? "Confirming your payment…" : "Payment cancelled.") : null);
+  // Logged in, you're on every list you open, a new one included, without typing your name or tapping Join
+  // (decision 69). Waits for the fresh list, not the saved copy, and tries once per list.
+  const autoJoined = useRef<string | null>(null);
+  useEffect(() => {
+    if (!list || list === saved.current || !session || me || autoJoined.current === list.id) return;
+    autoJoined.current = list.id;
+    joinAs(null, true);
+    // joinAs reads the current list and session; it doesn't need to re-run the join when it changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, session, me]);
+
+  const message = status ??(orderId ? (approved ? "Confirming your payment…" : "Payment cancelled.") : null);
   const base = `/lists/${listId}`;
   // Joining is needed to claim, pay, tick and scan: the form shows where those happen (issue 34).
   const joinHere = pathname === base || pathname === `${base}/receipts`;

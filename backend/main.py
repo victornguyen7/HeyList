@@ -334,8 +334,10 @@ def join_list(list_id: str, request: Request, body=Depends(json_body)):
     if user and (mine := db.select("members", list_id=list_id, user_id=user["id"])):
         return member_out(mine[0])
     body = body or {}
+    # An account with no saved name (made with the old email link) reuses the name it last joined a list with.
+    known = user and (user["name"] or next((m["name"] for m in reversed(db.select("members", user_id=user["id"]))), None))
     try:
-        name = text(body.get("name") or (user and user["name"]), 40)
+        name = text(body.get("name") or known, 40)
         values = {"email": email(body["email"])} if body.get("email") else {}
     except BAD_INPUT:
         return error("INVALID_BODY", 400)

@@ -216,6 +216,12 @@ class JoinTest(AccountTest):
         self.assertEqual(self.join("new-token").status_code, 400)
         self.assertEqual(self.join("new-token", name="Bob").json()["name"], "Bob")
 
+    def test_an_account_without_a_saved_name_reuses_the_one_it_joined_with_before(self):
+        self.join("new-token", name="Bob")
+        self.list = self.new_list([])
+
+        self.assertEqual(self.join("new-token").json()["name"], "Bob")
+
     def test_a_guest_cannot_take_an_accounts_name_but_an_account_can_claim_a_guests(self):
         self.join("ann-token")
         guest = self.join(name="Bob").json()

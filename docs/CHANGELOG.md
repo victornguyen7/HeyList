@@ -4,6 +4,7 @@
 
 ### Added
 
+- **Logged in, you're on every list you open** (decision 69): creating or opening a list while logged in joins you under your account's name, with no name to type and no Join tap. Accounts made with the old email link reuse the name they joined with before. Your name can be changed on the account page (`/login`).
 - **Sign up and log in with a password** (decision 68): `/login` has **Log in** and **Sign up** tabs. Signing up asks for a name, email and password and sends a code to confirm the email; **Forgot your password?** sends a code and then asks for a new password. The emails come from the owner's Gmail. **Setup:** Gmail App Password, custom SMTP, sign-up settings and the two email templates in the Supabase dashboard, see [AUTH.md](AUTH.md). Accounts made with the old email link set a password with **Forgot your password?**.
 - **Refunds made in PayPal count** (issue 46): a refund made in PayPal's dashboard now comes in through the webhook, is saved on its order, and is taken off what the buyer paid on Money and Settle up. **Setup:** also subscribe the webhook to "Payment capture refunded". No schema change.
 - **PayPal webhooks** (decision 66, phase 8F): a payment that came back pending now completes, or is released, on its own when PayPal says so, without **Check again**. Every event is verified with PayPal first and handled once. **Setup:** register the webhook for `https://heylist-api.onrender.com/api/paypal/webhook` (capture completed, denied, declined) and set `PAYPAL_WEBHOOK_ID`. **Schema:** `webhook_events`; run `supabase/schema.sql` again.
@@ -25,6 +26,7 @@
 
 ### Fixed
 
+- **Home stuck on "Creating…"**: after creating a list (or opening the sample), going to History and back showed the review screen again with a disabled "Creating…" button. Next keeps Home alive while hidden (`cacheComponents`), so the starter now starts fresh when it's shown again after a list was created (`app/starter.tsx`). A review left without creating is kept.
 - **Store prices checked at checkout** (issue 42, decision 58): a store price older than 10 minutes is read again from Channel3 when the PayPal order is created. If it changed, or the store stopped selling the product, the item is updated, the order is refused (`409 PRICE_CHANGED`), and Progress shows the new total so the buyer can pay again.
 - **Done tick** (issue 40): white instead of near-black on the dark circle.
 - **Receipt amounts:** `.98` was read as $98.00, and discounts printed `9.95-` or `($12.00)` as charges.

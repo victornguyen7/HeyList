@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { api, rememberMember, usd, type List } from "./api";
 import { Brand, button, card, chip, row } from "./ui";
 
@@ -62,6 +62,23 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
     () => false,
   );
   const budgetCents = budgetIn(description);
+  // Next keeps Home alive, hidden, after navigating away (cacheComponents' Activity). Once a list was created, the
+  // page starts fresh when it's shown again, rather than reopening the review with "Creating…" stuck on its button.
+  // A review left without creating stays, so the draft isn't lost.
+  const created = useRef(false);
+  useLayoutEffect(
+    () => () => {
+      if (!created.current) return;
+      created.current = false;
+      setDescription("");
+      setSuggestion(null);
+      setDropped(new Set());
+      setExtra("");
+      setStatus(null);
+      setBusy(false);
+    },
+    [],
+  );
 
   function listen() {
     const Recognition = recognitionClass();
@@ -99,7 +116,9 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
     try {
       // An emptied name means the item isn't wanted.
       const items = suggestion.items.filter((item, index) => !dropped.has(index) && item.name.trim()).map((item) => ({ ...item, name: item.name.trim() }));
-      onCreated(await api<List>("/api/lists", { method: "POST", body: JSON.stringify({ ...suggestion, items, budgetCents }) }));
+      const list = await api<List>("/api/lists", { method: "POST", body: JSON.stringify({ ...suggestion, items, budgetCents }) });
+      created.current = true;
+      onCreated(list);
     } catch (err) {
       setStatus(`Could not create the list: ${(err as Error).message}`);
       setBusy(false);
@@ -112,6 +131,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
     try {
       const { list, memberId } = await api<{ list: List; memberId: string }>("/api/lists/sample", { method: "POST" });
       rememberMember(list.id, memberId);
+      created.current = true;
       onCreated(list);
     } catch (err) {
       setStatus(`Could not open the sample: ${(err as Error).message}`);
