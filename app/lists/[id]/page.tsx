@@ -5,15 +5,17 @@ import { useState } from "react";
 import { api, captureMessage, proofLabel, refundNote, usd, type Capture, type Item, type List } from "../../api";
 import { PayPalButtons } from "../../paypal-buttons";
 import { ShopAgent } from "../../shop-agent";
-import { Check, Ring } from "../../ui";
+import { Check, menuRow, PayCard, payPayPal, Ring } from "../../ui";
 import { buttonAi, card, outline, row, useList } from "./list-context";
 
 // Progress: the checklist itself. The tick means "done"; paying with PayPal and shopping in stores are separate modes
 // that put a circle on each item to choose, so a plain checklist never shows payment controls unless someone asks.
 export default function ProgressPage() {
-  const { list, setList, me, memberName, setStatus } = useList();
+  const { list, setList, me, memberName, setStatus, joinCard } = useList();
   // "pay": choose items to pay for with PayPal; "shop": choose items for the shopping agent to find in stores.
   const [mode, setMode] = useState<"pay" | "shop" | null>(null);
+  // The phone's More actions sheet is open.
+  const [sheet, setSheet] = useState(false);
   // Set while the agent's cart is shown, so the items it searched for can't change under it.
   const [planned, setPlanned] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -275,16 +277,65 @@ export default function ProgressPage() {
     </div>
   );
 
+  // More actions (Figma "Action row"): a bottom sheet on the phone, a menu card on the website. Each row closes the sheet.
+  const actions: { label: string; href?: string; onClick?: () => void; disabled?: boolean }[] = [
+    ...(main !== "scan" ? [{ label: "Scan a receipt", href: `/lists/${list.id}/receipts` }] : []),
+    ...(items.some(payable) ? [{ label: main === "pay" ? "Choose other items to pay for" : "Pay for items with PayPal", onClick: startPaying, disabled: !me }] : []),
+    ...(items.some(shoppable) ? [{ label: "Shop this list for me", onClick: startShopping }] : []),
+    ...(main !== "share" && members.length > 0 && open.some((item) => !item.claimedBy) ? [{ label: "Share out the rest evenly", onClick: assign }] : []),
+    ...(main !== "settle" && done.length > 0 ? [{ label: "Settle up", href: `/lists/${list.id}/settle` }] : []),
+  ];
+  const actionRows = (
+    <div className="flex flex-col divide-y divide-muted/15">
+      {actions.map((action) =>
+        action.href ? (
+          <Link key={action.label} href={action.href} className={menuRow}>
+            {action.label}
+            <span aria-hidden className="text-xl font-normal text-muted">›</span>
+          </Link>
+        ) : (
+          <button
+            key={action.label}
+            type="button"
+            disabled={action.disabled}
+            onClick={() => {
+              setSheet(false);
+              action.onClick!();
+            }}
+            className={menuRow}
+          >
+            {action.label}
+            <span aria-hidden className="text-xl font-normal text-muted">›</span>
+          </button>
+        ),
+      )}
+    </div>
+  );
+  const finishButton = (
+    <button
+      type="button"
+      onClick={() => {
+        setSheet(false);
+        finish(!list.finishedAt);
+      }}
+      className="py-2 text-[15px] font-medium text-muted"
+    >
+      {list.finishedAt ? "Reopen this list" : "Mark this list finished"}
+    </button>
+  );
+  const payLabel = `Your ${mine.length === 1 ? "item" : `${mine.length} items`}`;
+
   return (
     <div className="flex flex-col gap-3.5 lg:flex-row-reverse lg:items-start lg:gap-10">
       <aside className="flex flex-col gap-3.5 lg:w-[400px] lg:shrink-0 lg:gap-5">
         <div className="flex flex-col items-center gap-5 pt-1.5 lg:glass lg:rounded-3xl lg:p-6">
-          <div className="relative size-44">
-            <Ring done={done.length} total={items.length} size={176} />
+          {/* Smaller on the phone, so the pay card and the first items fit above the tab bar. */}
+          <div className="relative size-32 lg:size-44">
+            <Ring done={done.length} total={items.length} size={176} className="size-full" />
             <span className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="flex items-baseline gap-0.5">
-                <span className="text-[49px] font-light tracking-[-0.03em] tabular-nums">{done.length}</span>
-                <span className="text-[21px] font-medium text-muted tabular-nums">/{items.length}</span>
+                <span className="text-[36px] font-light tracking-[-0.03em] tabular-nums lg:text-[49px]">{done.length}</span>
+                <span className="text-base font-medium text-muted tabular-nums lg:text-[21px]">/{items.length}</span>
               </span>
               <span className="text-[13px] font-medium text-list">done</span>
             </span>
@@ -311,46 +362,34 @@ export default function ProgressPage() {
           <ShopAgent itemIds={[...selected]} onPlanned={setPlanned} onClose={stopChoosing} />
         ) : mode === "pay" ? (
           <div className="flex flex-col gap-2.5">
-            <p className="text-base text-muted">Choose what you&apos;re paying for.</p>
-            {total === 0 || !me ? (
-              <button type="button" disabled className={buttonAi}>
-                Choose items to pay for
-              </button>
-            ) : (
-              <PayPalButtons
-                label={`Pay ${usd(total)}`}
-                createOrder={(method) => orderFor([...selected], method)}
-                onApproved={captured}
-                onError={setStatus}
-              >
-                <button type="button" onClick={() => pay([...selected])} disabled={busy} className={buttonAi}>
-                  {busy ? "Opening PayPal…" : `Pay ${usd(total)} with PayPal`}
+            <PayCard title="Choose what you're paying for" amount={usd(total)}>
+              {total === 0 || !me ? (
+                <button type="button" disabled className={payPayPal}>
+                  Tick items to pay for
                 </button>
-              </PayPalButtons>
-            )}
-            <button
-              type="button"
-              onClick={stopChoosing}
-              disabled={busy}
-              className={outline}
-            >
+              ) : (
+                <PayPalButtons createOrder={(method) => orderFor([...selected], method)} onApproved={captured} onError={setStatus}>
+                  <button type="button" onClick={() => pay([...selected])} disabled={busy} className={payPayPal}>
+                    {busy ? "Opening PayPal…" : "Pay with PayPal"}
+                  </button>
+                </PayPalButtons>
+              )}
+            </PayCard>
+            <button type="button" onClick={stopChoosing} disabled={busy} className="py-2 text-[15px] font-medium text-muted">
               Cancel
             </button>
           </div>
         ) : (
           <>
-            {main === null && <p className="text-base text-muted">Join the list above to claim, pay for and tick off items.</p>}
+            {joinCard}
             {main === "pay" && (
-              <PayPalButtons
-                label={`Pay for your ${mine.length === 1 ? "item" : `${mine.length} items`} · ${usd(mineCost)}`}
-                createOrder={(method) => orderFor(mine.map((item) => item.id), method)}
-                onApproved={captured}
-                onError={setStatus}
-              >
-                <button type="button" onClick={() => pay(mine.map((item) => item.id))} disabled={busy} className={buttonAi}>
-                  {busy ? "Opening PayPal…" : `Pay for your ${mine.length === 1 ? "item" : `${mine.length} items`} · ${usd(mineCost)} with PayPal`}
-                </button>
-              </PayPalButtons>
+              <PayCard title={payLabel} amount={usd(mineCost)} note="Ticked off for you as soon as PayPal confirms.">
+                <PayPalButtons createOrder={(method) => orderFor(mine.map((item) => item.id), method)} onApproved={captured} onError={setStatus}>
+                  <button type="button" onClick={() => pay(mine.map((item) => item.id))} disabled={busy} className={payPayPal}>
+                    {busy ? "Opening PayPal…" : "Pay with PayPal"}
+                  </button>
+                </PayPalButtons>
+              </PayCard>
             )}
             {main === "share" && (
               <button type="button" onClick={assign} className={buttonAi}>
@@ -368,39 +407,29 @@ export default function ProgressPage() {
               </Link>
             )}
 
-            <details className="group">
-              <summary className="cursor-pointer list-none text-center text-[15px] font-medium text-muted">More</summary>
-              <div className="mt-2.5 flex flex-col gap-2.5">
-                {main !== "scan" && (
-                  <Link href={`/lists/${list.id}/receipts`} className={outline}>
-                    Scan a receipt
-                  </Link>
-                )}
-                {items.some(payable) && (
-                  <button type="button" onClick={startPaying} disabled={!me} className={outline}>
-                    {main === "pay" ? "Choose other items to pay for" : "Pay for items with PayPal"}
-                  </button>
-                )}
-                {items.some(shoppable) && (
-                  <button type="button" onClick={startShopping} className={outline}>
-                    Shop this list for me
-                  </button>
-                )}
-                {main !== "share" && members.length > 0 && open.some((item) => !item.claimedBy) && (
-                  <button type="button" onClick={assign} className={outline}>
-                    Share out the rest evenly
-                  </button>
-                )}
-                {main !== "settle" && done.length > 0 && (
-                  <Link href={`/lists/${list.id}/settle`} className={outline}>
-                    Settle up
-                  </Link>
-                )}
-                <button type="button" onClick={() => finish(!list.finishedAt)} className="text-[15px] text-muted">
-                  {list.finishedAt ? "Reopen this list" : "Mark this list finished"}
+            {me && (
+              <>
+                <button type="button" onClick={() => setSheet(true)} className="py-1 text-[15px] font-medium text-muted lg:hidden">
+                  More actions ›
                 </button>
+                <nav className="glass hidden flex-col rounded-3xl py-2 lg:flex" aria-label="More actions">
+                  <span className="px-[18px] pt-2 pb-1 text-[13px] font-medium text-muted">More actions</span>
+                  {actionRows}
+                  <span className="flex justify-center border-t border-muted/15 pt-1">{finishButton}</span>
+                </nav>
+              </>
+            )}
+            {sheet && (
+              <div className="fixed inset-0 z-20 lg:hidden" role="dialog" aria-modal="true" aria-label="More actions">
+                <button type="button" aria-label="Close" onClick={() => setSheet(false)} className="absolute inset-0 bg-text/30" />
+                <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[28px] bg-surface-2 px-4 pt-2.5 pb-7 shadow-[0_-10px_30px_rgb(30_40_60/0.12)] backdrop-blur-xl">
+                  <span className="mx-auto h-[5px] w-10 rounded-full bg-muted/40" />
+                  <span className="px-[18px] pt-2 pb-1.5 text-lg font-medium">More actions</span>
+                  <div className="rounded-[20px] bg-bg/70">{actionRows}</div>
+                  <span className="flex justify-center pt-2">{finishButton}</span>
+                </div>
               </div>
-            </details>
+            )}
           </>
         )}
       </aside>

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, captureMessage, proofLabel, usd, type Capture, type List } from "./api";
 import { useList } from "./lists/[id]/list-context";
 import { PayPalButtons } from "./paypal-buttons";
-import { Avatar, button, buttonGlass, card, chip, field } from "./ui";
+import { Avatar, button, card, chip, field, mini, payPayPal } from "./ui";
 
 export type Split = {
   totalCents: number;
@@ -158,12 +158,12 @@ function PayBack({ transfer }: { transfer: Transfer }) {
           required
         />
       )}
-      <PayPalButtons label={`Pay ${to} ${usd(transfer.amountCents)}`} createOrder={async (method) => (await order(method)).orderId} onApproved={captured} onError={setStatus}>
-        <button type="submit" className={button} disabled={busy}>
-          Pay {to} {usd(transfer.amountCents)} with PayPal
+      <PayPalButtons createOrder={async (method) => (await order(method)).orderId} onApproved={captured} onError={setStatus}>
+        <button type="submit" className={payPayPal} disabled={busy}>
+          Pay {to} with PayPal
         </button>
       </PayPalButtons>
-      <p className="text-[13px] text-muted">The money goes straight to {to}&apos;s PayPal account.</p>
+      <p className="text-xs text-muted">Goes straight to {to}&apos;s PayPal account.</p>
     </form>
   );
 }
@@ -199,9 +199,12 @@ function Remind({ transfer }: { transfer: Transfer }) {
   }
 
   return (
-    <button type="button" onClick={remind} disabled={busy} className={`${buttonGlass} h-10 self-start px-4 text-sm`}>
-      {busy ? "Writing it…" : `Remind ${who}`}
-    </button>
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-sm font-medium text-money">Not paid yet</span>
+      <button type="button" onClick={remind} disabled={busy} className={mini}>
+        {busy ? "Writing it…" : `Remind ${who}`}
+      </button>
+    </div>
   );
 }
 
@@ -246,7 +249,7 @@ function Payments({ list, name }: { list: List; name: (id: string | null) => str
             <span className="text-muted"> · {p.status === "COMPLETED" ? "with PayPal" : "pending at PayPal"}</span>
           </span>
           {p.status === "PENDING" && (
-            <button type="button" className={`${buttonGlass} h-10 px-4 text-sm`} disabled={busy} onClick={() => checkAgain(p.id)}>
+            <button type="button" className={mini} disabled={busy} onClick={() => checkAgain(p.id)}>
               Check again
             </button>
           )}

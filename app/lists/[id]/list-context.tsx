@@ -16,6 +16,8 @@ type Ctx = {
   setStatus: (status: string | null) => void;
   // Join as this name, or take back the guest member who already has it (a reminder link opened on a new phone).
   joinAs: (name: string) => Promise<void>;
+  // Figma "Join card", or null once you've joined. Progress shows it where the pay card goes; Receipts above the scan.
+  joinCard: React.ReactNode;
 };
 
 const ListContext = createContext<Ctx | null>(null);
@@ -166,11 +168,13 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
 
   const tabs = TABS.map(([path, label, color]) => ({ href: base + path, label, color, active: pathname === base + path }));
   const shareButton = (
-    <button type="button" onClick={share} className="glass rounded-[18px] bg-surface-2 px-3.5 py-2 text-sm font-medium lg:px-5 lg:py-[13px]">
+    <button type="button" onClick={share} className="glass shrink-0 rounded-[18px] bg-surface-2 px-3.5 py-2 text-sm font-medium whitespace-nowrap lg:px-5 lg:py-[13px]">
       Share link
     </button>
   );
 
+  // The header (Figma v2): on the website the title has its own row with Share link beside it, and the tabs sit on
+  // the row below, so a long title wraps instead of squeezing the tabs onto two lines.
   return (
     <div className="flex w-full flex-col gap-3.5 lg:gap-7">
       <div className="flex items-center justify-between lg:hidden">
@@ -180,41 +184,43 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
         {shareButton}
       </div>
 
-      <header className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex flex-col gap-2.5">
-          <Link href="/" className="hidden text-[15px] text-muted lg:block">
-            ← My lists
-          </Link>
-          <h1 className="text-[32px] tracking-[-0.015em] lg:text-[48px] lg:font-medium">{list?.title ?? "Loading…"}</h1>
-          {list && list.members.length > 0 && (
-            <div className="flex items-center gap-2.5">
-              <span className="flex pr-2.5">
+      <header className="flex flex-col gap-2 lg:gap-3">
+        <Link href="/" className="hidden text-[15px] text-muted lg:block">
+          ← My lists
+        </Link>
+        <div className="flex items-end justify-between gap-6">
+          <h1 className="min-w-0 text-[32px] tracking-[-0.015em] break-words lg:text-[48px] lg:leading-tight lg:font-medium">{list?.title ?? "Loading…"}</h1>
+          <span className="hidden lg:block">{shareButton}</span>
+        </div>
+        <div className="flex items-center justify-between gap-6">
+          {list && list.members.length > 0 ? (
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="flex shrink-0 pr-2.5">
                 {list.members.map((m) => (
                   <Avatar key={m.id} name={m.name} ring />
                 ))}
               </span>
               <span className="text-sm font-medium text-muted">
                 {list.members.length} {list.members.length === 1 ? "person" : "people"}
-                {me && ` · you are ${list.members.find((m) => m.id === me)?.name}`}
+                {me ? ` · you are ${list.members.find((m) => m.id === me)?.name}` : " · you haven't joined"}
               </span>
             </div>
+          ) : (
+            <span />
           )}
-        </div>
-        {/* Website tabs (Figma "Web tabs"): the active one is a raised frosted pill. */}
-        <div className="hidden items-center gap-3 lg:flex">
-          <nav className="glass flex gap-1 rounded-full p-[5px]" aria-label="List pages">
+          {/* Website tabs (Figma "Web tabs"): the active one is a raised frosted pill. */}
+          <nav className="glass hidden shrink-0 gap-1 rounded-full p-[5px] lg:flex" aria-label="List pages">
             {tabs.map((tab) => (
               <Link
                 key={tab.href}
                 href={tab.href}
                 aria-current={tab.active ? "page" : undefined}
-                className={`rounded-full px-5 py-2.5 text-[15px] ${tab.active ? "bg-surface-2 font-medium shadow-[0_4px_14px_0_rgb(30_40_60/0.1)]" : "text-muted hover:text-text"}`}
+                className={`rounded-full px-5 py-2.5 text-[15px] whitespace-nowrap ${tab.active ? "bg-surface-2 font-medium shadow-[0_4px_14px_0_rgb(30_40_60/0.1)]" : "text-muted hover:text-text"}`}
               >
                 {tab.label}
               </Link>
             ))}
           </nav>
-          {shareButton}
         </div>
       </header>
 
@@ -231,38 +237,6 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
               Join this list to take part
             </Link>
           )}
-          {!me && joinHere && (
-            <form onSubmit={join} className={`${card} flex flex-col gap-3 sm:flex-row sm:items-center`}>
-              <span className="text-base font-medium sm:flex-1">Join to claim, tick off and pay for items</span>
-              {savedName ? (
-                <button type="submit" className={button}>
-                  Join as {savedName}
-                </button>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <input
-                      className="h-12 min-w-0 flex-1 rounded-[20px] bg-bg px-4 text-base"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Your name"
-                      aria-label="Your name"
-                      maxLength={40}
-                      required
-                    />
-                    <button type="submit" className={button}>
-                      Join
-                    </button>
-                  </div>
-                  {!session && (
-                    <Link href={`/login?next=${encodeURIComponent(base)}`} className="text-sm text-muted underline">
-                      Or log in with email, so you don&apos;t type your name next time
-                    </Link>
-                  )}
-                </div>
-              )}
-            </form>
-          )}
           <ListContext
             value={{
               list,
@@ -275,6 +249,41 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
               memberName: (id) => list.members.find((m) => m.id === id)?.name,
               setStatus,
               joinAs,
+              joinCard: me ? null : (
+                <form onSubmit={join} className={`${card} flex flex-col gap-3 border-ai/35`}>
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-[17px] font-medium">Join this list</span>
+                    <span className="text-sm text-muted">to claim, tick off and pay for items</span>
+                  </span>
+                  {savedName ? (
+                    <button type="submit" className={button}>
+                      Join as {savedName}
+                    </button>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <input
+                          className="h-12 min-w-0 flex-1 rounded-[20px] bg-bg px-4 text-base"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Your name"
+                          aria-label="Your name"
+                          maxLength={40}
+                          required
+                        />
+                        <button type="submit" className={`${button} px-7`}>
+                          Join
+                        </button>
+                      </div>
+                      {!session && (
+                        <Link href={`/login?next=${encodeURIComponent(base)}`} className="text-[13px] text-ai">
+                          Or log in with email, so you don&apos;t type your name next time
+                        </Link>
+                      )}
+                    </>
+                  )}
+                </form>
+              ),
             }}
           >
             {children}

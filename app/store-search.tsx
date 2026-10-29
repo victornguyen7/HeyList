@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { api, usd, type Item, type Product } from "./api";
-import { buttonGlass } from "./ui";
+import { mini } from "./ui";
 
 // Find a real product for an item in stores (Channel3, decision 50). Choosing one makes its price the one
 // "Pay with PayPal" charges; the store link is there to see the product. Nothing is ordered from the store.
@@ -50,7 +50,7 @@ export function StoreSearch({ item, onChosen }: { item: Item; onChosen: (item: I
         </span>
       )}
       {!item.checkedAt && !products && (
-        <button type="button" onClick={find} disabled={busy} className={`${buttonGlass} h-10 self-start px-4 text-sm`}>
+        <button type="button" onClick={find} disabled={busy} className={mini}>
           {busy ? "Searching…" : item.product ? "Choose another" : "Find in stores"}
         </button>
       )}
@@ -71,7 +71,7 @@ export function StoreSearch({ item, onChosen }: { item: Item; onChosen: (item: I
                   {usd(product.priceCents)} at {product.store}
                 </span>
               </span>
-              <button type="button" onClick={() => choose(product)} disabled={busy} className={`${buttonGlass} h-10 shrink-0 px-4 text-sm`}>
+              <button type="button" onClick={() => choose(product)} disabled={busy} className={mini}>
                 Choose
               </button>
             </li>

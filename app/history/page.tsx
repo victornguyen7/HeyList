@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, forgetList, usd, type List } from "../api";
 import { ListCard, spent, useSeenLists } from "../recent";
-import { buttonGlass, card } from "../ui";
+import { card, mini } from "../ui";
 
 const month = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
@@ -65,7 +65,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <main className="flex flex-col gap-5 lg:mx-auto lg:w-full lg:max-w-[760px]">
+    <main className="flex flex-col gap-5">
       <Link href="/" className="text-base font-medium text-muted lg:hidden">
         ← Lists
       </Link>
@@ -87,23 +87,21 @@ export default function HistoryPage() {
         <p className="text-base text-muted">No lists yet. Lists you make or open on this device show up here.</p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3 lg:gap-5">
             <Totals heading="By type" rows={totalsBy(lists, (list) => list.kind)} />
             <Totals heading="By month" rows={totalsBy(lists, (list) => month(list.createdAt))} />
           </div>
 
-          <ul className="flex flex-col gap-2.5">
+          <ul className="grid grid-cols-1 gap-2.5 lg:grid-cols-2 lg:gap-5">
             {lists.map((list) => (
               <li key={list.id}>
                 <ListCard list={list}>
-                  <div className="flex shrink-0 flex-col items-center gap-1.5">
-                    <button type="button" onClick={() => again(list)} className={`${buttonGlass} h-10 px-4 text-sm`}>
-                      Buy again
-                    </button>
-                    <button type="button" onClick={() => remove(list)} aria-label={`Remove ${list.title} from History`} className="text-[13px] text-muted">
-                      Remove
-                    </button>
-                  </div>
+                  <button type="button" onClick={() => again(list)} className={mini}>
+                    Buy again
+                  </button>
+                  <button type="button" onClick={() => remove(list)} aria-label={`Remove ${list.title} from History`} className="text-[13px] font-medium text-muted">
+                    Remove
+                  </button>
                 </ListCard>
               </li>
             ))}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { api, usd, type List, type Product } from "./api";
 import { useList } from "./lists/[id]/list-context";
-import { buttonAi, buttonGlass, card } from "./ui";
+import { buttonAi, buttonGlass, card, mini, payPayPal } from "./ui";
 
 type Line = { itemId: string; quantity: number; product: Product; options: Product[] };
 type Plan = { cart: Line[]; skipped: { itemId: string; reason: string }[]; totalCents: number; budgetLeftCents: number | null };
@@ -128,14 +128,15 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
                       View ↗
                     </a>
                   </span>
+                  {/* Under the text (Figma v2 cart), so the product title keeps the row's width. */}
+                  <button
+                    type="button"
+                    onClick={() => setPicked(inCart ? Object.fromEntries(Object.entries(picked).filter(([id]) => id !== line.itemId)) : { ...picked, [line.itemId]: line.product.productId })}
+                    className={`${mini} mt-1`}
+                  >
+                    {inCart ? "Remove" : "Add back"}
+                  </button>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setPicked(inCart ? Object.fromEntries(Object.entries(picked).filter(([id]) => id !== line.itemId)) : { ...picked, [line.itemId]: line.product.productId })}
-                  className={`${buttonGlass} h-9 shrink-0 px-3 text-[13px]`}
-                >
-                  {inCart ? "Remove" : "Add back"}
-                </button>
               </li>
             );
           })}
@@ -153,7 +154,7 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
       )}
       {over && <p className="text-[13px] text-money">This is {usd(total - plan.budgetLeftCents!)} over what&apos;s left in the budget.</p>}
 
-      <button type="button" onClick={pay} disabled={chosen.length === 0 || busy !== null || !me} className={buttonAi}>
+      <button type="button" onClick={pay} disabled={chosen.length === 0 || busy !== null || !me} className={payPayPal}>
         {busy === "pay" ? "Opening PayPal…" : !me ? "Join the list to pay" : chosen.length === 0 ? "Nothing in the cart" : `Pay ${usd(total)} with PayPal`}
       </button>
       <div className="flex justify-center gap-5">

@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { payPayPal, payVenmo } from "./ui";
 
-// PayPal's own buttons from the JS SDK v6 (decision 67): PayPal and, where the buyer can use it, Venmo. Payment
-// happens in PayPal's pop-up on this page. The orders are still made and captured by HeyList's backend from its own
-// prices (decision 21); the buttons only replace the trip to PayPal's page and back. Until the SDK is ready, or if it
-// can't load or nothing is eligible, the children (the redirect checkout) show instead.
+// PayPal and, where the buyer can use it, Venmo, from the JS SDK v6 (decision 67). Payment happens in PayPal's pop-up
+// on this page. The orders are still made and captured by HeyList's backend from its own prices (decision 21); the
+// buttons only replace the trip to PayPal's page and back. Until the SDK is ready, or if it can't load or nothing is
+// eligible, the children (the redirect checkout) show instead.
+// The buttons are drawn in the soft glass style (Figma "Pay buttons") and start the SDK's payment session on click,
+// in place of the SDK's fixed-width yellow and blue <paypal-button> and <venmo-button>.
 
 type Method = "paypal" | "venmo";
 type SessionOptions = { onApprove: (data: { orderId: string }) => Promise<void>; onCancel?: () => void; onError?: (error: Error) => void };
@@ -19,15 +22,6 @@ type Instance = {
 declare global {
   interface Window {
     paypal?: { createInstance: (options: { clientId: string; components: string[]; pageType?: string }) => Promise<Instance> };
-  }
-}
-declare module "react" {
-  // eslint-disable-next-line @typescript-eslint/no-namespace -- how React declares custom elements for JSX
-  namespace JSX {
-    interface IntrinsicElements {
-      "paypal-button": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { type?: string };
-      "venmo-button": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { type?: string };
-    }
   }
 }
 
@@ -59,11 +53,8 @@ export function PayPalButtons({
   createOrder,
   onApproved,
   onError,
-  label,
   children,
 }: {
-  /** Said above PayPal's buttons, which don't show the amount ("Pay for your 3 items · $42"). */
-  label?: string;
   /** Asks the backend for an order and returns its ID; throws (after saying why) when it can't. */
   createOrder: (method: Method) => Promise<string>;
   /** Captures the approved order. */
@@ -114,10 +105,17 @@ export function PayPalButtons({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {label && <span className="text-center text-base font-medium">{label}</span>}
-      {sessions.paypal && <paypal-button type="pay" onClick={() => start("paypal")} />}
-      {sessions.venmo && <venmo-button type="pay" onClick={() => start("venmo")} />}
+    <div className="flex gap-2.5">
+      {sessions.paypal && (
+        <button type="button" onClick={() => start("paypal")} className={payPayPal}>
+          Pay with PayPal
+        </button>
+      )}
+      {sessions.venmo && (
+        <button type="button" onClick={() => start("venmo")} className={payVenmo}>
+          Venmo
+        </button>
+      )}
     </div>
   );
 }

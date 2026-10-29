@@ -14,6 +14,27 @@ export const card = "glass rounded-3xl p-[18px]";
 export const row = "flex items-center gap-3.5 rounded-[18px] bg-surface px-4 py-3.5";
 export const chip = "rounded-[20px] border border-line bg-surface-2 px-3.5 py-[9px] text-sm font-medium";
 export const field = "h-12 rounded-[20px] bg-bg px-4 text-base";
+// Figma "Mini button": a small action inside a row or card (Find in stores, Remind, Buy again). Never full width.
+export const mini = "inline-flex h-8 shrink-0 items-center justify-center self-start rounded-full border border-ai/35 bg-surface-2 px-3.5 text-[13px] font-medium whitespace-nowrap text-ai disabled:opacity-40";
+// Figma "Pay buttons": PayPal as the black pill, Venmo as the white one, side by side.
+export const payPayPal = "flex h-12 flex-1 items-center justify-center rounded-full bg-list px-4 text-[15px] font-semibold whitespace-nowrap text-on-accent disabled:opacity-40";
+export const payVenmo = "flex h-12 flex-1 items-center justify-center rounded-full border border-line bg-surface-2 px-4 text-[15px] font-semibold whitespace-nowrap text-ai disabled:opacity-40";
+// Figma "Action row": one line of a More actions menu.
+export const menuRow = "flex h-[52px] w-full items-center justify-between gap-3 px-[18px] text-left text-base font-medium disabled:opacity-40";
+
+// Figma "Pay card": what is being paid for and how much, above the pay buttons.
+export function PayCard({ title, amount, note, children }: { title: string; amount: string; note?: string; children: React.ReactNode }) {
+  return (
+    <div className={`${card} flex flex-col gap-3.5`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="min-w-0 text-[15px] font-medium text-muted">{title}</span>
+        <span className="text-2xl text-money tabular-nums">{amount}</span>
+      </div>
+      {children}
+      {note && <p className="text-xs text-muted">{note}</p>}
+    </div>
+  );
+}
 
 export function Brand() {
   return (
@@ -87,14 +108,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Progress ring (Figma "Ring"): a light track with the done share in the list colour.
-export function Ring({ done, total, size }: { done: number; total: number; size: number }) {
+// Progress ring (Figma "Ring"): a light track with the done share in the list colour. className can resize it per
+// breakpoint (it scales from its viewBox).
+export function Ring({ done, total, size, className = "" }: { done: number; total: number; size: number; className?: string }) {
   const stroke = size / 8;
   const r = (size - stroke) / 2;
   const circumference = 2 * Math.PI * r;
   const share = total ? done / total : 0;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden className="shrink-0 -rotate-90">
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden className={`shrink-0 -rotate-90 ${className}`}>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-2)" strokeWidth={stroke} />
       <circle
         cx={size / 2}

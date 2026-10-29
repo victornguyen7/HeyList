@@ -21,7 +21,7 @@ export default function Login() {
   }
 
   return (
-    <main className={`${card} mx-auto flex w-full max-w-md flex-col gap-4`}>
+    <main className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:max-w-[440px] lg:p-8`}>
       <h1 className="text-[28px] tracking-[-0.015em]">Log in</h1>
       {session ? (
         <>

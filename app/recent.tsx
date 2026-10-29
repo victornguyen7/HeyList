@@ -29,12 +29,13 @@ export function useSeenLists() {
   return lists;
 }
 
-// Figma "List card": progress ring, title, how far along, what was spent.
+// Figma "List card": progress ring, title, how far along, what was spent. children are actions, in a footer row under
+// it (Figma v2 "History card") so they never squeeze the title.
 export function ListCard({ list, children }: { list: List; children?: React.ReactNode }) {
   const done = list.items.filter((item) => item.checkedAt).length;
   return (
-    <div className={`${card} flex items-center gap-4`}>
-      <Link href={`/lists/${list.id}`} className="flex min-w-0 flex-1 items-center gap-4">
+    <div className={`${card} flex flex-col gap-3`}>
+      <Link href={`/lists/${list.id}`} className="flex min-w-0 items-center gap-4">
         <Ring done={done} total={list.items.length} size={56} />
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="truncate text-lg font-medium">{list.title}</span>
@@ -47,7 +48,7 @@ export function ListCard({ list, children }: { list: List; children?: React.Reac
           <span className="text-xs text-muted">spent</span>
         </span>
       </Link>
-      {children}
+      {children && <div className="flex items-center justify-between gap-4">{children}</div>}
     </div>
   );
 }
