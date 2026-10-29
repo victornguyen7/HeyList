@@ -1,8 +1,7 @@
 import { createClient, type Session } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
-// Email login (Supabase Auth, magic link). Optional: guests still join a list by name (decision 6).
-// The link lands back on the page that asked for it, and the client reads the session from the URL.
+// Email and password login (Supabase Auth, decision 68). Optional: guests still join a list by name (decision 6).
 export const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
 
 /** The logged-in session, or null for a guest (and until it has been read). */

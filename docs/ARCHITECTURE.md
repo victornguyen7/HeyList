@@ -16,7 +16,7 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 | TypeScript 5 | All frontend code |
 | Tailwind CSS 4 (`@tailwindcss/turbopack`) | Styles; the soft glass classes live in `app/ui.tsx` (decision 46) |
 | Geist and Geist Mono (`next/font/google`) | Fonts (`app/layout.tsx`) |
-| `@supabase/supabase-js` 2.117.3 | Login (the email magic link and the session token sent to the backend, `app/auth.ts`, decision 52) and a Realtime broadcast "changed" ping per list (`app/realtime.ts`, decision 59). All list data goes through the backend (decision 56) |
+| `@supabase/supabase-js` 2.117.3 | Login (email and password, codes by email, and the session token sent to the backend, `app/auth.ts`, decision 52) and a Realtime broadcast "changed" ping per list (`app/realtime.ts`, decision 59). All list data goes through the backend (decision 56) |
 | ESLint 9 (`eslint-config-next`) | `npm run lint` |
 | Browser APIs | Web Speech API (`SpeechRecognition`) for voice; camera capture (`<input capture="environment">`) and `<canvas>` to shrink receipt photos; `localStorage` for lists this browser has opened and their saved copies (decision 55) |
 
@@ -38,7 +38,7 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 
 | Service | Used for | Status |
 |---|---|---|
-| Supabase | Postgres tables, the private `receipts` bucket (`supabase/schema.sql`), Auth (magic link) | Built, with Realtime broadcast for live list updates (decision 59) |
+| Supabase | Postgres tables, the private `receipts` bucket (`supabase/schema.sql`), Auth (email and password, decision 68) | Built, with Realtime broadcast for live list updates (decision 59) |
 | PayPal sandbox | Orders API: create, capture, read, refund. The buyer approves in a JS SDK v6 pop-up (PayPal or Venmo, decision 67), or on PayPal's hosted page and is sent back to `APP_URL` (decision 56). Webhooks settle pending captures (decision 66) | Built, including settle-up orders paid to the person owed (decision 60), JS SDK v6 buttons with Venmo (decision 67) and webhooks (decision 66) |
 | Ollama API (cloud) | One LLM with vision (`OLLAMA_MODEL`, measured on `gemma4:31b`) | Built |
 | AWS Textract | Reading receipts, with a confidence per line | Built and tested on 289 real receipts (issue 15); Ollama reads receipts only when Textract is unavailable |
@@ -90,7 +90,7 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 | `app/ui.tsx` | Soft glass building blocks (decision 46): button, card, row and chip classes; `Ring`, `Avatar`, `Check`, `WebNav`, and `Shell` (background glows, web nav, page width) |
 | `app/paypal-buttons.tsx` | PayPal's JS SDK v6 buttons (decision 67): loads the sandbox SDK once, shows PayPal and (if eligible) Venmo, makes the order through our routes and captures it on approval; the redirect checkout shows until it's ready or if it fails |
 | `app/recent.tsx` | `useSeenLists()` (lists this browser opened, loaded in one request; the saved copy shows first), `spent()`, `ListCard` |
-| `app/auth.ts`, `app/login/page.tsx` | Optional email login (Supabase Auth magic link, decision 52): `useSession()`, `accountName()`, the login page |
+| `app/auth.ts`, `app/login/page.tsx` | Optional account (Supabase Auth email and password with emailed codes, decisions 52 and 68; setup in [AUTH.md](AUTH.md)): `useSession()`, `accountName()`, the login page |
 | `app/store-search.tsx` | "Find in stores" on Items: up to 5 checked products, choose one to make its price the item's price |
 | `public/ui/` | Figma assets: logo dot, sparkle, mic, check, arrow, background glows |
 | `app/page.tsx` | Home: the starter, "Your lists", and on the web "Spent this month" |

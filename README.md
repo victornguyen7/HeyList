@@ -67,7 +67,7 @@ Built:
 - **Sample trip** — try the whole loop alone, with a ready-made trip shared with Ann and Ben.
 - **Live updates** — a claim, tick or payment on one phone shows on the others.
 - **History** — lists this browser has opened, spending by type and month, buy again at the price really paid. Lists you've opened show at once from a saved copy, then refresh.
-- **Optional login** — an email link; logged in, you join a list in one tap and are the same person on every device. Guests still just type a name.
+- **Optional account** — sign up with email and password, confirmed with a code sent by email (forgot password works the same way); logged in, you join a list in one tap and are the same person on every device. Guests still just type a name.
 - **Find in stores** — real products for an item from Channel3, checked by the AI so only real matches show; the chosen price is what PayPal charges.
 - **Price memory** — suggested prices come from what people really paid (PayPal or a receipt), then a chosen store price, then the AI's guess.
 
@@ -95,7 +95,7 @@ Progress · Items · Money · Receipts · History · Settle-up — see [docs/SPE
 
 - **Frontend:** Next.js 16 (App Router, Turbopack), React 19, TypeScript 5, Tailwind CSS 4, Geist fonts, on Node.js 24; mobile-first website (native app later); `/api/*` is proxied to the backend
 - **Backend:** Python 3.14, FastAPI on uvicorn, in `backend/`; tests with `unittest`
-- **Data and login:** Supabase — Postgres, receipt photo storage, Auth (email magic link, through `@supabase/supabase-js` in the browser and the `supabase` Python client in the backend), and Realtime broadcast to tell open pages a list changed
+- **Data and login:** Supabase — Postgres, receipt photo storage, Auth (email and password, codes sent from the owner's Gmail by custom SMTP, [docs/AUTH.md](docs/AUTH.md), through `@supabase/supabase-js` in the browser and the `supabase` Python client in the backend), and Realtime broadcast to tell open pages a list changed
 - **Payments:** PayPal sandbox — Orders API (create, capture, read, refund, pay a friend as payee) through the PayPal Server SDK (Python, APIMatic-generated); PayPal's JS SDK v6 buttons with Venmo, falling back to PayPal's hosted page; webhooks verified with PayPal
 - **AI:** one LLM with vision through the Ollama API (`ollama` client) for starting lists, receipt matching and checking store results
 - **Receipts:** AWS Textract `AnalyzeExpense` (`boto3`), falling back to the Ollama vision model
