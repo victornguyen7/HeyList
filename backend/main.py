@@ -488,6 +488,7 @@ def create_order(list_id: str, request: Request, body=Depends(json_body)):
         if len(items) != len(item_ids) or any(item["checked_at"] or not item["est_price_cents"] for item in items):
             raise ValueError("an item cannot be bought")
         member_id = member_of(list_id, body.get("memberId"))
+        venmo = by_venmo(body)
     except BAD_INPUT:
         return error("INVALID_ITEMS", 400)
     if locked(member_id, request):
@@ -497,10 +498,18 @@ def create_order(list_id: str, request: Request, body=Depends(json_body)):
         return error("PAYMENT_PENDING", 409)
     if store_prices_changed(items):
         return error("PRICE_CHANGED", 409)
-    return open_order(list_id, items, member_id)
+    return open_order(list_id, items, member_id, venmo)
 
 
-def open_order(list_id: str, items: list[dict], member_id: str | None):
+def by_venmo(body: dict) -> bool:
+    """{"method": "venmo"} from the JS SDK v6 Venmo button (decision 67); anything else pays with PayPal."""
+    method = body.get("method", "paypal")
+    if method not in ("paypal", "venmo"):
+        raise ValueError("bad method")
+    return method == "venmo"
+
+
+def open_order(list_id: str, items: list[dict], member_id: str | None, venmo: bool = False):
     """Creates the PayPal order for these items at their saved prices and stores it, so the capture knows what it
     paid for. The caller checked the items can be bought."""
     try:
@@ -508,6 +517,7 @@ def open_order(list_id: str, items: list[dict], member_id: str | None):
             [{"name": item["name"], "priceCents": item["est_price_cents"], "quantity": item["quantity"]} for item in items],
             # Back to this list's page, which captures the order.
             f"{APP_URL}/lists/{list_id}",
+            venmo=venmo,
         )
     except Exception as exc:
         if not isinstance(exc, paypal.PayPalError):
@@ -742,6 +752,7 @@ def shop_checkout(list_id: str, request: Request, body=Depends(json_body)):
             raise ValueError("each item once, with a product")
         seen_total = cents(body["totalCents"])
         member_id = member_of(list_id, body.get("memberId"))
+        venmo = by_venmo(body)
         items = db.select("items", "position", list_id=list_id, id=list(chosen))
         if len(items) != len(chosen) or any(item["checked_at"] for item in items):
             raise ValueError("an item cannot be bought")
@@ -774,7 +785,47 @@ def shop_checkout(list_id: str, request: Request, body=Depends(json_body)):
         saved.append(rows[0])
     if sum(item["est_price_cents"] * item["quantity"] for item in saved) != seen_total:
         return error("PRICE_CHANGED", 409)
-    return open_order(list_id, saved, member_id)
+    return open_order(list_id, saved, member_id, venmo)
+
+
+# PayPal webhooks
+
+# Events that settle a capture which came back PENDING (decision 66). Anything else is acknowledged and ignored.
+CAPTURE_EVENTS = {"PAYMENT.CAPTURE.COMPLETED": "COMPLETED", "PAYMENT.CAPTURE.DENIED": "DENIED", "PAYMENT.CAPTURE.DECLINED": "DECLINED"}
+
+
+@app.post("/api/paypal/webhook")
+def paypal_webhook(request: Request, event=Depends(json_body)):
+    """PayPal tells HeyList when a pending capture completes or is denied, so nobody has to press Check again
+    (decision 66). Every event is verified with PayPal before it's read, and handled once."""
+    if not isinstance(event, dict) or not isinstance(event.get("id"), str):
+        return error("INVALID_BODY", 400)
+    try:
+        genuine = paypal.verify_webhook(dict(request.headers), event)
+    except Exception:
+        log.exception("Webhook verification failed")
+        return error("WEBHOOK_UNVERIFIED", 503)
+    if not genuine:
+        return error("WEBHOOK_UNVERIFIED", 401)
+
+    status = CAPTURE_EVENTS.get(event.get("event_type"))
+    resource = event.get("resource") or {}
+    order_id = ((resource.get("supplementary_data") or {}).get("related_ids") or {}).get("order_id")
+    if not status or not isinstance(order_id, str):
+        return {"handled": False}
+    # Once per event: PayPal retries until it gets a 2xx, and may deliver the same event twice.
+    if db.select("webhook_events", id=event["id"]):
+        return {"handled": False}
+    db.insert("webhook_events", [{"id": event["id"], "type": event["event_type"]}])
+
+    orders, settlement = paid_order(order_id)
+    row = orders[0] if orders else settlement
+    # Only a capture we haven't settled yet: a completed one stays completed whatever arrives late.
+    if not row or row["status"] not in ("CREATED", "PENDING"):
+        return {"handled": False}
+    result = {"orderId": order_id, "status": status, "captureId": resource.get("id")}
+    record_capture(row, result) if orders else record_settlement(row, result)
+    return {"handled": True}
 
 
 # Settle up
@@ -797,6 +848,7 @@ def settle_up(list_id: str, request: Request, body=Depends(json_body)):
         debtor, creditor = member_of(list_id, body["fromId"]), member_of(list_id, body["toId"])
         amount = cents(body["amountCents"])
         new_email = email(body["email"]) if body.get("email") else None
+        venmo = by_venmo(body)
         if not debtor or not creditor or not amount:
             raise ValueError("a payment needs both people and an amount")
     except BAD_INPUT:
@@ -827,6 +879,7 @@ def settle_up(list_id: str, request: Request, body=Depends(json_body)):
             # Back to Settle up, where the list layout captures it.
             f"{APP_URL}/lists/{list_id}/settle",
             payee_email=payee,
+            venmo=venmo,
         )
     except Exception as exc:
         if isinstance(exc, paypal.PayPalError) and payee_refused(exc):

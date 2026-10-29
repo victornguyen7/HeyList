@@ -25,7 +25,7 @@ To pay, log in on PayPal's page with this sandbox buyer account, made for judges
 3. Open **Settle up**: HeyList shows who owes whom. Pay Ann with PayPal (the money goes to her account, not HeyList's), or tap **Remind Ben** for a friendly AI-written message with a link to pay.
 4. Or start your own: type one sentence ("camping at Big Sur with 4 friends, $200 budget"), keep what you need, and share the link. Changes show on everyone's phone as they happen.
 
-**PayPal** (sandbox, Orders API v2 through the PayPal Server SDK): create and capture orders for list items, read pending captures, refund an item someone already bought, and pay a friend directly (the order's payee is the person owed).
+**PayPal** (sandbox): PayPal and Venmo buttons from the JS SDK v6; the Orders API v2 through the PayPal Server SDK to create and capture orders for list items, refund an item someone already bought, and pay a friend directly (the order's payee is the person owed); webhooks, verified with PayPal, that finish pending payments.
 
 **AI:** Ollama (`gemma4:31b`) drafts the starting list, matches receipt lines to items, checks store search results and writes payment reminders. AWS Textract reads receipt photos. Channel3 finds real products for "Shop this list for me".
 
@@ -96,7 +96,7 @@ Progress · Items · Money · Receipts · History · Settle-up — see [docs/SPE
 - **Frontend:** Next.js 16 (App Router, Turbopack), React 19, TypeScript 5, Tailwind CSS 4, Geist fonts, on Node.js 24; mobile-first website (native app later); `/api/*` is proxied to the backend
 - **Backend:** Python 3.14, FastAPI on uvicorn, in `backend/`; tests with `unittest`
 - **Data and login:** Supabase — Postgres, receipt photo storage, Auth (email magic link, through `@supabase/supabase-js` in the browser and the `supabase` Python client in the backend), and Realtime broadcast to tell open pages a list changed
-- **Payments:** PayPal sandbox — Orders API (create, capture, refund) through the PayPal Server SDK (Python, APIMatic-generated), with PayPal's hosted approval page. Checkout JS SDK and Invoicing API planned
+- **Payments:** PayPal sandbox — Orders API (create, capture, read, refund, pay a friend as payee) through the PayPal Server SDK (Python, APIMatic-generated); PayPal's JS SDK v6 buttons with Venmo, falling back to PayPal's hosted page; webhooks verified with PayPal
 - **AI:** one LLM with vision through the Ollama API (`ollama` client) for starting lists, receipt matching and checking store results
 - **Receipts:** AWS Textract `AnalyzeExpense` (`boto3`), falling back to the Ollama vision model
 - **Store products:** Channel3 product search (`httpx`)

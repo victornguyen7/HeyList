@@ -126,6 +126,21 @@ export function proofLabel(item: Item, orders: Order[]): string | null {
 // Said after a capture: how much came back for items someone had already bought.
 export const refundNote = (cents: number) => (cents > 0 ? ` ${usd(cents)} was refunded for items someone had already bought.` : "");
 
+// What a capture came back with. settlement is set when the order was a settle-up payment, not list items.
+export type Capture = { orderId: string; status: string; refundedCents: number; settlement?: boolean };
+
+/** What to tell the payer after a capture, whether they came back from PayPal's page or approved in a pop-up. */
+export const captureMessage = (result: Capture) =>
+  result.status === "COMPLETED"
+    ? result.settlement
+      ? "Paid. The money went to their PayPal account, and Settle up is updated."
+      : `Paid. Those items are checked off.${refundNote(result.refundedCents)}`
+    : result.status === "PENDING"
+      ? result.settlement
+        ? "PayPal is still processing this payment. It counts once it goes through."
+        : "PayPal is still processing this payment. The items are held as pending until it goes through."
+      : `Payment is ${result.status.toLowerCase()}; items stay unchecked for now.`;
+
 export const usd = (cents: number) =>
   `${cents < 0 ? "−" : ""}$${Math.floor(Math.abs(cents) / 100)}.${String(Math.abs(cents) % 100).padStart(2, "0")}`;
 

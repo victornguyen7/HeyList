@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, use, useEffect, useRef, useState } from "react";
-import { api, cachedLists, cacheLists, memberKey, refundNote, rememberList, rememberMember, type List, type Member } from "../../api";
+import { api, cachedLists, cacheLists, captureMessage, memberKey, rememberList, rememberMember, type Capture, type List, type Member } from "../../api";
 import { accountName, supabase, useSession } from "../../auth";
 import { listChanged, onListChanged } from "../../realtime";
 import { Avatar, button, card } from "../../ui";
 
-// settlement is set when the order was a settle-up payment rather than items from the list.
-type Capture = { orderId: string; status: string; refundedCents: number; settlement?: boolean };
 type Ctx = {
   list: List;
   setList: (list: List | ((current: List) => List)) => void;
@@ -85,18 +83,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
     // Capture is idempotent on the backend for a while, so a repeat (Strict Mode) returns the same result.
     api<Capture>(`/api/orders/${encodeURIComponent(orderId)}/capture`, { method: "POST" })
       .then(
-        (result) =>
-          setStatus(
-            result.status === "COMPLETED"
-              ? result.settlement
-                ? "Paid. The money went to their PayPal account, and Settle up is updated."
-                : `Paid. Those items are checked off.${refundNote(result.refundedCents)}`
-              : result.status === "PENDING"
-                ? result.settlement
-                  ? "PayPal is still processing this payment. It counts once it goes through."
-                  : "PayPal is still processing this payment. The items are held as pending until it goes through."
-                : `Payment is ${result.status.toLowerCase()}; items stay unchecked for now.`,
-          ),
+        (result) => setStatus(captureMessage(result)),
         (e) => setStatus(`Payment could not be confirmed: ${e.message}`),
       )
       // Drop ?token=&PayerID= so a reload or a shared link doesn't capture again after PayPal's idempotency

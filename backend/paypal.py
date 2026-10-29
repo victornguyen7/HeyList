@@ -7,6 +7,8 @@ import uuid
 from functools import cache
 from typing import Any
 
+import requests
+
 from paypalserversdk.configuration import Environment
 from paypalserversdk.exceptions.api_exception import ApiException
 from paypalserversdk.http.auth.o_auth_2 import ClientCredentialsAuthCredentials
@@ -94,10 +96,11 @@ def _usd(cents: int) -> Money:
     return Money(currency_code="USD", value=f"{cents // 100}.{cents % 100:02d}")
 
 
-def create_order(items: list[dict], return_url: str, payee_email: str | None = None) -> dict:
+def create_order(items: list[dict], return_url: str, payee_email: str | None = None, venmo: bool = False) -> dict:
     """Creates an order for [{"name", "priceCents", "quantity"}, ...] and returns its ID and the PayPal page to send
     the buyer to. The caller looked the prices up; none came from the browser. With payee_email the money goes to
-    that PayPal account instead of HeyList's (settle up, decision 60)."""
+    that PayPal account instead of HeyList's (settle up, decision 60). A Venmo order (JS SDK v6 button, decision 67)
+    names no payment source, as PayPal's v6 sample does; it is approved in Venmo's own flow, so it has no return page."""
     total = sum(item["priceCents"] * item["quantity"] for item in items)
 
     body = OrderRequest(
@@ -118,15 +121,20 @@ def create_order(items: list[dict], return_url: str, payee_email: str | None = N
             )
         ],
         # Where PayPal's hosted page sends the buyer back; it adds ?token=<order id>&PayerID=... after approval.
-        payment_source=PaymentSource(
-            paypal=PaypalWallet(
-                experience_context=PaypalWalletExperienceContext(return_url=return_url, cancel_url=return_url)
-            )
+        # The v6 PayPal button uses the same order: when a pop-up can't open, it falls back to this redirect.
+        **(
+            {}
+            if venmo
+            else {
+                "payment_source": PaymentSource(
+                    paypal=PaypalWallet(experience_context=PaypalWalletExperienceContext(return_url=return_url, cancel_url=return_url))
+                )
+            }
         ),
     )
     order = _call("create_order", {"body": body, "paypal_request_id": str(uuid.uuid4())})
-    # With payment_source.paypal, PayPal names the approval link "payer-action" rather than "approve".
-    approve_url = next(link.href for link in order.links if link.rel == "payer-action")
+    # With payment_source.paypal, PayPal names the approval link "payer-action"; without one, "approve".
+    approve_url = next((link.href for link in order.links or [] if link.rel in ("payer-action", "approve")), None)
     return {"orderId": order.id, "approveUrl": approve_url}
 
 
@@ -173,3 +181,38 @@ def refund(capture_id: str, cents: int, request_id: str) -> dict:
                 raise
             time.sleep(wait)
     raise AssertionError("unreachable")
+
+
+SANDBOX_API = "https://api-m.sandbox.paypal.com"
+# The headers PayPal signs a webhook with, as the verify call names them.
+WEBHOOK_HEADERS = {
+    "auth_algo": "paypal-auth-algo",
+    "cert_url": "paypal-cert-url",
+    "transmission_id": "paypal-transmission-id",
+    "transmission_sig": "paypal-transmission-sig",
+    "transmission_time": "paypal-transmission-time",
+}
+
+
+def verify_webhook(headers: dict[str, str], event: dict) -> bool:
+    """True only if PayPal confirms it sent this event to our webhook (decision 66). The Server SDK has no
+    notifications API, so this is two plain REST calls: a token, then verify-webhook-signature."""
+    webhook_id = os.environ.get("PAYPAL_WEBHOOK_ID")
+    client_id, client_secret = os.environ.get("PAYPAL_CLIENT_ID"), os.environ.get("PAYPAL_CLIENT_SECRET")
+    if not webhook_id or not client_id or not client_secret:
+        raise RuntimeError("PAYPAL_WEBHOOK_ID, PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be set")
+    signed = {key: headers.get(name) for key, name in WEBHOOK_HEADERS.items()}
+    if not all(signed.values()):
+        return False
+    http = session or requests.Session()
+    token = http.post(f"{SANDBOX_API}/v1/oauth2/token", auth=(client_id, client_secret), data={"grant_type": "client_credentials"}, timeout=30)
+    token.raise_for_status()
+    answer = http.post(
+        f"{SANDBOX_API}/v1/notifications/verify-webhook-signature",
+        headers={"Authorization": f"Bearer {token.json()['access_token']}"},
+        json={**signed, "webhook_id": webhook_id, "webhook_event": event},
+        timeout=30,
+    )
+    answer.raise_for_status()
+    return answer.json().get("verification_status") == "SUCCESS"
+

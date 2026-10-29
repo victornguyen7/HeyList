@@ -13,7 +13,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
 | 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7C built 2026-10-28; 7D built and removed (decision 63); 7E optional; 7F dropped |
-| 8 | Effortless core loop, ready for judges | 8B–8D built 2026-10-28; 8A code part (README) done, owner tasks left; 8E later |
+| 8 | Effortless core loop, ready for judges | 8B–8D built 2026-10-28; 8A code part (README) done, owner tasks left; 8F, 8G built 2026-10-28; 8E later |
 
 ### Phase 1 — purchase verification (done)
 
@@ -452,6 +452,57 @@ Under **More**: scan, choose other items to pay for, Shop this list for me, shar
   5. Settle up → **Remind** → Ben pays Ann with PayPal (8D, 7B).
 - **Devpost text:** problem, who it's for (families, flatmates, trip groups), how PayPal and AI each work, and what was built after 1 October. Built With: PayPal Orders API, PayPal Server SDK, Ollama, AWS Textract, Channel3, Supabase, Render.
 - **Video:** recorded on a phone, under 3:00, public on YouTube. Paid calls during takes need the owner's approval ([RULES.md](RULES.md)).
+
+#### 8F — PayPal webhooks on Render (replaces 7E)
+
+**Built 2026-10-28** (decision 66).
+- **Code:** `paypal.verify_webhook()` (REST: token, then verify-webhook-signature), `POST /api/paypal/webhook`, and the `webhook_events` table. `requests` is now pinned in `backend/requirements.txt`.
+- **Tests:** 8 new.
+- **Owner setup:** register the webhook in the sandbox app, set `PAYPAL_WEBHOOK_ID` on heylist-api and in `.env.local`, then run the schema. Not tried live yet.
+
+Added 2026-10-28 at the owner's request, from the review of PayPal and sponsor tools. It's part of PayPal's "useful payment capabilities", and it removes a manual step: a payment that comes back pending finishes by itself.
+
+- **Route:** `POST /api/paypal/webhook`. Every event is checked with PayPal's verify-webhook-signature API (`PAYPAL_WEBHOOK_ID`) before anything happens, and each event ID is handled once (a `webhook_events` table).
+- **Events:**
+  - `PAYMENT.CAPTURE.COMPLETED`: a pending list order or settle-up payment is recorded through the same code as **Check again** (`record_capture()` / `record_settlement()`);
+  - `PAYMENT.CAPTURE.DENIED` and `PAYMENT.CAPTURE.DECLINED`: the pending payment is marked as failed and its items are released.
+- **Not handled:** `PAYMENT.CAPTURE.REFUNDED` from outside HeyList. Counting such a refund correctly in the split would mean changing the money math; HeyList's own refunds are already recorded when it makes them. Noted in ISSUES.
+- **Keep Check again** as the fallback, for local development, where PayPal can't reach the backend.
+- **Setup:** register the webhook in the sandbox app for `https://heylist-api.onrender.com/api/paypal/webhook` with the events above, and put its ID in `PAYPAL_WEBHOOK_ID` (Render, `.env.local`).
+- **Tests:**
+  - a bad signature is refused;
+  - a repeated event is handled once;
+  - pending to completed, for a list order and for a settle-up payment;
+  - pending to denied;
+  - unknown orders and other events are ignored;
+  - no webhook ID: refused.
+
+#### 8G — PayPal JS SDK v6 buttons, with Venmo
+
+**Built 2026-10-28** (decision 67).
+- **Component:** `app/paypal-buttons.tsx`, used on Progress (pay for your items, and the choose-items pay mode) and on Settle up (pay the person you owe).
+- **Backend:** the order routes take `"method": "venmo"`, and a Venmo order has no `payment_source`, as in PayPal's v6 sample. The capture wording is shared (`captureMessage()` in `app/api.ts`).
+- **Tests:** 2 new backend tests.
+- **Owner setup:** add `PAYPAL_CLIENT_ID` to heylist-web and redeploy, since it's read at build time.
+- **Not done:**
+  - trying both buttons on the sandbox in a browser; Venmo needs it enabled for the sandbox business account, and a US buyer;
+  - Shop this list for me still uses the redirect.
+
+Added 2026-10-28 at the owner's request. Payment happens in PayPal's own pop-up, on the list page, instead of a redirect to PayPal and back. Venmo is offered where it's available: US buyers, USD, which suits friends paying each other back.
+
+- **Where:**
+  - Progress, when you pay for your items;
+  - Settle up, when you pay the person you owe.
+- **How:**
+  - The buttons call the same backend routes as now, which create the order and then capture it. Prices and amounts still come from the server (decision 21).
+  - The pop-up returns the order ID, and the page captures it.
+- **Fallback:** if the SDK fails to load, or no method is eligible, the current redirect checkout stays as it is.
+- **Client ID:** `PAYPAL_CLIENT_ID` is public by design. The web service gets it at build time, as for Supabase.
+- **Check first:**
+  - the v6 docs: some pages are "limited release";
+  - whether an order must be created differently for Venmo than for PayPal;
+  - whether the sandbox app has Venmo enabled.
+- **Tests:** backend tests for any change to order creation. The buttons themselves are tried in a browser with the sandbox.
 
 #### Not doing in this phase
 

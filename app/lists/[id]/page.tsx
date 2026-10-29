@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { api, proofLabel, refundNote, usd, type Item, type List } from "../../api";
+import { api, captureMessage, proofLabel, refundNote, usd, type Capture, type Item, type List } from "../../api";
+import { PayPalButtons } from "../../paypal-buttons";
 import { ShopAgent } from "../../shop-agent";
 import { Check, Ring } from "../../ui";
 import { buttonAi, card, outline, row, useList } from "./list-context";
@@ -98,6 +99,33 @@ export default function ProgressPage() {
       setStatus(err.code === "PRICE_CHANGED" ? err.message : `Could not start checkout: ${err.message}`);
       setBusy(false);
     }
+  }
+
+  // The PayPal and Venmo buttons (decision 67): the same order route, approved in PayPal's pop-up instead of a redirect.
+  async function orderFor(itemIds: string[], method: "paypal" | "venmo") {
+    setStatus(null);
+    try {
+      const { orderId } = await api<{ orderId: string }>(`/api/lists/${list.id}/orders`, {
+        method: "POST",
+        body: JSON.stringify({ itemIds, memberId: me, method }),
+      });
+      return orderId;
+    } catch (e) {
+      const err = e as Error & { code?: string };
+      if (err.code === "PRICE_CHANGED") setList(await api<List>(`/api/lists/${list.id}`).catch(() => list));
+      setStatus(err.code === "PRICE_CHANGED" ? err.message : `Could not start checkout: ${err.message}`);
+      throw err;
+    }
+  }
+
+  async function captured(orderId: string) {
+    try {
+      setStatus(captureMessage(await api<Capture>(`/api/orders/${encodeURIComponent(orderId)}/capture`, { method: "POST" })));
+    } catch (err) {
+      setStatus(`Payment could not be confirmed: ${(err as Error).message}`);
+    }
+    stopChoosing();
+    setList(await api<List>(`/api/lists/${list.id}`).catch(() => list));
   }
 
   const cost = (item: Item) => (item.estPriceCents ?? 0) * item.quantity;
@@ -284,9 +312,22 @@ export default function ProgressPage() {
         ) : mode === "pay" ? (
           <div className="flex flex-col gap-2.5">
             <p className="text-base text-muted">Choose what you&apos;re paying for.</p>
-            <button type="button" onClick={() => pay([...selected])} disabled={total === 0 || busy || !me} className={buttonAi}>
-              {busy ? "Opening PayPal…" : total === 0 ? "Choose items to pay for" : `Pay ${usd(total)} with PayPal`}
-            </button>
+            {total === 0 || !me ? (
+              <button type="button" disabled className={buttonAi}>
+                Choose items to pay for
+              </button>
+            ) : (
+              <PayPalButtons
+                label={`Pay ${usd(total)}`}
+                createOrder={(method) => orderFor([...selected], method)}
+                onApproved={captured}
+                onError={setStatus}
+              >
+                <button type="button" onClick={() => pay([...selected])} disabled={busy} className={buttonAi}>
+                  {busy ? "Opening PayPal…" : `Pay ${usd(total)} with PayPal`}
+                </button>
+              </PayPalButtons>
+            )}
             <button
               type="button"
               onClick={stopChoosing}
@@ -300,9 +341,16 @@ export default function ProgressPage() {
           <>
             {main === null && <p className="text-base text-muted">Join the list above to claim, pay for and tick off items.</p>}
             {main === "pay" && (
-              <button type="button" onClick={() => pay(mine.map((item) => item.id))} disabled={busy} className={buttonAi}>
-                {busy ? "Opening PayPal…" : `Pay for your ${mine.length === 1 ? "item" : `${mine.length} items`} · ${usd(mineCost)} with PayPal`}
-              </button>
+              <PayPalButtons
+                label={`Pay for your ${mine.length === 1 ? "item" : `${mine.length} items`} · ${usd(mineCost)}`}
+                createOrder={(method) => orderFor(mine.map((item) => item.id), method)}
+                onApproved={captured}
+                onError={setStatus}
+              >
+                <button type="button" onClick={() => pay(mine.map((item) => item.id))} disabled={busy} className={buttonAi}>
+                  {busy ? "Opening PayPal…" : `Pay for your ${mine.length === 1 ? "item" : `${mine.length} items`} · ${usd(mineCost)} with PayPal`}
+                </button>
+              </PayPalButtons>
             )}
             {main === "share" && (
               <button type="button" onClick={assign} className={buttonAi}>

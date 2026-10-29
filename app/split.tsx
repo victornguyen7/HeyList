@@ -2,8 +2,9 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { api, proofLabel, usd, type List } from "./api";
+import { api, captureMessage, proofLabel, usd, type Capture, type List } from "./api";
 import { useList } from "./lists/[id]/list-context";
+import { PayPalButtons } from "./paypal-buttons";
 import { Avatar, button, buttonGlass, card, chip, field } from "./ui";
 
 export type Split = {
@@ -102,23 +103,45 @@ function PayBack({ transfer }: { transfer: Transfer }) {
   const to = nameOf(list, transfer.to);
   const needsEmail = !list.members.find((m) => m.id === transfer.to)?.hasEmail;
 
-  async function pay(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
+  // The order for this payment. Redirect checkout uses its approveUrl; the PayPal and Venmo buttons (decision 67) only
+  // its ID. Throws after saying why when it can't be made.
+  async function order(method: "paypal" | "venmo") {
     setStatus(null);
+    if (needsEmail && !email.includes("@")) {
+      setStatus(`Type ${to}'s PayPal email first.`);
+      throw new Error("email needed");
+    }
     try {
-      const { approveUrl } = await api<{ approveUrl: string }>(`/api/lists/${list.id}/settlements`, {
+      return await api<{ orderId: string; approveUrl: string }>(`/api/lists/${list.id}/settlements`, {
         method: "POST",
-        body: JSON.stringify({ fromId: transfer.from, toId: transfer.to, amountCents: transfer.amountCents, ...(needsEmail ? { email } : {}) }),
+        body: JSON.stringify({ fromId: transfer.from, toId: transfer.to, amountCents: transfer.amountCents, method, ...(needsEmail ? { email } : {}) }),
       });
-      window.location.assign(approveUrl);
     } catch (err) {
       const { code, message } = err as Error & { code?: string };
       setStatus(message);
       // Someone paid or bought something meanwhile: show the new amounts before they pay again.
       if (code === "SPLIT_CHANGED" || code === "PAYMENT_PENDING") setList(await api<List>(`/api/lists/${list.id}`).catch(() => list));
+      throw err;
+    }
+  }
+
+  async function pay(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      window.location.assign((await order("paypal")).approveUrl);
+    } catch {
       setBusy(false);
     }
+  }
+
+  async function captured(orderId: string) {
+    try {
+      setStatus(captureMessage(await api<Capture>(`/api/orders/${encodeURIComponent(orderId)}/capture`, { method: "POST" })));
+    } catch (err) {
+      setStatus(`Payment could not be confirmed: ${(err as Error).message}`);
+    }
+    setList(await api<List>(`/api/lists/${list.id}`).catch(() => list));
   }
 
   return (
@@ -135,9 +158,11 @@ function PayBack({ transfer }: { transfer: Transfer }) {
           required
         />
       )}
-      <button type="submit" className={button} disabled={busy}>
-        Pay {to} {usd(transfer.amountCents)} with PayPal
-      </button>
+      <PayPalButtons label={`Pay ${to} ${usd(transfer.amountCents)}`} createOrder={async (method) => (await order(method)).orderId} onApproved={captured} onError={setStatus}>
+        <button type="submit" className={button} disabled={busy}>
+          Pay {to} {usd(transfer.amountCents)} with PayPal
+        </button>
+      </PayPalButtons>
       <p className="text-[13px] text-muted">The money goes straight to {to}&apos;s PayPal account.</p>
     </form>
   );

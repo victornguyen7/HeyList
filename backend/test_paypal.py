@@ -89,6 +89,38 @@ class PayPalTest(unittest.TestCase):
         self.assertEqual(units[0]["payee"], {"email_address": "ann@example.com"})
         self.assertNotIn("payee", units[1])
 
+    def test_a_webhook_is_verified_with_paypal(self):
+        self.fake_paypal((200, {"verification_status": "SUCCESS"}), (200, {"verification_status": "FAILURE"}))
+        headers = {name: f"v-{key}" for key, name in paypal.WEBHOOK_HEADERS.items()}
+        event = {"id": "WH-1", "event_type": "PAYMENT.CAPTURE.COMPLETED"}
+        with mock.patch.dict(os.environ, {"PAYPAL_WEBHOOK_ID": "HOOK1"}):
+            self.assertTrue(paypal.verify_webhook(headers, event))
+            self.assertFalse(paypal.verify_webhook(headers, event))
+            # A request without PayPal's signature headers isn't sent to PayPal at all.
+            self.assertFalse(paypal.verify_webhook({}, event))
+
+        verify = self.fake.requests[1]
+        self.assertEqual(verify.path_url, "/v1/notifications/verify-webhook-signature")
+        self.assertEqual(verify.headers["authorization"], "Bearer token-1")
+        body = json.loads(verify.body)
+        self.assertEqual((body["webhook_id"], body["transmission_sig"], body["webhook_event"]), ("HOOK1", "v-transmission_sig", event))
+        self.assertEqual(len(self.fake.requests), 4)
+
+    def test_a_webhook_needs_its_id(self):
+        self.fake_paypal()
+        with mock.patch.dict(os.environ, {"PAYPAL_WEBHOOK_ID": ""}), self.assertRaises(RuntimeError):
+            paypal.verify_webhook({}, {})
+
+    def test_a_venmo_order_names_no_payment_source(self):
+        self.fake_paypal((201, {"id": "ORDER2", "links": [{"rel": "approve", "href": "https://approve"}]}))
+
+        order = paypal.create_order([{"name": "Tent", "priceCents": 9000, "quantity": 1}], "http://app/", venmo=True)
+
+        self.assertEqual(order, {"orderId": "ORDER2", "approveUrl": "https://approve"})
+        body = json.loads(self.fake.requests[1].body)
+        self.assertNotIn("payment_source", body)
+        self.assertEqual(body["purchase_units"][0]["amount"]["value"], "90.00")
+
     def test_capture_reports_the_payment_status(self):
         self.fake_paypal((201, captured("COMPLETED")))
 

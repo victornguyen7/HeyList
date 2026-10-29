@@ -66,7 +66,7 @@ Infrastructure:
 
 - [x] Supabase (lists, receipts storage, realtime)
 - [x] FastAPI backend, proxied under `/api` by Next.js
-- [ ] PayPal sandbox (Checkout JS SDK + Orders API, Invoicing API) — Orders API done via the PayPal Server SDK
+- [x] PayPal sandbox: Orders API via the PayPal Server SDK, JS SDK v6 buttons with Venmo, webhooks (Invoicing dropped, decision 60)
 - [ ] LLM with vision via the Ollama API: starting lists and receipt matching done; receipt photos are read by Ollama vision when Textract is unavailable (decision 38)
 - [x] Deploy on Render (`render.yaml` Blueprint: heylist-api and heylist-web)
 - [ ] Sponsor tools: APIMatic Context Plugin, Postman — APIMatic in use (PayPal Server SDK and its Context Plugin skills)

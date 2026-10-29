@@ -4,6 +4,8 @@
 
 ### Added
 
+- **PayPal webhooks** (decision 66, phase 8F): a payment that came back pending now completes, or is released, on its own when PayPal says so, without **Check again**. Every event is verified with PayPal first and handled once. **Setup:** register the webhook for `https://heylist-api.onrender.com/api/paypal/webhook` (capture completed, denied, declined) and set `PAYPAL_WEBHOOK_ID`. **Schema:** `webhook_events`; run `supabase/schema.sql` again.
+- **PayPal and Venmo buttons** (decision 67, phase 8G): paying for your items and paying back a friend now use PayPal's JS SDK v6 buttons, in a pop-up on the page, with Venmo where it's available. The redirect checkout stays as the fallback. `PAYPAL_CLIENT_ID` is now also needed by heylist-web, at build time.
 - **Sample trip** (decision 64, phase 8B): **New here? See how it works with a sample trip** on Home opens a real camping list shared with Ann and Ben, where they've already bought something, so one person can try paying, scanning and settling up.
 - **Remind on Settle up** (decision 65, phase 8D): **Remind Ben** drafts a friendly message with the AI, with the exact amount from the split and a link that opens Settle up ready to pay with PayPal. You send it from your phone's share sheet, or copy it. A reminder link opened on a new phone offers "I'm Ben, let me pay".
 

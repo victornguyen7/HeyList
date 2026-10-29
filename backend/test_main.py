@@ -299,6 +299,16 @@ class CheckoutTest(RoutesTest):
         self.assertEqual(return_url, f"{main.APP_URL}/lists/{self.list['id']}")
         self.assertEqual(self.db.tables["orders"][0]["total_cents"], 899 * 2 + 1499)
 
+    def test_the_venmo_button_asks_for_a_venmo_order_and_other_methods_are_refused(self):
+        create = self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": None})
+        ids = [self.sunscreen["id"]]
+
+        self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": ids, "method": "venmo"})
+        self.assertEqual(create.call_args.kwargs, {"venmo": True})
+        self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": ids})
+        self.assertEqual(create.call_args.kwargs, {"venmo": False})
+        self.assertEqual(self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": ids, "method": "card"}).status_code, 400)
+
     def test_items_without_a_price_or_from_another_list_cannot_be_ordered(self):
         create = self.mock_paypal("create_order")
         other = self.new_list([{"name": "Tent", "estPriceCents": 100}])["items"][0]
@@ -851,6 +861,70 @@ class ReminderTest(RoutesTest):
         llm.reminder.assert_not_called()
 
 
+class WebhookTest(RoutesTest):
+    def setUp(self):
+        super().setUp()
+        self.list = self.new_list([{"name": "Tent", "estPriceCents": 9000}])
+        self.tent = self.list["items"][0]
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": [self.tent["id"]]})
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "PENDING", "captureId": "CAP1"})
+        self.client.post("/api/orders/ORDER1/capture")
+        self.verify = self.mock_paypal("verify_webhook", return_value=True)
+
+    def event(self, event_type="PAYMENT.CAPTURE.COMPLETED", order_id="ORDER1", event_id="WH-1"):
+        body = {"id": event_id, "event_type": event_type, "resource": {"id": "CAP1", "supplementary_data": {"related_ids": {"order_id": order_id}}}}
+        return self.client.post("/api/paypal/webhook", json=body, headers={"paypal-transmission-id": "T1"})
+
+    def tent_now(self):
+        return next(i for i in self.client.get(f"/api/lists/{self.list['id']}").json()["items"] if i["id"] == self.tent["id"])
+
+    def test_a_pending_payment_completes_without_check_again(self):
+        self.assertEqual(self.event().json(), {"handled": True})
+
+        self.assertEqual(self.tent_now()["orderId"], "ORDER1")
+        self.assertEqual(self.tent_now()["priceCents"], 9000)
+        headers, body = self.verify.call_args.args
+        self.assertEqual((headers["paypal-transmission-id"], body["id"]), ("T1", "WH-1"))
+
+    def test_a_denied_payment_releases_its_items(self):
+        self.event("PAYMENT.CAPTURE.DENIED")
+
+        self.assertEqual(self.db.tables["orders"][0]["status"], "DENIED")
+        self.assertIsNone(self.tent_now()["checkedAt"])
+        self.assertEqual(self.client.get(f"/api/lists/{self.list['id']}").json()["orders"], [])
+
+    def test_a_bad_signature_changes_nothing(self):
+        self.verify.return_value = False
+        self.assertEqual(self.event().status_code, 401)
+        self.assertEqual(self.db.tables["orders"][0]["status"], "PENDING")
+
+        self.verify.side_effect = RuntimeError("PAYPAL_WEBHOOK_ID must be set")
+        with self.assertLogs(main.log, "ERROR"):
+            self.assertEqual(self.event().status_code, 503)
+        self.assertNotIn("webhook_events", self.db.tables)
+
+    def test_a_repeated_event_is_handled_once_and_a_late_denial_doesnt_undo_a_completion(self):
+        self.event()
+        self.assertEqual(self.event().json(), {"handled": False})
+        self.assertEqual(self.event("PAYMENT.CAPTURE.DENIED", event_id="WH-2").json(), {"handled": False})
+        self.assertEqual(self.db.tables["orders"][0]["status"], "COMPLETED")
+        # Each distinct event is recorded once; the repeat of WH-1 added nothing.
+        self.assertEqual([e["id"] for e in self.db.tables["webhook_events"]], ["WH-1", "WH-2"])
+
+    def test_other_events_and_unknown_orders_are_acknowledged_and_ignored(self):
+        self.assertEqual(self.event("PAYMENT.CAPTURE.REFUNDED").json(), {"handled": False})
+        self.assertEqual(self.event(order_id="NOPE", event_id="WH-3").json(), {"handled": False})
+        self.assertEqual(self.db.tables["orders"][0]["status"], "PENDING")
+
+    def test_a_pending_settle_up_payment_completes_too(self):
+        ann, bob = (self.client.post(f"/api/lists/{self.list['id']}/members", json={"name": n}).json()["id"] for n in ("Ann", "Bob"))
+        self.db.insert("settlements", [{"id": "SETTLE1", "list_id": self.list["id"], "debtor_id": bob, "creditor_id": ann, "amount_cents": 500, "status": "PENDING"}])
+
+        self.assertEqual(self.event(order_id="SETTLE1", event_id="WH-4").json(), {"handled": True})
+        self.assertEqual(self.db.tables["settlements"][0]["status"], "COMPLETED")
+
+
 class SettleUpTest(RoutesTest):
     def setUp(self):
         super().setUp()
@@ -876,7 +950,7 @@ class SettleUpTest(RoutesTest):
         self.assertEqual(self.pay(email="ann@example.com").json(), {"orderId": "SETTLE1", "approveUrl": "https://pay"})
 
         items, return_url = self.create.call_args.args
-        self.assertEqual(self.create.call_args.kwargs, {"payee_email": "ann@example.com"})
+        self.assertEqual(self.create.call_args.kwargs, {"payee_email": "ann@example.com", "venmo": False})
         self.assertEqual(items, [{"name": "HeyList: settle up for Trip", "priceCents": 3000, "quantity": 1}])
         self.assertEqual(return_url, f"{main.APP_URL}/lists/{self.list['id']}/settle")
         row = self.db.tables["settlements"][0]
@@ -909,7 +983,7 @@ class SettleUpTest(RoutesTest):
         self.join("Ann", email="bob@example.com")
         self.assertEqual(self.db.tables["members"][0]["email"], "ann@example.com")
         self.assertEqual(self.pay().status_code, 200)
-        self.assertEqual(self.create.call_args.kwargs, {"payee_email": "ann@example.com"})
+        self.assertEqual(self.create.call_args.kwargs, {"payee_email": "ann@example.com", "venmo": False})
 
     def test_capturing_twice_records_one_settlement_and_everyone_is_even(self):
         self.pay(email="ann@example.com")

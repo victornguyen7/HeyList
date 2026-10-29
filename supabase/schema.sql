@@ -126,6 +126,14 @@ create table if not exists settlements (
   created_at timestamptz not null default now()
 );
 
+-- PayPal webhook events already handled (decision 66), so a repeated delivery is acted on once.
+create table if not exists webhook_events (
+  -- PayPal's event ID.
+  id text primary key,
+  type text not null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists items_list_id on items (list_id);
 create index if not exists receipts_list_id on receipts (list_id);
 create index if not exists orders_list_id on orders (list_id);
@@ -137,6 +145,7 @@ alter table receipts enable row level security;
 alter table orders enable row level security;
 alter table items enable row level security;
 alter table settlements enable row level security;
+alter table webhook_events enable row level security;
 
 -- Private bucket for receipt photos. The backend uploads and serves them; there is no public URL.
 insert into storage.buckets (id, name, public)

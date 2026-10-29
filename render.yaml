@@ -17,6 +17,8 @@ services:
         sync: false
       - key: PAYPAL_CLIENT_SECRET
         sync: false
+      - key: PAYPAL_WEBHOOK_ID # the sandbox app's webhook for https://heylist-api.onrender.com/api/paypal/webhook
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SECRET_KEY
@@ -46,4 +48,6 @@ services:
       - key: SUPABASE_URL # for login (app/auth.ts); read at build time
         sync: false
       - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: PAYPAL_CLIENT_ID # the same sandbox app as heylist-api; public, for the PayPal and Venmo buttons; read at build time
         sync: false

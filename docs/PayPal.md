@@ -86,7 +86,7 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 ## 6. Planned, not built
 
 - **Settle-up on the live sandbox** (decision 60, replacing the invoices of decision 9). Built and unit-tested: `POST /api/lists/{id}/settlements` creates an Orders API order with `purchase_units[0].payee.email_address` set to the PayPal email of the person owed, for the amount in the current split. The capture and **Check again** routes handle it like a list order, and a completed one counts in the split (`settlements` table). Still to check: that the sandbox accepts a **personal** account as the payee (it needs a second sandbox personal account). If it refuses, the person owed needs a sandbox business account.
-- **PayPal Checkout JS SDK** (decision 17). Checkout uses PayPal's hosted page and a redirect for now (decision 56). The JS SDK would keep the buyer on the list page with PayPal's own buttons.
+- **JS SDK v6 buttons and webhooks, live:** built and unit-tested (decisions 66, 67). Still to try on the sandbox: the PayPal and Venmo pop-ups (Venmo needs the sandbox business account to have it, and a US buyer), and one webhook delivery to the Render URL.
 - **Dark redesign.** The Figma draft puts a blue "Pay <name> with PayPal" button on each payment in Settle up ([ROADMAP](ROADMAP.md)). Built on the current design (decision 60).
 
 ## 7. Testing
