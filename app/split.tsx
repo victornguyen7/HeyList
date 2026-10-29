@@ -330,8 +330,17 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
               <summary className="flex cursor-pointer justify-between gap-2 tabular-nums">
                 <span className="font-medium">{name(m.memberId)}</span>
                 <span>
-                  paid {usd(m.paidCents)} − share {usd(m.shareCents)}
-                  {m.settledCents > 0 ? ` + sent ${usd(m.settledCents)}` : m.settledCents < 0 ? ` − received ${usd(-m.settledCents)}` : ""} ={" "}
+                  {usd(m.paidCents)} <span className="text-muted">(paid)</span> − {usd(m.shareCents)} <span className="text-muted">(share)</span>
+                  {m.settledCents > 0 ? (
+                    <>
+                      {" "}+ {usd(m.settledCents)} <span className="text-muted">(sent)</span>
+                    </>
+                  ) : m.settledCents < 0 ? (
+                    <>
+                      {" "}− {usd(-m.settledCents)} <span className="text-muted">(received)</span>
+                    </>
+                  ) : null}{" "}
+                  ={" "}
                   {m.balanceCents > 0 ? `gets back ${usd(m.balanceCents)}` : m.balanceCents < 0 ? `owes ${usd(-m.balanceCents)}` : "even"}
                 </span>
               </summary>
