@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api, proofLabel, usd, type List } from "./api";
 import { useList } from "./lists/[id]/list-context";
@@ -142,6 +143,54 @@ function PayBack({ transfer }: { transfer: Transfer }) {
   );
 }
 
+// Remind someone to pay (decision 65): the AI drafts a friendly message with a link that opens this page ready to pay
+// with PayPal. The person sends it from their own phone (share sheet) or copies it; HeyList never sends anything.
+function Remind({ transfer }: { transfer: Transfer }) {
+  const { list, setStatus } = useList();
+  const [busy, setBusy] = useState(false);
+  const who = nameOf(list, transfer.from);
+
+  async function remind() {
+    setBusy(true);
+    setStatus(null);
+    try {
+      const { message } = await api<{ message: string }>(`/api/lists/${list.id}/reminders`, {
+        method: "POST",
+        body: JSON.stringify({ fromId: transfer.from, toId: transfer.to }),
+      });
+      try {
+        if (navigator.share) await navigator.share({ text: message });
+        else {
+          await navigator.clipboard.writeText(message);
+          setStatus(`Reminder copied. Paste it to ${who} in your chat:\n${message}`);
+        }
+      } catch {
+        // Closing the share sheet is not an error.
+      }
+    } catch (err) {
+      setStatus((err as Error).message);
+    }
+    setBusy(false);
+  }
+
+  return (
+    <button type="button" onClick={remind} disabled={busy} className={`${buttonGlass} h-10 self-start px-4 text-sm`}>
+      {busy ? "Writing it…" : `Remind ${who}`}
+    </button>
+  );
+}
+
+// Opened from a reminder (?pay=<member>) on a phone that hasn't joined: one tap to be that person and pay.
+function ClaimPayer({ memberId }: { memberId: string }) {
+  const { list, joinAs } = useList();
+  const name = nameOf(list, memberId);
+  return (
+    <button type="button" onClick={() => joinAs(name)} className={button}>
+      I&apos;m {name}, let me pay
+    </button>
+  );
+}
+
 // Settle-up payments made with PayPal. A pending one counts once PayPal has captured it; PayPal doesn't call back,
 // so anyone can ask again.
 function Payments({ list, name }: { list: List; name: (id: string | null) => string }) {
@@ -187,6 +236,8 @@ function Payments({ list, name }: { list: List; name: (id: string | null) => str
 export function SettleUp({ list, split, me }: { list: List; split: Split; me: string | null }) {
   const name = (id: string | null) => nameOf(list, id) + (id === me ? " (you)" : "");
   const item = (id: string) => list.items.find((i) => i.id === id);
+  // The payment a reminder link points to.
+  const payFor = useSearchParams().get("pay");
   if (list.members.length === 0) return <p className="text-base text-muted">Settling up is for shared lists. Add people first.</p>;
   const count = split.transfers.length;
 
@@ -207,7 +258,7 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
       </div>
 
       {split.transfers.map((t, index) => (
-        <div key={index} className={`${card} flex flex-col gap-3.5 ${t.from === me ? "border-money" : ""}`}>
+        <div key={index} className={`${card} flex flex-col gap-3.5 ${t.from === me ? "border-money" : ""} ${t.from === payFor ? "ring-2 ring-ai" : ""}`}>
           <div className="flex items-center justify-between gap-2">
             <span className="flex w-20 flex-col items-center gap-1.5 text-center text-sm font-medium">
               <Avatar name={nameOf(list, t.from)} size={48} />
@@ -224,6 +275,8 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
             </span>
           </div>
           {t.from === me && <PayBack transfer={t} />}
+          {t.from === payFor && !me && <ClaimPayer memberId={t.from} />}
+          {t.from !== me && <Remind transfer={t} />}
         </div>
       ))}
       {count > 0 && !split.transfers.some((t) => t.from === me) && (

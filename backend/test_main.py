@@ -114,6 +114,34 @@ class RoutesTest(unittest.TestCase):
         return patch.start()
 
 
+class SampleListTest(RoutesTest):
+    def test_the_sample_has_three_people_its_items_and_two_purchases(self):
+        response = self.client.post("/api/lists/sample").json()
+        state, you = response["list"], response["memberId"]
+        names = {m["id"]: m["name"] for m in state["members"]}
+
+        self.assertEqual(sorted(names.values()), ["Ann", "Ben", "You"])
+        self.assertEqual(names[you], "You")
+        self.assertEqual((state["title"], state["kind"], state["budgetCents"]), ("Weekend camping trip (sample)", "trip", 25000))
+        self.assertEqual(len(state["items"]), 6)
+        bought = {i["name"]: (names[i["boughtBy"]], i["priceCents"]) for i in state["items"] if i["checkedAt"]}
+        self.assertEqual(bought, {"Tent": ("Ann", 9000), "Snacks for the road": ("Ben", 2400)})
+        self.assertEqual([names[i["claimedBy"]] for i in state["items"] if i["claimedBy"] and not i["checkedAt"]], ["You", "You"])
+
+    def test_its_split_already_has_payments_to_settle(self):
+        state = self.client.post("/api/lists/sample").json()["list"]
+        names = {m["id"]: m["name"] for m in state["members"]}
+
+        transfers = [(names[t["from"]], names[t["to"]], t["amountCents"]) for t in state["split"]["transfers"]]
+        # 11400 spent, 3800 each: Ann paid 9000, Ben 2400, You nothing yet.
+        self.assertEqual(transfers, [("You", "Ann", 3800), ("Ben", "Ann", 1400)])
+
+    def test_samples_are_capped(self):
+        for _ in range(60):
+            main.allow("sample", 60, 3600)
+        self.assertEqual(self.client.post("/api/lists/sample").status_code, 429)
+
+
 class ListRoutesTest(RoutesTest):
     def test_a_new_list_comes_back_with_its_items_in_order(self):
         state = self.new_list([{"name": "Sunscreen", "estPriceCents": 899, "quantity": 2}, {"name": "Adapter"}])
@@ -773,6 +801,54 @@ class ShopTest(RoutesTest):
         self.assertEqual(self.checkout([(self.tent, "T2")], 7000).status_code, 400)
         self.assertEqual(self.checkout([(self.lamp, "L1"), (self.lamp, "L2")], 2400).status_code, 400)
         create.assert_not_called()
+
+
+class ReminderTest(RoutesTest):
+    def setUp(self):
+        super().setUp()
+        self.list = self.new_list([{"name": "Tent", "estPriceCents": 9000}, {"name": "Food", "estPriceCents": 3000}])
+        self.ann, self.bob = (self.client.post(f"/api/lists/{self.list['id']}/members", json={"name": n}).json()["id"] for n in ("Ann", "Bob"))
+        tent, food = (i["id"] for i in self.list["items"])
+        self.client.patch(f"/api/items/{tent}", json={"checked": True, "memberId": self.ann, "priceCents": 9000})
+        self.client.patch(f"/api/items/{food}", json={"checked": True, "memberId": self.bob, "priceCents": 3000})
+        # Bob owes Ann $30.
+
+    def remind(self, from_id=None, to_id=None):
+        return self.client.post(f"/api/lists/{self.list['id']}/reminders", json={"fromId": from_id or self.bob, "toId": to_id or self.ann})
+
+    def test_the_ai_writes_it_from_the_splits_amount_and_the_link_opens_settle_up(self):
+        write = mock.patch.object(llm, "reminder", return_value="Hey Bob, just a heads-up: $30.00 for Trip, to Ann 🙂").start()
+        self.addCleanup(mock.patch.stopall)
+
+        reply = self.remind().json()
+
+        write.assert_called_once_with("Bob", "Ann", "$30.00", "Trip")
+        link = f"{main.APP_URL}/lists/{self.list['id']}/settle?pay={self.bob}"
+        self.assertEqual(reply, {"message": f"Hey Bob, just a heads-up: $30.00 for Trip, to Ann 🙂\n{link}", "link": link, "amountCents": 3000, "aiWritten": True})
+
+    def test_a_pair_that_owes_nothing_or_isnt_on_the_list_is_refused(self):
+        write = mock.patch.object(llm, "reminder").start()
+        self.addCleanup(mock.patch.stopall)
+        other = self.new_list([{"name": "x"}])
+        stranger = self.client.post(f"/api/lists/{other['id']}/members", json={"name": "Cy"}).json()["id"]
+
+        self.assertEqual(self.remind(self.ann, self.bob).json(), {"error": "SPLIT_CHANGED"})
+        self.assertEqual(self.remind(stranger, self.ann).status_code, 400)
+        write.assert_not_called()
+
+    def test_a_failed_ai_call_or_the_cap_falls_back_to_the_template(self):
+        mock.patch.object(llm, "reminder", side_effect=ValueError("unusable reminder")).start()
+        self.addCleanup(mock.patch.stopall)
+        with self.assertLogs(main.log, "ERROR"):
+            reply = self.remind().json()
+        self.assertFalse(reply["aiWritten"])
+        self.assertTrue(reply["message"].startswith("Hi Bob! Quick heads-up: your part of Trip comes to $30.00, to Ann."))
+
+        for _ in range(30):
+            main.allow("reminder", 30, 3600)
+        llm.reminder.reset_mock()
+        self.assertFalse(self.remind().json()["aiWritten"])
+        llm.reminder.assert_not_called()
 
 
 class SettleUpTest(RoutesTest):

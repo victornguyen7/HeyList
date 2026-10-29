@@ -119,5 +119,20 @@ class StoreMatchTest(unittest.TestCase):
 
 
 
+
+class ReminderTest(unittest.TestCase):
+    def write(self, reply):
+        with mock.patch.object(llm, "chat", return_value=json.dumps({"message": reply})):
+            return llm.reminder("Ben", "Ann", "$30.00", "Camping")
+
+    def test_a_short_reply_with_the_exact_amount_is_kept(self):
+        self.assertEqual(self.write("  Hey Ben, just a heads-up: $30.00 for Camping, to Ann. Pay with PayPal below!  "), "Hey Ben, just a heads-up: $30.00 for Camping, to Ann. Pay with PayPal below!")
+
+    def test_a_wrong_amount_a_link_or_a_long_reply_is_refused(self):
+        for reply in ("Hey Ben, you owe Ann $35 for Camping.", "Hey Ben, $30.00 to Ann: https://evil.example", "Hey Ben, $30.00. " + "x" * 400, "$30.00"):
+            with self.subTest(reply=reply[:30]), self.assertRaises(ValueError):
+                self.write(reply)
+
+
 if __name__ == "__main__":
     unittest.main()

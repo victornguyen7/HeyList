@@ -170,3 +170,23 @@ def store_matches(name: str, note: str | None, list_title: str, products: list[d
     reply = json_reply(chat([{"role": "system", "content": STORE_MATCH_PROMPT}, {"role": "user", "content": request}], STORE_MATCH_SCHEMA))
     chosen = {n for n in reply.get("matches", []) if type(n) is int}
     return [p for n, p in enumerate(products, 1) if n in chosen]
+
+
+REMINDER_SCHEMA = {"type": "object", "properties": {"message": {"type": "string"}}, "required": ["message"]}
+
+REMINDER_PROMPT = """You write a short reminder for HeyList, a shared shopping list app, that one friend sends another.
+Write two or three warm, light sentences, the way a friend would text ("hey, just a heads-up..."). Say the list,
+the exact amount as given, and who to pay. Say they can pay with PayPal from the link that follows. Never sound like
+a debt collector, never add a deadline or guilt, and don't write the link itself. At most one emoji.
+Reply as JSON: {"message": "..."}"""
+
+
+def reminder(debtor: str, creditor: str, amount: str, list_title: str) -> str:
+    """A friendly reminder to pay (decision 65). Raises when the reply isn't usable, so the route falls back to its
+    template: the text must name the exact amount and stay short enough for a chat message."""
+    request = f"To: {debtor}\nPay: {creditor}\nAmount: {amount}\nList: {list_title}"
+    text = json_reply(chat([{"role": "system", "content": REMINDER_PROMPT}, {"role": "user", "content": request}], REMINDER_SCHEMA))["message"]
+    if not isinstance(text, str) or not 20 <= len(text.strip()) <= 400 or amount not in text or "http" in text:
+        raise ValueError("unusable reminder")
+    return text.strip()
+

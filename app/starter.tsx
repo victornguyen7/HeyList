@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
-import { api, usd, type List } from "./api";
+import { api, rememberMember, usd, type List } from "./api";
 import { Brand, button, card, chip, row } from "./ui";
 
 // priceSource (decision 49): paid = what people paid for it before, store = a store product chosen for it, estimate = the AI's guess.
@@ -106,6 +106,19 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
     }
   }
 
+  // A ready-made trip with Ann and Ben, so one person can try sharing, paying and settling up (phase 8B).
+  async function trySample() {
+    setBusy(true);
+    try {
+      const { list, memberId } = await api<{ list: List; memberId: string }>("/api/lists/sample", { method: "POST" });
+      rememberMember(list.id, memberId);
+      onCreated(list);
+    } catch (err) {
+      setStatus(`Could not open the sample: ${(err as Error).message}`);
+      setBusy(false);
+    }
+  }
+
   const message = status && (
     <p role="status" className={`${card} text-base`}>
       {status}
@@ -173,6 +186,9 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
               </button>
             ))}
           </div>
+          <button type="button" onClick={trySample} disabled={busy} className="self-start text-[15px] text-muted underline underline-offset-4">
+            New here? See how it works with a sample trip
+          </button>
         </div>
         {side && <aside className="flex flex-col gap-5 lg:w-[440px] lg:shrink-0 lg:pt-10">{side}</aside>}
       </div>

@@ -17,6 +17,9 @@ export default function ProgressPage() {
   const [planned, setPlanned] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  // The item being ticked by hand, and the price typed for it (asked in the row, not in a pop-up).
+  const [ticking, setTicking] = useState<string | null>(null);
+  const [priceText, setPriceText] = useState("");
   const { items, members } = list;
 
   async function patchItem(item: Item, change: object) {
@@ -28,14 +31,19 @@ export default function ProgressPage() {
     }
   }
 
-  // Ticking by hand asks what was paid, so the split has a real price; blank means "don't know" and leaves it out.
-  async function tick(item: Item) {
+  // Ticking by hand asks what was paid, in the row, so the split has a real price; blank means "don't know" and
+  // leaves it out. Unticking needs no question.
+  function tick(item: Item) {
     if (item.checkedAt) return patchItem(item, { checked: false });
-    const estimate = item.estPriceCents !== null ? (item.estPriceCents * item.quantity) / 100 : "";
-    const answer = window.prompt(`What did you pay for ${item.name}? Leave it blank if you don't know.`, String(estimate));
-    if (answer === null) return;
-    const priceCents = answer.trim() ? Math.round(Number(answer.replace("$", "")) * 100) : null;
+    setTicking(item.id);
+    setPriceText(item.estPriceCents !== null ? ((item.estPriceCents * item.quantity) / 100).toFixed(2) : "");
+  }
+
+  async function confirmTick(e: React.FormEvent, item: Item) {
+    e.preventDefault();
+    const priceCents = priceText.trim() ? Math.round(Number(priceText.replace("$", "")) * 100) : null;
     if (priceCents !== null && !(priceCents >= 0)) return setStatus("That price wasn't a number, so nothing was changed.");
+    setTicking(null);
     await patchItem(item, { checked: true, memberId: me, priceCents });
   }
 
@@ -74,13 +82,13 @@ export default function ProgressPage() {
     setSelected(next);
   }
 
-  async function pay() {
+  async function pay(itemIds: string[]) {
     setBusy(true);
     setStatus(null);
     try {
       const { approveUrl } = await api<{ approveUrl: string }>(`/api/lists/${list.id}/orders`, {
         method: "POST",
-        body: JSON.stringify({ itemIds: [...selected], memberId: me }),
+        body: JSON.stringify({ itemIds, memberId: me }),
       });
       window.location.assign(approveUrl);
     } catch (e) {
@@ -111,6 +119,18 @@ export default function ProgressPage() {
     setSelected(new Set(mine.map((item) => item.id)));
     setMode("pay");
   }
+
+  // One main action, chosen by where the list is (phase 8C); everything else sits under More.
+  const mineCost = mine.reduce((sum, item) => sum + cost(item), 0);
+  const main: "pay" | "share" | "settle" | "scan" | null = !me
+    ? null
+    : mine.length > 0
+      ? "pay"
+      : members.length > 0 && open.some((item) => !item.claimedBy)
+        ? "share"
+        : open.length === 0 && done.length > 0
+          ? "settle"
+          : "scan";
 
   // Starts with nothing ticked: the person chooses every item the agent searches for.
   function startShopping() {
@@ -190,6 +210,28 @@ export default function ProgressPage() {
             {isDone ? `${proof}${memberName(item.boughtBy) ? ` · ${memberName(item.boughtBy)}` : ""}` : (proof ?? `${who} · ×${item.quantity}`)}
           </span>
           {item.note && !isDone && <span className="text-[13px] text-money">{item.note}</span>}
+          {ticking === item.id && (
+            <form onSubmit={(e) => confirmTick(e, item)} className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+              <label className="flex items-center gap-1.5">
+                What did you pay? $
+                <input
+                  autoFocus
+                  inputMode="decimal"
+                  className="h-9 w-24 rounded-full bg-surface-2 px-3 tabular-nums"
+                  value={priceText}
+                  onChange={(e) => setPriceText(e.target.value)}
+                  placeholder="Don't know"
+                  aria-label={`What you paid for ${item.name}`}
+                />
+              </label>
+              <button type="submit" className="h-9 rounded-full bg-list px-4 font-medium text-on-accent">
+                Done
+              </button>
+              <button type="button" onClick={() => setTicking(null)} className="text-muted">
+                Cancel
+              </button>
+            </form>
+          )}
         </div>
         <span className={`mt-0.5 shrink-0 text-base font-medium tabular-nums lg:font-semibold ${isDone ? "text-list" : ""}`}>
           {isDone ? (item.priceCents !== null ? usd(item.priceCents) : "—") : item.estPriceCents !== null ? `~${usd(cost(item))}` : "—"}
@@ -242,7 +284,7 @@ export default function ProgressPage() {
         ) : mode === "pay" ? (
           <div className="flex flex-col gap-2.5">
             <p className="text-base text-muted">Choose what you&apos;re paying for.</p>
-            <button type="button" onClick={pay} disabled={total === 0 || busy || !me} className={buttonAi}>
+            <button type="button" onClick={() => pay([...selected])} disabled={total === 0 || busy || !me} className={buttonAi}>
               {busy ? "Opening PayPal…" : total === 0 ? "Choose items to pay for" : `Pay ${usd(total)} with PayPal`}
             </button>
             <button
@@ -256,29 +298,61 @@ export default function ProgressPage() {
           </div>
         ) : (
           <>
-            <div className="flex gap-2.5">
-              <Link href={`/lists/${list.id}/receipts`} className={`${buttonAi} flex-1 px-2`}>
-                Scan receipt
-              </Link>
-              {items.some(payable) && (
-                <button type="button" onClick={startPaying} disabled={!me} className={`${outline} flex-1 px-2`}>
-                  {mine.length > 0 ? `Pay ${usd(mine.reduce((sum, item) => sum + cost(item), 0))}` : "Pay with PayPal"}
-                </button>
-              )}
-            </div>
-            {items.some(shoppable) && (
-              <button type="button" onClick={startShopping} className={buttonAi}>
-                Shop this list for me
+            {main === null && <p className="text-base text-muted">Join the list above to claim, pay for and tick off items.</p>}
+            {main === "pay" && (
+              <button type="button" onClick={() => pay(mine.map((item) => item.id))} disabled={busy} className={buttonAi}>
+                {busy ? "Opening PayPal…" : `Pay for your ${mine.length === 1 ? "item" : `${mine.length} items`} · ${usd(mineCost)} with PayPal`}
               </button>
             )}
-            {members.length > 0 && open.some((item) => !item.claimedBy) && (
-              <button type="button" onClick={assign} className={outline}>
+            {main === "share" && (
+              <button type="button" onClick={assign} className={buttonAi}>
                 Share out the rest evenly
               </button>
             )}
-            <button type="button" onClick={() => finish(!list.finishedAt)} className="self-start text-[15px] text-muted">
-              {list.finishedAt ? "Reopen this list" : "Mark this list finished"}
-            </button>
+            {main === "settle" && (
+              <Link href={`/lists/${list.id}/settle`} className={buttonAi}>
+                Everything&apos;s bought. Settle up
+              </Link>
+            )}
+            {main === "scan" && (
+              <Link href={`/lists/${list.id}/receipts`} className={buttonAi}>
+                Scan a receipt
+              </Link>
+            )}
+
+            <details className="group">
+              <summary className="cursor-pointer list-none text-center text-[15px] font-medium text-muted">More</summary>
+              <div className="mt-2.5 flex flex-col gap-2.5">
+                {main !== "scan" && (
+                  <Link href={`/lists/${list.id}/receipts`} className={outline}>
+                    Scan a receipt
+                  </Link>
+                )}
+                {items.some(payable) && (
+                  <button type="button" onClick={startPaying} disabled={!me} className={outline}>
+                    {main === "pay" ? "Choose other items to pay for" : "Pay for items with PayPal"}
+                  </button>
+                )}
+                {items.some(shoppable) && (
+                  <button type="button" onClick={startShopping} className={outline}>
+                    Shop this list for me
+                  </button>
+                )}
+                {main !== "share" && members.length > 0 && open.some((item) => !item.claimedBy) && (
+                  <button type="button" onClick={assign} className={outline}>
+                    Share out the rest evenly
+                  </button>
+                )}
+                {main !== "settle" && done.length > 0 && (
+                  <Link href={`/lists/${list.id}/settle`} className={outline}>
+                    Settle up
+                  </Link>
+                )}
+                <button type="button" onClick={() => finish(!list.finishedAt)} className="text-[15px] text-muted">
+                  {list.finishedAt ? "Reopen this list" : "Mark this list finished"}
+                </button>
+              </div>
+            </details>
           </>
         )}
       </aside>

@@ -13,7 +13,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
 | 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7C built 2026-10-28; 7D built and removed (decision 63); 7E optional; 7F dropped |
-| 8 | Effortless core loop, ready for judges | Planned 2026-10-28 (see below) |
+| 8 | Effortless core loop, ready for judges | 8B–8D built 2026-10-28; 8A code part (README) done, owner tasks left; 8E later |
 
 ### Phase 1 — purchase verification (done)
 
@@ -358,6 +358,8 @@ About 4–5 days in all, which leaves room for fixes found in the live checks. 7
 
 #### 8A — ready for judges (by 5 November)
 
+**Code part done 2026-10-28:** the README has a "Try it in 2 minutes" section (hosted URL, the steps through the sample trip, what PayPal and the AI do) and an up-to-date status line. The judge's login is a placeholder, `JUDGE_SANDBOX_EMAIL` / `JUDGE_SANDBOX_PASSWORD`, for the owner to fill in once that sandbox account exists. **Left, all owner tasks:** the live checks below, the judge's account, the repo made public, and the Devpost draft.
+
 The only part that can fail Stage One, so it comes first.
 
 - **Live checks**, each one recorded in [ISSUES.md](ISSUES.md) or closed:
@@ -377,6 +379,8 @@ The only part that can fail Stage One, so it comes first.
 
 #### 8B — "Try a sample list" on Home
 
+**Built 2026-10-28** (decision 64): `POST /api/lists/sample` and **New here? See how it works with a sample trip** under the idea chips. `rememberMember()` in `app/api.ts` is now shared with the list page. 3 new tests.
+
 - **Problem:** HeyList shines with several people, but a new user (or a judge) is alone. Today they must invent a list, then pretend to be friends in other browsers before Settle up shows anything.
 - **Plan:** a quiet link under the starter, **See how it works with a sample trip**. It creates a real, normal list:
   - "Weekend camping trip (sample)" with Ann, Ben and You;
@@ -391,6 +395,15 @@ The only part that can fail Stage One, so it comes first.
   - the cap.
 
 #### 8C — a calmer Progress page
+
+**Built 2026-10-28.** Main button by state:
+- not joined: a line pointing to the join form;
+- your claimed items: **Pay for your N items · $X with PayPal**, which goes straight to PayPal without the choosing step;
+- unclaimed items: **Share out the rest evenly**;
+- everything bought: **Settle up**;
+- otherwise: **Scan a receipt**.
+
+Under **More**: scan, choose other items to pay for, Shop this list for me, share out, settle up, mark finished. The hand-tick price is asked inline. The join form shows only on Progress and Receipts (issue 34 closed). No backend change. **Not done:** the tap count on a phone.
 
 - **Problem:** Progress now shows Scan receipt, Pay, Shop this list for me, Share out the rest and Mark finished at the same time. Ticking an item by hand opens the browser's own pop-up asking for a price. The join form appears on every tab (issue 34).
 - **Plan:**
@@ -407,6 +420,8 @@ The only part that can fail Stage One, so it comes first.
 - **Check:** walk the camping demo on a phone and count the taps from opening the link to paying. Aim for fewer than today.
 
 #### 8D — "Remind" on Settle up, with a PayPal pay link
+
+**Built 2026-10-28** (decision 65): `POST /api/lists/{id}/reminders`, `llm.reminder()` (kept only with the exact amount, no link, at most 400 characters; else a template), **Remind Ben** on each payment that isn't yours (share sheet, or copy), and `?pay=<member>` highlighting the payment with **I'm Ben, let me pay** on a phone that hasn't joined (`joinAs()` in the list context). 5 new tests. **Not done:** a live AI reminder (one paid call, owner's approval).
 
 - **Problem:** Settle up works out who owes whom, and 7B lets the debtor pay with PayPal, but only if they open the list. In real groups, someone has to send an awkward "you owe me" message.
 - **Plan:** each open payment on Settle up gets **Remind Ben**.

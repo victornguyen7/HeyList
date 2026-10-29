@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, use, useEffect, useRef, useState } from "react";
-import { api, cachedLists, cacheLists, refundNote, rememberList, type List, type Member } from "../../api";
+import { api, cachedLists, cacheLists, memberKey, refundNote, rememberList, rememberMember, type List, type Member } from "../../api";
 import { accountName, supabase, useSession } from "../../auth";
 import { listChanged, onListChanged } from "../../realtime";
 import { Avatar, button, card } from "../../ui";
@@ -16,6 +16,8 @@ type Ctx = {
   me: string | null;
   memberName: (id: string | null) => string | undefined;
   setStatus: (status: string | null) => void;
+  // Join as this name, or take back the guest member who already has it (a reminder link opened on a new phone).
+  joinAs: (name: string) => Promise<void>;
 };
 
 const ListContext = createContext<Ctx | null>(null);
@@ -33,7 +35,6 @@ const TABS = [
 ] as const;
 
 // Who "you" are on a list: for a guest, remembered in this browser only; logged in, the member with your account.
-const memberKey = (listId: string) => `heylist:member:${listId}`;
 function storedMember(listId: string): string | null {
   try {
     return localStorage.getItem(memberKey(listId));
@@ -136,12 +137,14 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
   // Logged in with a saved name, the backend fills it in; otherwise the typed name is sent (and saved on the account).
   async function join(e: React.FormEvent) {
     e.preventDefault();
+    await joinAs(savedName ? null : name);
+  }
+
+  async function joinAs(asName: string | null) {
     try {
-      const member = await api<Member>(`/api/lists/${list!.id}/members`, { method: "POST", body: JSON.stringify(savedName ? {} : { name }) });
+      const member = await api<Member>(`/api/lists/${list!.id}/members`, { method: "POST", body: JSON.stringify(asName ? { name: asName } : {}) });
       if (session && !savedName) await supabase.auth.updateUser({ data: { name: member.name } });
-      try {
-        localStorage.setItem(memberKey(list!.id), member.id);
-      } catch {}
+      rememberMember(list!.id, member.id);
       setJoined(member.id);
       setListState({ ...list!, members: [...list!.members.filter((m) => m.id !== member.id), member] });
       listChanged(list!.id);
@@ -158,6 +161,8 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
     (list?.members.some((member) => member.id === remembered && !member.userId) ? remembered : null);
   const message = status ?? (orderId ? (approved ? "Confirming your payment…" : "Payment cancelled.") : null);
   const base = `/lists/${listId}`;
+  // Joining is needed to claim, pay, tick and scan: the form shows where those happen (issue 34).
+  const joinHere = pathname === base || pathname === `${base}/receipts`;
 
   async function share() {
     const url = `${window.location.origin}${base}`;
@@ -227,14 +232,19 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       </header>
 
       {message && (
-        <p role="status" className={`${card} text-base`}>
+        <p role="status" className={`${card} text-base whitespace-pre-line`}>
           {message}
         </p>
       )}
 
       {list && (
         <>
-          {!me && (
+          {!me && !joinHere && (
+            <Link href={base} className="text-[15px] text-ai underline underline-offset-4">
+              Join this list to take part
+            </Link>
+          )}
+          {!me && joinHere && (
             <form onSubmit={join} className={`${card} flex flex-col gap-3 sm:flex-row sm:items-center`}>
               <span className="text-base font-medium sm:flex-1">Join to claim, tick off and pay for items</span>
               {savedName ? (
@@ -277,6 +287,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
               me,
               memberName: (id) => list.members.find((m) => m.id === id)?.name,
               setStatus,
+              joinAs,
             }}
           >
             {children}

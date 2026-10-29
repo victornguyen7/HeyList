@@ -79,6 +79,14 @@ export function rememberList(id: string) {
   } catch {}
 }
 
+// Who "you" are on a list: for a guest, remembered in this browser only (list-context.tsx reads it).
+export const memberKey = (listId: string) => `heylist:member:${listId}`;
+export function rememberMember(listId: string, memberId: string) {
+  try {
+    localStorage.setItem(memberKey(listId), memberId);
+  } catch {}
+}
+
 // The last copy of each list this browser loaded, shown at once on the next visit while a fresh one loads
 // (Home, History, a list's own pages). A per-browser convenience only: it can be missing or blocked, and the
 // fresh copy always replaces it.

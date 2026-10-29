@@ -4,6 +4,9 @@
 
 ### Added
 
+- **Sample trip** (decision 64, phase 8B): **New here? See how it works with a sample trip** on Home opens a real camping list shared with Ann and Ben, where they've already bought something, so one person can try paying, scanning and settling up.
+- **Remind on Settle up** (decision 65, phase 8D): **Remind Ben** drafts a friendly message with the AI, with the exact amount from the split and a link that opens Settle up ready to pay with PayPal. You send it from your phone's share sheet, or copy it. A reminder link opened on a new phone offers "I'm Ben, let me pay".
+
 - **Remove a list from History**: each list in History has **Remove**, which takes it off this browser's Home and History (after a confirmation). The list isn't deleted: it stays for everyone else on the link, and opening the link again brings it back.
 - **"Shop this list for me"** (decision 61, phase 7C): on Progress, the button puts a circle on each open item; tick the ones to shop for (any number; none are ticked to start), and the agent searches stores for them, checks each match with the AI, and proposes a cart that fits what is left of the budget. Items it can't fill are listed with a reason (not sold online, over budget, search failed). You remove or swap products, then pay for the whole cart with one PayPal payment; each price is read again from Channel3 first, and a changed total is shown before anything is charged. No order is placed with the stores.
 - **Settle up with PayPal** (decision 60, phase 7B): each payment you owe on Settle up has **Pay Ann $X with PayPal**. The order's payee is Ann's PayPal account, so the money goes to her, not to HeyList. The amount comes from the current split on the server, and a stale one is refused (`409 SPLIT_CHANGED`). The first payment to someone asks for their PayPal email. A completed payment evens the balances, and Settle up lists it ("Ben paid Ann $30 · with PayPal"), with **Check again** for a pending one. **Schema:** a `settlements` table replaces the never-used `invoices`; run `supabase/schema.sql` again.
@@ -25,6 +28,9 @@
 
 ### Changed
 
+- **A calmer Progress page** (phase 8C): one main button for where the list is (pay for your items, share out the rest, settle up, or scan a receipt); the other actions are under **More**. Paying for your own items goes straight to PayPal. Ticking an item by hand asks the price in the row instead of a pop-up.
+- **Join form only where it's needed** (issue 34): on Progress and Receipts; other tabs link there.
+- **README**: a "Try it in 2 minutes" section with the hosted URL, a sandbox login for judges, and what PayPal and the AI do; the stale status line is gone.
 - **Members' emails stay on the server**: list pages get `hasEmail` instead, and joining again by name no longer replaces a saved email (decision 60).
 - **Stack documented** (issue 2, decision 56): [ARCHITECTURE.md](ARCHITECTURE.md#stack) now lists every framework, library, service, browser API and tool in use, with its pinned version and what it's for; the README's Stack section matches. The browser uses Supabase only for login, and checkout keeps PayPal's hosted page.
 - **PayPal tested live** (issues 25 and 37): on the sandbox, a payment approved on PayPal's page came back to the list page and was captured, and an item ticked by hand during checkout was refunded ($1.75, `COMPLETED`). The test showed that two captures at the same moment could lose a refund record (issue 45): a refund still in progress at PayPal is now asked for again, and refunds are merged into the order rather than overwritten.

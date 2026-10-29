@@ -10,7 +10,26 @@ The first use case is packing before a holiday; the app stays general-purpose so
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
-> **Status:** early build. Built so far: AI starting lists from one sentence, claiming and sharing out items, paying through the PayPal sandbox, receipt scanning (Textract, or the Ollama vision model while Textract is unavailable, then Ollama matching, with a confirm step), and the split of who owes whom. Voice, photo recognition, invoices and history are planned, not built. See [docs/ROADMAP.md](docs/ROADMAP.md). Before working with API keys, read [docs/RULES.md](docs/RULES.md).
+## Try it in 2 minutes
+
+**Live demo:** https://heylist-web.onrender.com (PayPal **sandbox**: no real money moves)
+
+To pay, log in on PayPal's page with this sandbox buyer account, made for judges and testers:
+
+| Email | Password |
+|---|---|
+| `JUDGE_SANDBOX_EMAIL` | `JUDGE_SANDBOX_PASSWORD` |
+
+1. On the home page, tap **New here? See how it works with a sample trip**. You join a camping trip with Ann and Ben; they've already bought the tent and the snacks.
+2. Tap **Pay for your items with PayPal**, approve on PayPal's page with the account above, and come back: your items are checked off, with the PayPal payment as proof.
+3. Open **Settle up**: HeyList shows who owes whom. Pay Ann with PayPal (the money goes to her account, not HeyList's), or tap **Remind Ben** for a friendly AI-written message with a link to pay.
+4. Or start your own: type one sentence ("camping at Big Sur with 4 friends, $200 budget"), keep what you need, and share the link. Changes show on everyone's phone as they happen.
+
+**PayPal** (sandbox, Orders API v2 through the PayPal Server SDK): create and capture orders for list items, read pending captures, refund an item someone already bought, and pay a friend directly (the order's payee is the person owed).
+
+**AI:** Ollama (`gemma4:31b`) drafts the starting list, matches receipt lines to items, checks store search results and writes payment reminders. AWS Textract reads receipt photos. Channel3 finds real products for "Shop this list for me".
+
+> **Status:** working prototype, deployed on Render. Not built: photo recognition and reusable lists ([docs/ROADMAP.md](docs/ROADMAP.md)). Before working with API keys, read [docs/RULES.md](docs/RULES.md).
 
 ## The loop
 
@@ -21,7 +40,7 @@ Every step keeps what the step before it established: the quantities and estimat
 | **Need** | What do we need? | Type or say one sentence ("…, $200 budget"); the AI suggests a list with quantities and estimated prices within the budget; you drop, rename, change or add items before anything is saved | Built |
 | **Coordinate** | Who handles it? | Share the link, join by name, claim items, or share out the rest evenly by estimated cost | Built, with live updates: a change on one phone shows on the others |
 | **Verify** | What got done? | Tick it off by hand (you say what you paid), pay with PayPal (a completed capture is the proof), or scan a receipt (the AI reads it and matches lines to items, and you confirm). Each item says what its status rests on: "Paid with PayPal", "On a receipt", "Marked bought by hand", or "Payment pending at PayPal" | Built |
-| **Settle** | Who owes whom? | Code (not AI) works out each person's share from the recorded prices and the fewest payments to even up | Built. PayPal invoices planned |
+| **Settle** | Who owes whom? | Code (not AI) works out each person's share from the recorded prices and the fewest payments to even up. Pay the person you owe with PayPal, straight to their account; or send them a friendly AI-written reminder with a link to pay | Built |
 
 Labels claim only what the evidence shows: a PayPal capture proves the payment, not that the item arrived. If an item is bought twice (a receipt and a PayPal payment at the same time), the PayPal charge is refunded to the person who paid it.
 
@@ -42,7 +61,11 @@ Built:
 - **Easy sharing** — send a list by link; no account needed to view, claim or check items.
 - **PayPal Checkout** — pay for chosen items; the captured order is the proof, and pending payments hold their items.
 - **Receipt scanning** — the AI reads a receipt photo and proposes a list item for each line; you confirm.
-- **Split and settle** — who paid what, equal shares, and who pays whom.
+- **Split and settle** — who paid what, equal shares, and who pays whom; pay the person you owe with PayPal, straight to their account.
+- **Friendly reminders** — the AI drafts a kind "just a heads-up" message with a link that opens the payment; you send it from your own phone.
+- **Shop this list for me** — tick items and the agent proposes real products from online stores within the budget; you approve one PayPal payment.
+- **Sample trip** — try the whole loop alone, with a ready-made trip shared with Ann and Ben.
+- **Live updates** — a claim, tick or payment on one phone shows on the others.
 - **History** — lists this browser has opened, spending by type and month, buy again at the price really paid. Lists you've opened show at once from a saved copy, then refresh.
 - **Optional login** — an email link; logged in, you join a list in one tap and are the same person on every device. Guests still just type a name.
 - **Find in stores** — real products for an item from Channel3, checked by the AI so only real matches show; the chosen price is what PayPal charges.
@@ -54,7 +77,6 @@ Planned:
 
 - **Photo as proof** and **photo recognition** — see [docs/SPEC.md](docs/SPEC.md#photo-recognition-planned-spec-and-learning-plan-only).
 - **Reuse** — repeating lists reset with one tap.
-- **PayPal invoices** for settle-up.
 
 ## How it works
 

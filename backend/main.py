@@ -234,6 +234,48 @@ def create_list(body=Depends(json_body)):
     return list_state(list_id)
 
 
+# "See how it works with a sample trip" (phase 8B): a real list a person alone can try every step on. Ann and Ben
+# have already bought something, so Settle up has payments to show; "You" is the person trying it.
+SAMPLE_ITEMS = [
+    # name, estimate per unit (cents), quantity, claimed by, paid in total (cents) if already bought
+    ("Tent", 9000, 1, "Ann", 9000),
+    ("Snacks for the road", 2400, 1, "Ben", 2400),
+    ("Sleeping bags", 2500, 3, "You", None),
+    ("Water, 24-pack", 600, 2, "You", None),
+    ("Firewood", 1200, 1, None, None),
+    ("Headlamp", 1500, 1, None, None),
+]
+
+
+@app.post("/api/lists/sample")
+def create_sample():
+    """A sample camping trip with three people (decision 64). Made from the template above: no AI and no PayPal call.
+    Returns the list and the member ID of "You", which the browser remembers as its own."""
+    # Anyone can make one, so one cap for everyone, as for suggestions.
+    if not allow("sample", 60, 3600):
+        return error("TOO_MANY_REQUESTS", 429)
+    list_id = db.insert("lists", [{"title": "Weekend camping trip (sample)", "kind": "trip", "budget_cents": 25000}])[0]["id"]
+    members = {row["name"]: row["id"] for row in db.insert("members", [{"list_id": list_id, "name": name} for name in ("Ann", "Ben", "You")])}
+    bought_at = now()
+    db.insert(
+        "items",
+        [
+            {
+                "list_id": list_id,
+                "name": name,
+                "est_price_cents": cents_each,
+                "quantity": count,
+                "position": position,
+                "claimed_by": members.get(claimed),
+                # Marked bought by hand, as people do when they bought it before the list existed.
+                **({"checked_at": bought_at, "bought_by": members[claimed], "price_cents": paid} if paid else {}),
+            }
+            for position, (name, cents_each, count, claimed, paid) in enumerate(SAMPLE_ITEMS)
+        ],
+    )
+    return {"list": list_state(list_id), "memberId": members["You"]}
+
+
 @app.get("/api/lists")
 def get_lists(ids: str = ""):
     """?ids=a,b,c: the lists this browser has opened, for Home and History, in one request. Unknown or deleted
@@ -801,6 +843,41 @@ def settle_up(list_id: str, request: Request, body=Depends(json_body)):
         [{"id": order["orderId"], "list_id": list_id, "debtor_id": debtor, "creditor_id": creditor, "amount_cents": amount}],
     )
     return order
+
+
+@app.post("/api/lists/{list_id}/reminders")
+def remind(list_id: str, body=Depends(json_body)):
+    """{fromId, toId}: a friendly message asking fromId to pay toId, for one open Settle up payment, with a link that
+    opens Settle up ready to pay with PayPal (decision 65). The amount and names come from the current split. The AI
+    writes it (one Ollama call); if that fails, a plain template does. HeyList never sends it: the person does."""
+    found = find("lists", list_id)
+    if not found:
+        return error("LIST_NOT_FOUND", 404)
+    try:
+        debtor, creditor = member_of(list_id, body["fromId"]), member_of(list_id, body["toId"])
+        if not debtor or not creditor:
+            raise ValueError("a reminder needs both people")
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+    transfer = next((t for t in list_state(list_id)["split"]["transfers"] if t["from"] == debtor and t["to"] == creditor), None)
+    if not transfer:
+        return error("SPLIT_CHANGED", 409)
+
+    names = {m["id"]: m["name"] for m in db.select("members", list_id=list_id)}
+    amount = f"${transfer['amountCents'] // 100}.{transfer['amountCents'] % 100:02d}"
+    text, written = None, False
+    # A paid call, and anyone with the link can press it: one cap for everyone, as for suggestions.
+    if allow("reminder", 30, 3600):
+        try:
+            text, written = llm.reminder(names[debtor], names[creditor], amount, found["title"]), True
+        except Exception:
+            log.exception("Reminder failed; using the template")
+    text = text or (
+        f"Hi {names[debtor]}! Quick heads-up: your part of {found['title']} comes to {amount}, to {names[creditor]}. "
+        f"You can pay {names[creditor]} with PayPal here whenever suits you."
+    )
+    link = f"{APP_URL}/lists/{list_id}/settle?pay={debtor}"
+    return {"message": f"{text}\n{link}", "link": link, "amountCents": transfer["amountCents"], "aiWritten": written}
 
 
 def record_settlement(settlement: dict, result: dict) -> dict:
