@@ -259,7 +259,11 @@ function Payments({ list, name }: { list: List; name: (id: string | null) => str
 // Settle up: the fewest payments that even out what everyone paid, paying them with PayPal, and how each balance
 // was worked out.
 export function SettleUp({ list, split, me }: { list: List; split: Split; me: string | null }) {
-  const name = (id: string | null) => nameOf(list, id) + (id === me ? " (you)" : "");
+  // Someone named "You" (the sample trip's member) is shown as just "You", not "You (you)".
+  const name = (id: string | null) => {
+    const shown = nameOf(list, id);
+    return id === me && shown.trim().toLowerCase() !== "you" ? `${shown} (you)` : shown;
+  };
   const item = (id: string) => list.items.find((i) => i.id === id);
   // The payment a reminder link points to.
   const payFor = useSearchParams().get("pay");

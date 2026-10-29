@@ -22,6 +22,7 @@
 
 | # | Issue | Resolution |
 |---|---|---|
+| 47 | Settle up showed "You (you)" on the sample trip | The sample's member is named "You", and Settle up added "(you)" after your own name. A name that is already "You" is now shown as it is (`SettleUp` in `app/split.tsx`); anyone else is still "Dan (you)" |
 | 46 | A refund made outside HeyList wasn't recorded | The webhook now handles `PAYMENT.CAPTURE.REFUNDED`: a refund made in PayPal's dashboard is saved on its order (`orders.refunds`, under its refund ID with `outside: true`) and taken off what the buyer paid in the split, shown on Money as "Refunded · given back in PayPal". HeyList's own refunds are sent with `custom_id` `heylist` and skipped. The webhook must also be subscribed to "Payment capture refunded". Not covered: a settle-up payment refunded in the dashboard, and reversals (`PAYMENT.CAPTURE.REVERSED`). Tests in `test_main.py`, `test_money.py`, `test_paypal.py` |
 | 36 | A pending payment was only re-checked when someone pressed Check again | PayPal webhooks now complete or release it (decision 66), once `PAYPAL_WEBHOOK_ID` is set and the webhook is registered; Check again stays as the fallback |
 | 34 | The join form showed on every list tab | It shows only on Progress and Receipts, where joining is needed to claim, pay, tick or scan; the other tabs show a one-line "Join this list to take part" link (phase 8C) |
