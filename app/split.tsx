@@ -20,8 +20,8 @@ export type Split = {
     // Settle-up payments sent minus received (decision 60).
     settledCents: number;
     balanceCents: number;
-    // feesOf is set on a receipt's share of its tax, tip and fees (itemId is then null).
-    purchases: { itemId: string | null; cents: number; boughtTwice: boolean; feesOf: string | null }[];
+    // feesOf is set on a receipt's share of its tax, tip and fees; refundOf on money given back in PayPal (itemId is then null).
+    purchases: { itemId: string | null; cents: number; boughtTwice: boolean; feesOf: string | null; refundOf: string | null }[];
   }[];
   transfers: { from: string; to: string; amountCents: number }[];
 };
@@ -334,6 +334,16 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
                 <ul className="mt-2 flex flex-col gap-1">
                   {m.purchases.map((line, index) => {
                     const bought = line.itemId ? item(line.itemId) : undefined;
+                    if (line.refundOf) {
+                      return (
+                        <li key={index} className="flex justify-between gap-2 tabular-nums">
+                          <span>
+                            Refunded<span className="text-muted"> · given back in PayPal</span>
+                          </span>
+                          <span>{usd(line.cents)}</span>
+                        </li>
+                      );
+                    }
                     if (line.feesOf) {
                       return (
                         <li key={index} className="flex justify-between gap-2 tabular-nums">

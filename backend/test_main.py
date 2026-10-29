@@ -913,9 +913,51 @@ class WebhookTest(RoutesTest):
         self.assertEqual([e["id"] for e in self.db.tables["webhook_events"]], ["WH-1", "WH-2"])
 
     def test_other_events_and_unknown_orders_are_acknowledged_and_ignored(self):
-        self.assertEqual(self.event("PAYMENT.CAPTURE.REFUNDED").json(), {"handled": False})
+        self.assertEqual(self.event("PAYMENT.CAPTURE.REVERSED").json(), {"handled": False})
         self.assertEqual(self.event(order_id="NOPE", event_id="WH-3").json(), {"handled": False})
         self.assertEqual(self.db.tables["orders"][0]["status"], "PENDING")
+
+    def refunded(self, event_id="WH-R1", refund_id="REF9", value="20.00", **resource):
+        resource = {
+            "id": refund_id,
+            "status": "COMPLETED",
+            "amount": {"currency_code": "USD", "value": value},
+            "links": [{"rel": "up", "href": "https://api.sandbox.paypal.com/v2/payments/captures/CAP1", "method": "GET"}],
+        } | resource
+        body = {"id": event_id, "event_type": "PAYMENT.CAPTURE.REFUNDED", "resource": resource}
+        return self.client.post("/api/paypal/webhook", json=body, headers={"paypal-transmission-id": "T1"})
+
+    def test_a_refund_made_in_paypal_is_taken_off_what_the_buyer_paid(self):
+        ann = self.client.post(f"/api/lists/{self.list['id']}/members", json={"name": "Ann"}).json()["id"]
+        self.db.tables["orders"][0]["member_id"] = ann
+        self.event()
+
+        self.assertEqual(self.refunded().json(), {"handled": True})
+        self.assertEqual(self.refunded().json(), {"handled": False})  # the same event again
+        # A second, separate partial refund counts too.
+        self.assertEqual(self.refunded("WH-R2", "REF10", "5.50").json(), {"handled": True})
+
+        split = self.client.get(f"/api/lists/{self.list['id']}").json()["split"]
+        self.assertEqual(split["members"][0]["paidCents"], 9000 - 2000 - 550)
+        # One line per order, for all its refunds.
+        self.assertEqual([(line["refundOf"], line["cents"]) for line in split["members"][0]["purchases"]], [(None, 9000), ("ORDER1", -2550)])
+        # The item stays bought at the price PayPal charged.
+        self.assertEqual(self.tent_now()["priceCents"], 9000)
+
+    def test_heylists_own_refunds_and_odd_refunds_are_not_counted_again(self):
+        self.event()
+        self.db.tables["orders"][0]["refunds"] = {"item": {"refundId": "OLD1", "cents": 100, "status": "COMPLETED"}}
+
+        self.assertEqual(self.refunded("WH-R1", custom_id="heylist").json(), {"handled": False})
+        self.assertEqual(self.refunded("WH-R2", "OLD1").json(), {"handled": False})  # made before refunds were marked
+        self.assertEqual(self.refunded("WH-R3", amount={"currency_code": "EUR", "value": "1.00"}).json(), {"handled": False})
+        self.assertEqual(self.refunded("WH-R4", value="0.001").json(), {"handled": False})
+        self.assertEqual(self.refunded("WH-R5", links=[]).json(), {"handled": False})
+        self.assertEqual(self.db.tables["orders"][0]["refunds"], {"item": {"refundId": "OLD1", "cents": 100, "status": "COMPLETED"}})
+
+    def test_a_refund_before_the_payment_completed_is_ignored(self):
+        self.assertEqual(self.refunded().json(), {"handled": False})
+        self.assertEqual(self.db.tables["orders"][0]["refunds"], {})
 
     def test_a_pending_settle_up_payment_completes_too(self):
         ann, bob = (self.client.post(f"/api/lists/{self.list['id']}/members", json={"name": n}).json()["id"] for n in ("Ann", "Bob"))
@@ -1071,7 +1113,7 @@ class ReceiptTest(RoutesTest):
 
         # 75 cents of tax on 858 of milk for the list and 199 of gum for Ann: 61 is shared, 14 stays Ann's.
         ann = next(m for m in state["split"]["members"] if m["memberId"] == self.member)
-        self.assertEqual(ann["purchases"][-1], {"itemId": None, "cents": 61, "boughtTwice": False, "feesOf": receipt["id"]})
+        self.assertEqual(ann["purchases"][-1], {"itemId": None, "cents": 61, "boughtTwice": False, "feesOf": receipt["id"], "refundOf": None})
         self.assertEqual(state["split"]["totalCents"], 858 + 61)
         self.assertEqual([m["shareCents"] for m in state["split"]["members"] if m["memberId"] in (self.member, bob)], [460, 459])
 

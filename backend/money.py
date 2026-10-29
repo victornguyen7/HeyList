@@ -34,16 +34,18 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), rec
     (a receipt, a hand tick) is still money the buyer spent, so it counts too and is listed in boughtTwice.
     receipts are the list's receipts: a confirmed one's fees (tax, tip, discounts...) count in proportion to what it
     bought for the list, and the part for its extras stays with the buyer (decision 57).
+    An order's refunded_cents is money given back to its buyer in PayPal's dashboard (issue 46), so it is taken
+    off what they paid.
     settlements are completed settle-up payments (decision 60): money one member sent another, which moves their
     balances toward even; settledCents is what a member sent minus what they received.
     Each member's purchases are the lines their paidCents adds up from, so every balance can be traced."""
     purchases: dict[str, list[dict]] = {member_id: [] for member_id in member_ids}
     unattributed = 0
 
-    def credit(member_id, item_id: str | None, cents: int, twice: bool = False, fees_of: str | None = None):
+    def credit(member_id, item_id: str | None, cents: int, twice: bool = False, fees_of: str | None = None, refund_of: str | None = None):
         nonlocal unattributed
         if member_id in purchases:
-            purchases[member_id].append({"itemId": item_id, "cents": cents, "boughtTwice": twice, "feesOf": fees_of})
+            purchases[member_id].append({"itemId": item_id, "cents": cents, "boughtTwice": twice, "feesOf": fees_of, "refundOf": refund_of})
         else:
             # A price but no buyer: nobody to pay back, so it stays out of the split.
             unattributed += cents
@@ -60,6 +62,8 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), rec
             if proof.get(item_id) != order["id"] and order["prices"].get(item_id):
                 credit(order["member_id"], item_id, order["prices"][item_id], twice=True)
                 bought_twice.append({"orderId": order["id"], "itemId": item_id, "cents": order["prices"][item_id]})
+        if order.get("refunded_cents"):
+            credit(order["member_id"], None, -order["refunded_cents"], refund_of=order["id"])
 
     for receipt in receipts:
         fees = sum(fee["amountCents"] for fee in receipt.get("fees") or [] if fee["amountCents"] is not None)

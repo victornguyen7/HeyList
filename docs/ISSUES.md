@@ -5,7 +5,7 @@
 | # | Issue | Notes |
 |---|---|---|
 | 14 | The AI doesn't keep starting lists within the budget | Live run: "birthday party for 10 kids, $100" came back at $125. Not trimmed in code (which items to drop is the person's call); the review screen shows the overage instead (decision 34). Price memory (decision 49) now fills in proven and store prices, so the overage is measured on real prices where there are any |
-| 17 | Receipt discounts and voided lines are dropped | Lines with no price or a negative price are skipped, so an item's price can be above what was charged. Net them against their item once real receipts show the pattern (`ponytail:` note in `backend/receipts.py`) |
+| 17 | Receipt discounts aren't netted against their item | Negative lines (discounts, comps) are kept as discount extras (`parse_expense()` in `backend/receipts.py`) and shared in the split with the receipt's other fees, but an item still shows its full price. Net a discount against the line above it once real receipts show the pattern. Lines with no price are still skipped |
 | 18 | Split is equal shares only | Everyone on the list pays the same share; no "Ann isn't eating" or weighted shares yet (decision 35) |
 | 23 | Lines read by Ollama have no confidence score | Textract gives one per line; a vision model doesn't, so no line is flagged "hard to read". Now only matters when Textract is unavailable (outage, missing keys), since Textract works again (issue 15). The person still reviews every line before confirming |
 | 19 | `starlette.testclient` warns that `httpx` is deprecated in favour of `httpx2` | Test-only warning from the installed FastAPI/Starlette; harmless. Goes away when FastAPI's test client moves to `httpx2` |
@@ -16,13 +16,13 @@
 | 38 | The AI evaluation is small and labelled by us | Second run 2026-10-27, 30 cases: 96/98 item recall without prompt examples and 91/98 with them (IMPROVEMENTS phase 6). First run 2026-10-27 (`gemma4:31b`): item recall 62/63, quantities 12/13, conditions and unclear amounts kept 8/8, no invented items, no failed replies (`backend/eval/eval_report.json`). 20 cases, labelled by the team, one run: AI replies vary between runs, so treat these as indicative. Misses: "a dozen eggs" came back as 12 (the label said 1, which is debatable), and the kids' party list left out candles |
 | 39 | Receipt matching has no "not sure" answer | `match_lines()` returns an item or none per line; it can't say "maybe". The person reviews every line before confirming, so a wrong match isn't applied silently. Left out of phase 3 to keep it narrow |
 | 41 | Parts of the design not built | "leaving in 6 days" (lists have no date), item categories ("Gear · ×1"). Item rows show who buys it and the quantity instead. ("How it works" and the "Hey Vic" greeting are no longer in the app) |
-| 46 | A refund made outside HeyList isn't recorded | Webhooks handle captures that complete or fail (decision 66), not `PAYMENT.CAPTURE.REFUNDED`. A refund made in the PayPal dashboard leaves the split counting the full charge. Counting it means changing how the split reads an order's refunds |
 | 35 | Receipt photos load at full size | The Receipts tab shows each photo from `GET /api/receipts/{id}/image` (up to 2000 px). Lazy-loaded, but heavy on a phone with many receipts; add thumbnails if it gets slow |
 
 ## Closed
 
 | # | Issue | Resolution |
 |---|---|---|
+| 46 | A refund made outside HeyList wasn't recorded | The webhook now handles `PAYMENT.CAPTURE.REFUNDED`: a refund made in PayPal's dashboard is saved on its order (`orders.refunds`, under its refund ID with `outside: true`) and taken off what the buyer paid in the split, shown on Money as "Refunded · given back in PayPal". HeyList's own refunds are sent with `custom_id` `heylist` and skipped. The webhook must also be subscribed to "Payment capture refunded". Not covered: a settle-up payment refunded in the dashboard, and reversals (`PAYMENT.CAPTURE.REVERSED`). Tests in `test_main.py`, `test_money.py`, `test_paypal.py` |
 | 36 | A pending payment was only re-checked when someone pressed Check again | PayPal webhooks now complete or release it (decision 66), once `PAYPAL_WEBHOOK_ID` is set and the webhook is registered; Check again stays as the fallback |
 | 34 | The join form showed on every list tab | It shows only on Progress and Receipts, where joining is needed to claim, pay, tick or scan; the other tabs show a one-line "Join this list to take part" link (phase 8C) |
 | 31 | List pages didn't refresh while open | A change now sends a "changed" ping on a Supabase Realtime broadcast channel for the list (`app/realtime.ts`, decision 59), and every other open page of it reloads the list; showing the tab again reloads it too. Not yet tried with two browsers |

@@ -1,3 +1,4 @@
+import decimal
 import logging
 import os
 import re
@@ -182,7 +183,11 @@ def settled(items: list[dict], members: list[dict], orders: list[dict], receipts
     once PayPal has captured it."""
     paid = [
         # A refunded charge was given back, so it is not money the buyer spent.
-        order | {"prices": {k: v for k, v in order["prices"].items() if order["refunds"].get(k, {}).get("status", "FAILED") in REFUND_FAILED}}
+        order
+        | {
+            "prices": {k: v for k, v in order["prices"].items() if order["refunds"].get(k, {}).get("status", "FAILED") in REFUND_FAILED},
+            "refunded_cents": sum(r["cents"] for r in order["refunds"].values() if r.get("outside") and r["status"] not in REFUND_FAILED),
+        }
         for order in orders
         if order["status"] == "COMPLETED"
     ]
@@ -797,7 +802,8 @@ CAPTURE_EVENTS = {"PAYMENT.CAPTURE.COMPLETED": "COMPLETED", "PAYMENT.CAPTURE.DEN
 @app.post("/api/paypal/webhook")
 def paypal_webhook(request: Request, event=Depends(json_body)):
     """PayPal tells HeyList when a pending capture completes or is denied, so nobody has to press Check again
-    (decision 66). Every event is verified with PayPal before it's read, and handled once."""
+    (decision 66), and when a capture is refunded outside HeyList (issue 46). Every event is verified with PayPal
+    before it's read, and handled once."""
     if not isinstance(event, dict) or not isinstance(event.get("id"), str):
         return error("INVALID_BODY", 400)
     try:
@@ -808,15 +814,13 @@ def paypal_webhook(request: Request, event=Depends(json_body)):
     if not genuine:
         return error("WEBHOOK_UNVERIFIED", 401)
 
-    status = CAPTURE_EVENTS.get(event.get("event_type"))
     resource = event.get("resource") or {}
+    if event.get("event_type") == "PAYMENT.CAPTURE.REFUNDED":
+        return record_outside_refund(event, resource)
+    status = CAPTURE_EVENTS.get(event.get("event_type"))
     order_id = ((resource.get("supplementary_data") or {}).get("related_ids") or {}).get("order_id")
-    if not status or not isinstance(order_id, str):
+    if not status or not isinstance(order_id, str) or not first_delivery(event):
         return {"handled": False}
-    # Once per event: PayPal retries until it gets a 2xx, and may deliver the same event twice.
-    if db.select("webhook_events", id=event["id"]):
-        return {"handled": False}
-    db.insert("webhook_events", [{"id": event["id"], "type": event["event_type"]}])
 
     orders, settlement = paid_order(order_id)
     row = orders[0] if orders else settlement
@@ -825,6 +829,44 @@ def paypal_webhook(request: Request, event=Depends(json_body)):
         return {"handled": False}
     result = {"orderId": order_id, "status": status, "captureId": resource.get("id")}
     record_capture(row, result) if orders else record_settlement(row, result)
+    return {"handled": True}
+
+
+def first_delivery(event: dict) -> bool:
+    """Once per event: PayPal retries until it gets a 2xx, and may deliver the same event twice."""
+    if db.select("webhook_events", id=event["id"]):
+        return False
+    db.insert("webhook_events", [{"id": event["id"], "type": event["event_type"]}])
+    return True
+
+
+def record_outside_refund(event: dict, resource: dict) -> dict:
+    """A refund made in PayPal's dashboard, not by HeyList (issue 46). It is money given back to the buyer, so it is
+    saved on the order and the split stops counting it. HeyList's own refunds carry REFUND_MARK and are saved already.
+    ponytail: orders only; a settle-up payment refunded in the dashboard still counts as paid."""
+    # The refund names its capture only in its "up" link: .../v2/payments/captures/<capture id>.
+    up = next((link.get("href") or "" for link in resource.get("links") or [] if link.get("rel") == "up"), "")
+    capture_id, refund_id, amount = up.rsplit("/", 1)[-1], resource.get("id"), resource.get("amount") or {}
+    try:
+        refunded = decimal.Decimal(amount.get("value")) * 100
+    except (TypeError, decimal.InvalidOperation):
+        refunded = decimal.Decimal(0)
+    if (
+        resource.get("custom_id") == paypal.REFUND_MARK
+        or not capture_id
+        or not isinstance(refund_id, str)
+        or amount.get("currency_code") != "USD"
+        or refunded <= 0
+        or refunded != int(refunded)
+        or not first_delivery(event)
+    ):
+        return {"handled": False}
+    orders = db.select("orders", capture_id=capture_id)
+    # A refund HeyList made before it marked them is saved under the item already.
+    if not orders or orders[0]["status"] != "COMPLETED" or refund_id in {r.get("refundId") for r in orders[0]["refunds"].values()}:
+        return {"handled": False}
+    refund = {"refundId": refund_id, "cents": int(refunded), "status": resource.get("status") or "COMPLETED", "outside": True}
+    db.update("orders", {"refunds": orders[0]["refunds"] | {refund_id: refund}}, id=orders[0]["id"])
     return {"handled": True}
 
 

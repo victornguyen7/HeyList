@@ -163,11 +163,15 @@ def get_order(order_id: str) -> dict:
     return {"orderId": order.id, "status": captures[0].status, "captureId": captures[0].id}
 
 
+# Set as custom_id on HeyList's own refunds, so the refund webhook can tell them from one made in PayPal's dashboard.
+REFUND_MARK = "heylist"
+
+
 def refund(capture_id: str, cents: int, request_id: str) -> dict:
     """Refunds part of a capture to the buyer. request_id is the idempotency key, so a repeated call (a retried
     capture) refunds once. A call made while the same refund is still in progress waits for its result, so two
     captures at the same moment both see it (issue 45)."""
-    body = RefundRequest(amount=_usd(cents), note_to_payer="Someone on your list had already bought this item.")
+    body = RefundRequest(amount=_usd(cents), custom_id=REFUND_MARK, note_to_payer="Someone on your list had already bought this item.")
     for wait in (0.5, 1, 2, None):
         try:
             result = _call(

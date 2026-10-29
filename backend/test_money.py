@@ -100,13 +100,23 @@ class SplitTest(unittest.TestCase):
         self.assertEqual(
             result["members"][0]["purchases"],
             [
-                {"itemId": "tent", "cents": 9000, "boughtTwice": False, "feesOf": None},
-                {"itemId": "food", "cents": 2500, "boughtTwice": True, "feesOf": None},
-                {"itemId": "gone", "cents": 100, "boughtTwice": True, "feesOf": None},
+                {"itemId": "tent", "cents": 9000, "boughtTwice": False, "feesOf": None, "refundOf": None},
+                {"itemId": "food", "cents": 2500, "boughtTwice": True, "feesOf": None, "refundOf": None},
+                {"itemId": "gone", "cents": 100, "boughtTwice": True, "feesOf": None, "refundOf": None},
             ],
         )
         self.assertEqual(result["totalCents"], 14600)
         self.assertEqual([b["itemId"] for b in result["boughtTwice"]], ["food", "gone"])
+
+    def test_a_refund_made_in_paypal_is_taken_off_what_the_buyer_paid(self):
+        items = [item("tent", price_cents=9000, bought_by="ann", order_id="O1"), item("food", price_cents=3000, bought_by="bob")]
+        orders = [{"id": "O1", "member_id": "ann", "item_ids": ["tent"], "prices": {"tent": 9000}, "refunded_cents": 2000}]
+
+        result = money.split(items, ["ann", "bob"], orders)
+
+        self.assertEqual([m["paidCents"] for m in result["members"]], [7000, 3000])
+        self.assertEqual(result["members"][0]["purchases"][-1], {"itemId": None, "cents": -2000, "boughtTwice": False, "feesOf": None, "refundOf": "O1"})
+        self.assertEqual(result["transfers"], [{"from": "bob", "to": "ann", "amountCents": 2000}])
 
     def test_receipt_fees_are_shared_in_proportion_to_the_list_items(self):
         items = [item("milk", price_cents=600, bought_by="ann", receipt_id="R1"), item("eggs", price_cents=300, bought_by="ann", receipt_id="R1")]
@@ -116,7 +126,7 @@ class SplitTest(unittest.TestCase):
         result = money.split(items, ["ann", "bob"], receipts=[receipt | {"fees": fees}])
 
         # 240 of fees on 900 of list items and 300 of extras: 180 is shared, 60 stays with ann.
-        self.assertEqual(result["members"][0]["purchases"][-1], {"itemId": None, "cents": 180, "boughtTwice": False, "feesOf": "R1"})
+        self.assertEqual(result["members"][0]["purchases"][-1], {"itemId": None, "cents": 180, "boughtTwice": False, "feesOf": "R1", "refundOf": None})
         self.assertEqual(result["totalCents"], 1080)
         # An unconfirmed receipt, or one with no fees, adds nothing.
         for other in (receipt | {"fees": fees, "confirmed_at": None}, receipt | {"fees": []}):

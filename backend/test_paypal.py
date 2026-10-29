@@ -153,6 +153,7 @@ class PayPalTest(unittest.TestCase):
         self.assertEqual(request.path_url, "/v2/payments/captures/CAP1/refund")
         self.assertEqual(request.headers["paypal-request-id"], "ORDER1-item")
         self.assertEqual(json.loads(request.body)["amount"], {"currency_code": "USD", "value": "14.99"})
+        self.assertEqual(json.loads(request.body)["custom_id"], paypal.REFUND_MARK)
 
     def test_a_refund_still_in_progress_is_asked_for_again_with_the_same_request_id(self):
         in_progress = (409, {"name": "CONFLICT", "details": [{"issue": "PREVIOUS_REQUEST_IN_PROGRESS"}]})

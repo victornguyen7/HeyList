@@ -72,6 +72,7 @@ create table if not exists orders (
   capture_id text,
   -- Charges refunded because the item (quantity 1) was already checked off when the payment went through:
   -- {"<item id>": {"refundId": "...", "cents": 1499, "status": "COMPLETED"}} (decision 39).
+  -- A refund made in PayPal's dashboard is saved under its refund ID with "outside": true (issue 46).
   refunds jsonb not null default '{}',
   created_at timestamptz not null default now(),
   captured_at timestamptz
