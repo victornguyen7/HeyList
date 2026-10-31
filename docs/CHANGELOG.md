@@ -11,7 +11,7 @@
 
 UI audit against Figma Soft glass v2, each checked in a browser against a fake backend (not on a real phone or the live backend).
 
-- **Contrast**: `--muted`, `--money` and `--ai` are darker than the Figma values, and a new `--muted-on-bg` is used for text directly on the gradient, so text reaches WCAG AA. The Figma variables still have the old values.
+- **Contrast**: `--muted`, `--money` and `--ai` are darker than the Figma values, and a new `--muted-on-bg` is used for text directly on the gradient, so text reaches WCAG AA. The Figma Soft variables have the same values.
 - **Pay button**: it collapsed to about 23 px while the PayPal SDK loaded or if it failed. It's 48 px now.
 - **Messages on list pages**: they appeared at the top of the page, off screen when scrolled. They're a toast above the tab bar now, announced to screen readers, and stay until dismissed.
 - **AI review**: the pinned button's layer blocked taps on **+ Add an item**; it no longer does. Quantity buttons went from 15×20 px to 32 px. Notes show in full instead of being cut off.
