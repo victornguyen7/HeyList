@@ -142,9 +142,9 @@ export const captureMessage = (result: Capture) =>
       : `Payment is ${result.status.toLowerCase()}; items stay unchecked for now.`;
 
 export const usd = (cents: number) =>
-  `${cents < 0 ? "−" : ""}$${Math.floor(Math.abs(cents) / 100)}.${String(Math.abs(cents) % 100).padStart(2, "0")}`;
+  `${cents < 0 ? "−" : ""}$${Math.floor(Math.abs(cents) / 100).toLocaleString("en-US")}.${String(Math.abs(cents) % 100).padStart(2, "0")}`;
 
-// Readable messages for the backend's error codes; anything else shows the code itself.
+// Readable messages for the backend's error codes; anything else gets a general message, with the code still on the error.
 const MESSAGES: Record<string, string> = {
   AI_UNAVAILABLE: "The list helper is not answering right now. Try again in a moment.",
   UNREADABLE_IMAGE: "That photo could not be read. Try again with the whole receipt flat and in focus.",
@@ -165,6 +165,16 @@ const MESSAGES: Record<string, string> = {
   PAYEE_NOT_ACCEPTED: "PayPal can't send money to that email. Check it with them and try again.",
   NOT_YOURS: "That person joined with an account. Only they can do this, logged in.",
   NAME_TAKEN: "Someone with an account already uses that name on this list. Pick another, or log in if it's you.",
+  LIST_NOT_FOUND: "This list doesn't exist any more. Check the link with whoever shared it.",
+  ITEM_NOT_FOUND: "That item is no longer on the list. Reload the page to see the latest.",
+  ITEM_PAID: "That item was paid for with PayPal, so it can't be changed.",
+  ORDER_NOT_FOUND: "That payment couldn't be found. Reload the page to see the latest.",
+  RECEIPT_NOT_FOUND: "That receipt couldn't be found. Reload the page to see the latest.",
+  RECEIPT_CONFIRMED: "That receipt was already confirmed. Reload the page to see the latest.",
+  IMAGE_TOO_LARGE: "That photo is too large. Try a smaller one.",
+  UNSUPPORTED_IMAGE: "That file can't be read. Use a JPEG or PNG photo.",
+  PAYPAL_ERROR: "PayPal isn't answering right now. Try again in a moment.",
+  INVALID_BODY: "Something in that wasn't valid. Check it and try again.",
 };
 
 /** JSON in, JSON out. A Blob body is sent as-is with its own type (receipt photos). A failure throws an Error
@@ -173,10 +183,13 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = init?.body instanceof Blob ? { "Content-Type": init.body.type } : init?.body ? { "Content-Type": "application/json" } : {};
   const token = (await supabase.auth.getSession()).data.session?.access_token;
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(path, { ...init, headers });
+  const res = await fetch(path, { ...init, headers }).catch(() => {
+    throw Object.assign(new Error("HeyList can't be reached. Check your connection and try again."), { code: "NETWORK" });
+  });
   if (!res.ok) {
     const code = (await res.json().catch(() => null))?.error ?? res.statusText;
-    throw Object.assign(new Error(MESSAGES[code] ?? code), { code });
+    throw Object.assign(new Error(MESSAGES[code] ?? "That didn't work. Try again in a moment."), { code });
   }
-  return res.json();
+  // 204: nothing to read, as after deleting an item.
+  return res.status === 204 ? (undefined as T) : res.json();
 }

@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, captureMessage, proofLabel, refundNote, usd, type Capture, type Item, type List } from "../../api";
 import { PayPalButtons } from "../../paypal-buttons";
 import { ShopAgent } from "../../shop-agent";
-import { Check, menuRow, PayCard, payPayPal, Ring } from "../../ui";
+import { Check, menuRow, mini, PayCard, payPayPal, Ring } from "../../ui";
 import { buttonAi, card, outline, row, useList } from "./list-context";
 
 // Progress: the checklist itself. The tick means "done"; paying with PayPal and shopping in stores are separate modes
@@ -16,6 +16,12 @@ export default function ProgressPage() {
   const [mode, setMode] = useState<"pay" | "shop" | null>(null);
   // The phone's More actions sheet is open.
   const [sheet, setSheet] = useState(false);
+  const sheetRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = sheetRef.current;
+    if (sheet && !dialog?.open) dialog?.showModal();
+    if (!sheet && dialog?.open) dialog.close();
+  }, [sheet]);
   // Set while the agent's cart is shown, so the items it searched for can't change under it.
   const [planned, setPlanned] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -23,6 +29,8 @@ export default function ProgressPage() {
   // The item being ticked by hand, and the price typed for it (asked in the row, not in a pop-up).
   const [ticking, setTicking] = useState<string | null>(null);
   const [priceText, setPriceText] = useState("");
+  // The name typed into "+ Add an item".
+  const [extra, setExtra] = useState("");
   const { items, members } = list;
 
   async function patchItem(item: Item, change: object) {
@@ -31,6 +39,30 @@ export default function ProgressPage() {
       setList((current) => ({ ...current, items: current.items.map((i) => (i.id === saved.id ? saved : i)) }));
     } catch (err) {
       setStatus(`Could not save that change: ${(err as Error).message}`);
+    }
+  }
+
+  async function addItem(e: React.FormEvent) {
+    e.preventDefault();
+    const name = extra.trim();
+    if (!name) return;
+    try {
+      const added = await api<Item[]>(`/api/lists/${list.id}/items`, { method: "POST", body: JSON.stringify({ items: [{ name, quantity: 1 }] }) });
+      setList((current) => ({ ...current, items: [...current.items, ...added] }));
+      setExtra("");
+    } catch (err) {
+      setStatus(`Could not add ${name}: ${(err as Error).message}`);
+    }
+  }
+
+  // Removes it for everyone on the list, so it asks first, as Remove does on History.
+  async function removeItem(item: Item) {
+    if (!window.confirm(`Remove "${item.name}" from this list? It goes for everyone on the list.`)) return;
+    try {
+      await api(`/api/items/${item.id}`, { method: "DELETE" });
+      setList((current) => ({ ...current, items: current.items.filter((i) => i.id !== item.id) }));
+    } catch (err) {
+      setStatus(`Could not remove ${item.name}: ${(err as Error).message}`);
     }
   }
 
@@ -210,7 +242,12 @@ export default function ProgressPage() {
           ) : (
             // Tap the name to change how many, or who buys it.
             <details className="group">
-              <summary className="cursor-pointer list-none text-[17px] font-medium lg:font-semibold">{item.name}</summary>
+              <summary className="flex cursor-pointer list-none items-baseline gap-1.5 text-[17px] font-medium lg:font-semibold [&::-webkit-details-marker]:hidden">
+                <span className="min-w-0">{item.name}</span>
+                <span aria-hidden className="shrink-0 font-normal text-muted group-open:rotate-90">
+                  ›
+                </span>
+              </summary>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                 <span className="flex items-center gap-1">
                   <button type="button" aria-label={`One fewer ${item.name}`} disabled={busy || item.quantity <= 1} onClick={() => patchItem(item, { quantity: item.quantity - 1 })} className="size-8 rounded-full bg-surface-2 disabled:opacity-30">
@@ -233,6 +270,9 @@ export default function ProgressPage() {
                     ))}
                   </select>
                 )}
+                <button type="button" disabled={busy} onClick={() => removeItem(item)} className="h-8 px-2 font-medium text-muted underline underline-offset-4">
+                  Remove
+                </button>
               </div>
             </details>
           )}
@@ -272,7 +312,8 @@ export default function ProgressPage() {
 
   const stat = (value: string, label: string, color: string) => (
     <div className={`${card} flex flex-1 flex-col gap-0.5 p-3.5 font-medium`}>
-      <span className={`text-2xl tracking-[-0.015em] tabular-nums ${color}`}>{value}</span>
+      {/* Scales with the screen, so "$1,234.56" fits three across at 320 px. */}
+      <span className={`text-[clamp(1.0625rem,5.6vw,1.5rem)] tracking-[-0.015em] tabular-nums ${color}`}>{value}</span>
       <span className="text-xs text-muted">{label}</span>
     </div>
   );
@@ -375,7 +416,7 @@ export default function ProgressPage() {
                 </PayPalButtons>
               )}
             </PayCard>
-            <button type="button" onClick={stopChoosing} disabled={busy} className="py-2 text-[15px] font-medium text-muted">
+            <button type="button" onClick={stopChoosing} disabled={busy} className="py-2 text-[15px] font-medium text-muted-on-bg">
               Cancel
             </button>
           </div>
@@ -409,7 +450,7 @@ export default function ProgressPage() {
 
             {me && (
               <>
-                <button type="button" onClick={() => setSheet(true)} className="py-1 text-[15px] font-medium text-muted lg:hidden">
+                <button type="button" onClick={() => setSheet(true)} className="py-1 text-[15px] font-medium text-muted-on-bg lg:hidden">
                   More actions ›
                 </button>
                 <nav className="glass hidden flex-col rounded-3xl py-2 lg:flex" aria-label="More actions">
@@ -419,17 +460,27 @@ export default function ProgressPage() {
                 </nav>
               </>
             )}
-            {sheet && (
-              <div className="fixed inset-0 z-20 lg:hidden" role="dialog" aria-modal="true" aria-label="More actions">
-                <button type="button" aria-label="Close" onClick={() => setSheet(false)} className="no-press absolute inset-0 bg-text/30" />
-                <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[28px] bg-surface-2 px-4 pt-2.5 pb-7 shadow-[0_-10px_30px_rgb(30_40_60/0.12)] backdrop-blur-xl">
-                  <span className="mx-auto h-[5px] w-10 rounded-full bg-muted/40" />
-                  <span className="px-[18px] pt-2 pb-1.5 text-lg font-medium">More actions</span>
-                  <div className="rounded-[20px] bg-bg/70">{actionRows}</div>
-                  <span className="flex justify-center pt-2">{finishButton}</span>
-                </div>
+            {/* A native modal: Esc closes it, focus stays inside, the page behind is inert, and focus returns to
+                "More actions" on closing. A click on the backdrop lands on the dialog itself, not the panel. */}
+            <dialog
+              ref={sheetRef}
+              aria-label="More actions"
+              onClose={() => setSheet(false)}
+              onClick={(e) => e.target === e.currentTarget && setSheet(false)}
+              className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[85dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[28px] bg-transparent p-0 backdrop:bg-text/30 lg:hidden"
+            >
+              <div className="flex flex-col gap-1 rounded-t-[28px] bg-surface-2 px-4 pt-2.5 pb-7 shadow-[0_-10px_30px_rgb(30_40_60/0.12)] backdrop-blur-xl">
+                <span className="mx-auto h-[5px] w-10 rounded-full bg-muted/40" />
+                <span className="flex items-center justify-between pt-2 pb-1.5 pl-[18px]">
+                  <span className="text-lg font-medium">More actions</span>
+                  <button type="button" onClick={() => setSheet(false)} className="h-11 px-3 text-[15px] font-medium text-muted">
+                    Close
+                  </button>
+                </span>
+                <div className="rounded-[20px] bg-bg/70">{actionRows}</div>
+                <span className="flex justify-center pt-2">{finishButton}</span>
               </div>
-            )}
+            </dialog>
           </>
         )}
       </aside>
@@ -437,11 +488,32 @@ export default function ProgressPage() {
       <div className="flex min-w-0 flex-1 flex-col gap-3.5 lg:gap-6">
         <div className="flex items-baseline justify-between">
           <h2 className="text-lg font-medium lg:text-xl">Still to get</h2>
-          <span className="text-[15px] text-muted tabular-nums">
+          <span className="text-[15px] text-muted-on-bg tabular-nums">
             {open.length} {open.length === 1 ? "item" : "items"} · ~{usd(open.reduce((sum, item) => sum + cost(item), 0))}
           </span>
         </div>
-        {open.length === 0 ? <p className="text-base text-muted">Everything is done.</p> : <ul className="flex flex-col gap-2.5">{open.map(itemRow)}</ul>}
+        {open.length === 0 ? (
+          <p className="text-base text-muted-on-bg">{items.length === 0 ? "Nothing on this list yet. Add the first item below." : "Everything is done."}</p>
+        ) : (
+          <ul className="flex flex-col gap-2.5">{open.map(itemRow)}</ul>
+        )}
+        {!mode && (
+          <form onSubmit={addItem} className={`${row} py-2.5`}>
+            <input
+              className="h-8 min-w-0 flex-1 rounded-md bg-transparent text-base font-medium text-ai placeholder:text-ai focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text"
+              value={extra}
+              onChange={(e) => setExtra(e.target.value)}
+              placeholder="+ Add an item"
+              aria-label="Add an item"
+              maxLength={120}
+            />
+            {extra.trim() && (
+              <button type="submit" className={`${mini} self-center`}>
+                Add
+              </button>
+            )}
+          </form>
+        )}
         {done.length > 0 && (
           <>
             <h2 className="text-lg font-medium lg:text-xl">Done</h2>

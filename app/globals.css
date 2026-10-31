@@ -5,11 +5,14 @@
 :root {
   --bg: #e9ecf1;
   --text: #1c1f26;
-  --muted: #6a7180;
+  /* Darkened from the Figma values so text reaches 4.5:1 on the frosted cards. */
+  --muted: #4d5463;
+  /* Secondary text directly on the page gradient, which is darker than the cards at the top. */
+  --muted-on-bg: #2f3440;
   /* "list" is the main action colour: lists, progress, primary buttons. */
   --list: #1c1f26;
-  --ai: #5a7a9c;
-  --money: #a8705e;
+  --ai: #3f5d7d;
+  --money: #7d4a3a;
   --on-accent: #ffffff;
   --surface: #ffffff8c;
   --surface-2: #ffffffcc;
@@ -20,6 +23,7 @@
   --color-bg: var(--bg);
   --color-text: var(--text);
   --color-muted: var(--muted);
+  --color-muted-on-bg: var(--muted-on-bg);
   --color-list: var(--list);
   --color-ai: var(--ai);
   --color-money: var(--money);
@@ -62,7 +66,7 @@
     opacity: 0.7;
   }
   :where(button, a, summary, select, [role="button"], label):focus-visible {
-    outline: 2px solid var(--ai);
+    outline: 2px solid var(--text);
     outline-offset: 2px;
   }
   .no-press:hover,

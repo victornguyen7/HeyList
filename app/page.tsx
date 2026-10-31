@@ -37,7 +37,7 @@ export default function Home() {
     <>
       <div className="flex items-center justify-between font-medium">
         <h2 className="text-xl">Your lists</h2>
-        <Link href="/history" className="text-[15px] text-muted">
+        <Link href="/history" className="text-[15px] text-muted-on-bg">
           See all
         </Link>
       </div>

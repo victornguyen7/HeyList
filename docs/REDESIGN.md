@@ -18,10 +18,11 @@ What changed in the UI redesign (commit `5b2682c`, 2026-10-27), why, and what is
 |---|---|---|
 | `--bg` | `#e9ecf1` | Page base, input fields |
 | `--text` | `#1c1f26` | Text |
-| `--muted` | `#6a7180` | Secondary text |
+| `--muted` | `#4d5463` (Figma `#6a7180` fails contrast on cards) | Secondary text on cards |
+| `--muted-on-bg` | `#2f3440` (not in Figma) | Secondary text directly on the page gradient |
 | `--list` | `#1c1f26` | Main buttons, progress, "done" |
-| `--ai` | `#5a7a9c` | AI hints, avatars, Scan receipt, PayPal pay button |
-| `--money` | `#a8705e` | Amounts, notes to check, "paid less" |
+| `--ai` | `#3f5d7d` (Figma `#5a7a9c` fails contrast) | AI hints, avatars, Scan receipt, PayPal pay button |
+| `--money` | `#7d4a3a` (Figma `#a8705e` fails contrast) | Amounts, notes to check, "paid less" |
 | `--on-accent` | `#ffffff` | Text on coloured buttons |
 | `--surface` | `#ffffff8c` | Cards and item rows (frosted) |
 | `--surface-2` | `#ffffffcc` | Chips, tab bar, active tab |

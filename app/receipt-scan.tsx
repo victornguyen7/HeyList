@@ -106,15 +106,15 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-lg font-medium lg:text-xl">Scan a receipt</h2>
-      {!memberId && <p className="text-base text-muted">Join above first, so the receipt counts as yours.</p>}
-      <label className={`${buttonAi} cursor-pointer ${busy || !memberId ? "pointer-events-none opacity-40" : ""}`}>
+      {!memberId && <p className="text-base text-muted-on-bg">Join above first, so the receipt counts as yours.</p>}
+      <label className={`${buttonAi} cursor-pointer has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy || !memberId ? "pointer-events-none opacity-40" : ""}`}>
         Take a photo of the receipt
         <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={scan} disabled={busy || !memberId} />
       </label>
 
       {waiting.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-base text-muted">Scanned but not confirmed yet:</p>
+          <p className="text-base text-muted-on-bg">Scanned but not confirmed yet:</p>
           {waiting.map((r) => (
             <div key={r.id} className={`${card} flex items-center justify-between gap-3 text-base`}>
               <span className="tabular-nums">
@@ -137,7 +137,7 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
 
       {receipt && (
         <>
-          <p className="text-base text-muted">Check each line, change any that are wrong, then confirm.</p>
+          <p className="text-base text-muted-on-bg">Check each line, change any that are wrong, then confirm.</p>
           <ul className="flex flex-col gap-2">
             {receipt.lines.map((line, index) => (
               <li key={index} className={`${card} flex flex-col gap-2 text-base`}>
@@ -171,7 +171,7 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
           </ul>
           {fees.length > 0 && (
             <>
-              <p className="text-base text-muted">Tax, tip and other fees. They&apos;re shared like the list items they were charged on.</p>
+              <p className="text-base text-muted-on-bg">Tax, tip and other fees. They&apos;re shared like the list items they were charged on.</p>
               <ul className="flex flex-col gap-2">
                 {fees.map((fee, index) => (
                   <li key={index} className={`${card} flex flex-col gap-2 text-base`}>
@@ -197,7 +197,7 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
             </>
           )}
           {receipt.totalCents !== null && (
-            <p className={`text-base tabular-nums ${!blanks && sum !== receipt.totalCents ? "text-money" : "text-muted"}`}>
+            <p className={`text-base tabular-nums ${!blanks && sum !== receipt.totalCents ? "font-medium text-text" : "text-muted-on-bg"}`}>
               {blanks > 0
                 ? `Receipt total ${usd(receipt.totalCents)}. ${blanks} amount${blanks === 1 ? " is" : "s are"} still blank.`
                 : sum === receipt.totalCents
@@ -205,7 +205,7 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
                   : `These add up to ${usd(sum)}, but the receipt total is ${usd(receipt.totalCents)}. Check the prices against the receipt.`}
             </p>
           )}
-          {badTyping && <p className="text-base text-money">Type amounts like 4.50.</p>}
+          {badTyping && <p className="text-base font-medium text-text">Type amounts like 4.50.</p>}
           <button
             type="button"
             onClick={confirm}

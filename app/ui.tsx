@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
+import { useSession } from "./auth";
 
 // Shared pieces of the soft glass design (Figma "HeyList — Soft glass" and "HeyList — Web (soft glass)").
 // One codebase for both: below the lg breakpoint (1024px) it is the phone layout, above it the website layout.
@@ -17,8 +18,8 @@ export const field = "h-12 rounded-[20px] bg-bg px-4 text-base";
 // Figma "Mini button": a small action inside a row or card (Find in stores, Remind, Buy again). Never full width.
 export const mini = "inline-flex h-8 shrink-0 items-center justify-center self-start rounded-full border border-ai/35 bg-surface-2 px-3.5 text-[13px] font-medium whitespace-nowrap text-ai disabled:opacity-40";
 // Figma "Pay buttons": PayPal as the black pill, Venmo as the white one, side by side.
-export const payPayPal = "flex h-12 flex-1 items-center justify-center rounded-full bg-list px-4 text-[15px] font-semibold whitespace-nowrap text-on-accent disabled:opacity-40";
-export const payVenmo = "flex h-12 flex-1 items-center justify-center rounded-full border border-line bg-surface-2 px-4 text-[15px] font-semibold whitespace-nowrap text-ai disabled:opacity-40";
+export const payPayPal = "flex h-12 items-center justify-center rounded-full bg-list px-4 text-[15px] font-semibold whitespace-nowrap text-on-accent disabled:opacity-40";
+export const payVenmo = "flex h-12 items-center justify-center rounded-full border border-line bg-surface-2 px-4 text-[15px] font-semibold whitespace-nowrap text-ai disabled:opacity-40";
 // Figma "Action row": one line of a More actions menu.
 export const menuRow = "flex h-[52px] w-full items-center justify-between gap-3 px-[18px] text-left text-base font-medium disabled:opacity-40";
 
@@ -65,6 +66,16 @@ function CurrentNavLinks() {
   return <NavLinks path={usePathname()} />;
 }
 
+// Log in, or the account page once logged in. Goes in the web nav and the phone page headers.
+export function AccountLink({ className }: { className: string }) {
+  const session = useSession();
+  return (
+    <Link href="/login" className={className}>
+      {session ? "Account" : "Log in"}
+    </Link>
+  );
+}
+
 // Website top bar (Figma "Web nav"). Hidden on phones, which use the in-page links instead.
 export function WebNav() {
   return (
@@ -78,9 +89,7 @@ export function WebNav() {
         <CurrentNavLinks />
       </Suspense>
       <div className="flex items-center gap-4">
-        <Link href="/login" className="text-[15px] text-muted hover:text-text">
-          Log in
-        </Link>
+        <AccountLink className="text-[15px] text-muted hover:text-text" />
         <Link href="/" className={`${button} h-10 w-[120px] px-0 text-[15px]`}>
           New list
         </Link>

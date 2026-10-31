@@ -21,7 +21,7 @@ export default function ReceiptsPage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium lg:text-xl">Scanned receipts</h2>
-        {receipts.length === 0 && <p className="text-base text-muted">None yet.</p>}
+        {receipts.length === 0 && <p className="text-base text-muted-on-bg">None yet.</p>}
         {receipts.map((receipt) => (
           <article key={receipt.id} id={receipt.id} className={`${card} flex flex-col gap-2 text-base lg:flex-row lg:items-start lg:gap-5`}>
             {/* eslint-disable-next-line @next/next/no-img-element -- private photo served by the backend */}
@@ -60,7 +60,7 @@ export default function ReceiptsPage() {
 
       <section className="flex flex-col gap-3 lg:w-[460px] lg:shrink-0">
         <h2 className="text-lg font-medium lg:text-xl">PayPal orders</h2>
-        {list.orders.length === 0 && <p className="text-base text-muted">None yet.</p>}
+        {list.orders.length === 0 && <p className="text-base text-muted-on-bg">None yet.</p>}
         {list.orders.map((order) => (
           <article key={order.id} className={`${card} flex flex-col gap-1 text-base`}>
             <span className="flex justify-between gap-3 font-medium tabular-nums">

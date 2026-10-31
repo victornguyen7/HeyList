@@ -150,8 +150,17 @@ export default function Login() {
   );
   const linkButton = "self-start text-[15px] text-ai disabled:opacity-40";
 
+  // The way back on phones, which have no top bar (Figma "12 · Log in").
+  const backLink = (
+    <Link href="/" className="text-base font-medium text-muted-on-bg lg:hidden">
+      ← Lists
+    </Link>
+  );
+
   if (session && step !== "newPassword") {
     return (
+      <>
+      {backLink}
       <main className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:max-w-[440px] lg:p-8`}>
         <h1 className="text-[28px] tracking-[-0.015em]">Your account</h1>
         <p className="text-base">You are logged in as {session.user.email}.</p>
@@ -184,12 +193,15 @@ export default function Login() {
           </p>
         )}
       </main>
+      </>
     );
   }
 
   const title = { login: "Log in", signup: "Create an account", verify: "Check your email", forgot: "Reset your password", reset: "Check your email", newPassword: "Choose a new password" }[step];
 
   return (
+    <>
+    {backLink}
     <main className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:max-w-[440px] lg:p-8`}>
       <h1 className="text-[28px] tracking-[-0.015em]">{title}</h1>
 
@@ -280,5 +292,6 @@ export default function Login() {
         </p>
       )}
     </main>
+    </>
   );
 }

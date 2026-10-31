@@ -270,7 +270,7 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
   const item = (id: string) => list.items.find((i) => i.id === id);
   // The payment a reminder link points to.
   const payFor = useSearchParams().get("pay");
-  if (list.members.length === 0) return <p className="text-base text-muted">Settling up is for shared lists. Add people first.</p>;
+  if (list.members.length === 0) return <p className="text-base text-muted-on-bg">Settling up is for shared lists. Add people first.</p>;
   const count = split.transfers.length;
 
   return (
@@ -286,7 +286,7 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
             <span className="text-list">everyone&apos;s even</span>
           </>
         )}
-        {count > 0 && <span className="text-[15px] tracking-normal text-muted">We worked out the fewest payments for you.</span>}
+        {count > 0 && <span className="text-[15px] tracking-normal text-muted-on-bg">We worked out the fewest payments for you.</span>}
       </div>
 
       {split.transfers.map((t, index) => (
@@ -312,7 +312,7 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
         </div>
       ))}
       {count > 0 && !split.transfers.some((t) => t.from === me) && (
-        <p className="text-[13px] text-muted">Whoever owes can pay from their own phone with PayPal, straight to the person owed.</p>
+        <p className="text-[13px] text-muted-on-bg">Whoever owes can pay from their own phone with PayPal, straight to the person owed.</p>
       )}
 
       <Payments list={list} name={name} />
@@ -326,10 +326,10 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
             {split.totalCents % split.members.length > 0 && " (the odd cents go to the first people who joined)"}.
           </p>
           {split.members.map((m) => (
-            <details key={m.memberId} className={`${card} text-base`}>
-              <summary className="flex cursor-pointer justify-between gap-2 tabular-nums">
+            <details key={m.memberId} className={`${card} group text-base`}>
+              <summary className="flex cursor-pointer justify-between gap-2 tabular-nums [&::-webkit-details-marker]:hidden">
                 <span className="font-medium">{name(m.memberId)}</span>
-                <span>
+                <span className="min-w-0 flex-1 text-right">
                   {usd(m.paidCents)} <span className="text-muted">(paid)</span> − {usd(m.shareCents)} <span className="text-muted">(share)</span>
                   {m.settledCents > 0 ? (
                     <>
@@ -342,6 +342,9 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
                   ) : null}{" "}
                   ={" "}
                   {m.balanceCents > 0 ? `gets back ${usd(m.balanceCents)}` : m.balanceCents < 0 ? `owes ${usd(-m.balanceCents)}` : "even"}
+                </span>
+                <span aria-hidden className="shrink-0 text-muted group-open:rotate-90">
+                  ›
                 </span>
               </summary>
               {m.purchases.length === 0 ? (
@@ -387,7 +390,7 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
               )}
             </details>
           ))}
-          <p className="text-[13px] text-muted">
+          <p className="text-[13px] text-muted-on-bg">
             Only list items count, with their part of a receipt&apos;s tax, tip and fees. Receipt lines that weren&apos;t on the list,
             and their part of the fees, are personal and not shared
             {split.unattributedCents > 0 && `, and ${usd(split.unattributedCents)} checked off without a name isn't counted`}.

@@ -107,12 +107,12 @@ export function PayPalButtons({
   return (
     <div className="flex gap-2.5">
       {sessions.paypal && (
-        <button type="button" onClick={() => start("paypal")} className={payPayPal}>
+        <button type="button" onClick={() => start("paypal")} className={`${payPayPal} flex-1`}>
           Pay with PayPal
         </button>
       )}
       {sessions.venmo && (
-        <button type="button" onClick={() => start("venmo")} className={payVenmo}>
+        <button type="button" onClick={() => start("venmo")} className={`${payVenmo} flex-1`}>
           Venmo
         </button>
       )}

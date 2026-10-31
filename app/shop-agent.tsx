@@ -67,7 +67,7 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
   if (!plan) {
     return (
       <div className="flex flex-col gap-2.5">
-        <p className="text-base text-muted">Tick the items HeyList should find in online stores.</p>
+        <p className="text-base text-muted-on-bg">Tick the items HeyList should find in online stores.</p>
         <button type="button" onClick={shop} disabled={itemIds.length === 0 || busy !== null} className={buttonAi}>
           {busy ? "Finding products…" : itemIds.length === 0 ? "Tick items to shop for" : `Find products for ${itemIds.length} ${itemIds.length === 1 ? "item" : "items"}`}
         </button>

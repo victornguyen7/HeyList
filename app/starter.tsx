@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { api, rememberMember, usd, type List } from "./api";
-import { Brand, button, card, chip, row } from "./ui";
+import { AccountLink, Brand, button, card, chip, row } from "./ui";
 
 // priceSource (decision 49): paid = what people paid for it before, store = a store product chosen for it, estimate = the AI's guess.
 type Suggestion = {
@@ -22,7 +22,7 @@ const IDEAS = [
 ] as const;
 
 // Whole dollars without ".00", as in the design's budget card ("$186 of $200 budget").
-const dollars = (cents: number) => (cents % 100 === 0 ? `$${cents / 100}` : usd(cents));
+const dollars = (cents: number) => (cents % 100 === 0 ? `$${(cents / 100).toLocaleString("en-US")}` : usd(cents));
 
 // The budget is said in the sentence ("..., $200 budget"), as in the design; it only counts next to the word "budget".
 function budgetIn(text: string): number | undefined {
@@ -32,7 +32,13 @@ function budgetIn(text: string): number | undefined {
 }
 
 // Voice input with the browser's own speech recognition (decision 13); the mic only shows where it exists.
-type Recognition = { lang: string; start(): void; onresult: (e: { results: { 0: { 0: { transcript: string } } } }) => void; onend: () => void };
+type Recognition = {
+  lang: string;
+  start(): void;
+  onresult: (e: { results: { 0: { 0: { transcript: string } } } }) => void;
+  onerror: (e: { error: string }) => void;
+  onend: () => void;
+};
 const recognitionClass = () => {
   const w = window as unknown as Record<string, (new () => Recognition) | undefined>;
   return w.SpeechRecognition ?? w.webkitSpeechRecognition;
@@ -86,7 +92,16 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
     const recognition = new Recognition();
     recognition.lang = navigator.language;
     recognition.onresult = (e) => setDescription(e.results[0][0].transcript);
+    recognition.onerror = (e) =>
+      setStatus(
+        e.error === "not-allowed" || e.error === "service-not-allowed"
+          ? "HeyList can't use your microphone. Allow it in your browser's settings, or type your list instead."
+          : e.error === "no-speech"
+            ? "No speech was heard. Try the mic again, or type your list instead."
+            : "Voice input stopped. Try the mic again, or type your list instead.",
+      );
     recognition.onend = () => setListening(false);
+    setStatus(null);
     setListening(true);
     recognition.start();
   }
@@ -151,12 +166,15 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
         <div className="flex min-w-0 flex-1 flex-col gap-5 lg:gap-7 lg:pt-10">
           <div className="flex items-center justify-between lg:hidden">
             <Brand />
-            <Link href="/history" className="text-base font-medium text-muted">
-              History
-            </Link>
+            <span className="flex items-center gap-4">
+              <Link href="/history" className="text-base font-medium text-muted-on-bg">
+                History
+              </Link>
+              <AccountLink className="text-base font-medium text-muted-on-bg" />
+            </span>
           </div>
           <h1 className="text-[34px] tracking-[-0.015em] lg:text-[60px] lg:font-medium lg:tracking-[-0.02em]">What are we planning?</h1>
-          <p className="hidden text-[19px] leading-normal text-muted lg:block">
+          <p className="hidden text-[19px] leading-normal text-muted-on-bg lg:block">
             Describe the situation. HeyList drafts the list, you keep what you need,
             <br />
             and everyone sees who paid for what.
@@ -168,7 +186,8 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
               <img src="/ui/sparkle.svg" alt="" width={18} height={18} />
               Describe it, AI builds the list
             </span>
-            <div className="flex items-center gap-3 rounded-[20px] bg-bg py-2.5 pr-2.5 pl-[18px]">
+            {/* The ring goes on the rounded box, so the whole field shows focus. */}
+            <div className="flex items-center gap-3 rounded-[20px] bg-bg py-2.5 pr-2.5 pl-[18px] has-[textarea:focus-visible]:outline-2 has-[textarea:focus-visible]:outline-offset-2 has-[textarea:focus-visible]:outline-text">
               <textarea
                 className="min-h-[52px] min-w-0 flex-1 resize-none bg-transparent text-lg font-medium outline-none placeholder:text-muted lg:text-[22px]"
                 value={description}
@@ -185,13 +204,17 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                   onClick={listen}
                   disabled={listening}
                   aria-label={listening ? "Listening…" : "Say it instead"}
-                  className={`flex size-[52px] shrink-0 items-center justify-center rounded-full bg-ai ${listening ? "animate-pulse" : ""}`}
+                  className={`flex size-[52px] shrink-0 items-center justify-center rounded-full bg-ai ${listening ? "motion-safe:animate-pulse" : ""}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- 24px design asset */}
                   <img src="/ui/mic.svg" alt="" width={24} height={24} />
                 </button>
               )}
             </div>
+            {/* Always mounted, so a screen reader announces it. */}
+            <span role="status" className="text-sm font-medium text-text empty:hidden">
+              {listening ? "Listening… speak now" : ""}
+            </span>
             {budgetCents !== undefined && <span className="text-sm text-muted">Budget: {usd(budgetCents)}</span>}
             <button type="submit" disabled={busy || !description.trim()} className={`${button} w-full lg:w-[168px]`}>
               {busy ? "Making your list…" : "Make my list"}
@@ -206,7 +229,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
               </button>
             ))}
           </div>
-          <button type="button" onClick={trySample} disabled={busy} className="self-start text-[15px] text-muted underline underline-offset-4">
+          <button type="button" onClick={trySample} disabled={busy} className="self-start text-[15px] text-muted-on-bg underline underline-offset-4">
             New here? See how it works with a sample trip
           </button>
         </div>
@@ -219,8 +242,9 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
   const total = kept.reduce((sum, item) => sum + (item.estPriceCents ?? 0) * item.quantity, 0);
 
   return (
-    <div className="flex flex-col gap-5 lg:mx-auto lg:w-full lg:max-w-[760px]">
-      <button type="button" onClick={() => setSuggestion(null)} className="self-start text-base font-medium text-muted">
+    // The bottom padding (with the Shell's) clears the pinned button below, so the last field can always be reached.
+    <div className="flex flex-col gap-5 pb-12 lg:mx-auto lg:w-full lg:max-w-[760px] lg:pb-0">
+      <button type="button" onClick={() => setSuggestion(null)} className="self-start text-base font-medium text-muted-on-bg">
         ← Back
       </button>
       <span className={`${chip} flex items-center gap-1.5 self-start px-3 py-[7px] text-[13px] text-ai`}>
@@ -247,9 +271,9 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
           </div>
         )}
       </div>
-      {budgetCents !== undefined && total > budgetCents && <p className="text-base text-money">Tap the circle on a few items to drop them and fit the budget.</p>}
+      {budgetCents !== undefined && total > budgetCents && <p className="text-base font-medium text-text">Tap the circle on a few items to drop them and fit the budget.</p>}
 
-      <p className="text-[15px] text-muted">Tap anything to change it. Tap a circle to drop that item.</p>
+      <p className="text-[15px] text-muted-on-bg">Tap anything to change it. Tap a circle to drop that item.</p>
       <ul className="flex flex-col gap-2.5">
         {suggestion.items.map((item, index) => {
           const off = dropped.has(index);
@@ -258,7 +282,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
               <label className="flex shrink-0 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="sr-only"
+                  className="peer sr-only"
                   aria-label={`Drop ${item.name}`}
                   checked={off}
                   onChange={() => {
@@ -267,28 +291,28 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                     setDropped(next);
                   }}
                 />
-                <span className={`size-7 rounded-full border-2 border-muted ${off ? "bg-muted" : ""}`} />
+                <span className={`size-7 rounded-full border-2 border-muted peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-text ${off ? "bg-muted" : ""}`} />
               </label>
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <input
-                  className={`w-full bg-transparent text-[17px] font-medium outline-none ${off ? "line-through" : ""}`}
+                  className={`w-full rounded-md bg-transparent text-[17px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text ${off ? "line-through" : ""}`}
                   aria-label="Item name"
                   value={item.name}
                   maxLength={120}
                   onChange={(e) => change(index, { name: e.target.value })}
                 />
                 <span className="flex items-center gap-2 text-[13px] text-muted">
-                  <button type="button" aria-label={`One fewer ${item.name}`} disabled={item.quantity <= 1} onClick={() => change(index, { quantity: item.quantity - 1 })} className="px-1 disabled:opacity-30">
+                  <button type="button" aria-label={`One fewer ${item.name}`} disabled={item.quantity <= 1} onClick={() => change(index, { quantity: item.quantity - 1 })} className="size-8 rounded-full bg-surface-2 text-sm disabled:opacity-30">
                     −
                   </button>
                   <span aria-live="polite" className="tabular-nums">
                     ×{item.quantity}
                   </span>
-                  <button type="button" aria-label={`One more ${item.name}`} disabled={item.quantity >= 99} onClick={() => change(index, { quantity: item.quantity + 1 })} className="px-1 disabled:opacity-30">
+                  <button type="button" aria-label={`One more ${item.name}`} disabled={item.quantity >= 99} onClick={() => change(index, { quantity: item.quantity + 1 })} className="size-8 rounded-full bg-surface-2 text-sm disabled:opacity-30">
                     +
                   </button>
-                  {item.note && <span className="truncate text-money">· {item.note}</span>}
                 </span>
+                {item.note && <span className="text-[13px] text-money">{item.note}</span>}
               </span>
               <span className="flex shrink-0 flex-col items-end text-base font-medium tabular-nums">
                 {item.estPriceCents ? `${item.priceSource === "estimate" ? "~" : ""}${usd(item.estPriceCents * item.quantity)}` : "—"}
@@ -308,7 +332,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
         }}
       >
         <input
-          className="min-w-0 flex-1 bg-transparent text-base font-medium text-ai outline-none placeholder:text-ai"
+          className="min-w-0 flex-1 rounded-md bg-transparent text-base font-medium text-ai placeholder:text-ai focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text"
           value={extra}
           onChange={(e) => setExtra(e.target.value)}
           placeholder="+ Add an item"
@@ -324,8 +348,8 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
       {message}
 
       {/* Pinned to the bottom of the phone screen over a fade, as in the design; in the page flow on the website. */}
-      <div className="fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent via-bg/90 via-45% to-bg px-8 pt-16 pb-10 lg:static lg:bg-none lg:p-0">
-        <button type="button" onClick={create} disabled={busy || kept.length === 0} className={`${button} mx-auto w-full max-w-[760px] lg:w-auto`}>
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent via-bg/90 via-45% to-bg px-8 pt-16 pb-10 lg:static lg:bg-none lg:p-0">
+        <button type="button" onClick={create} disabled={busy || kept.length === 0} className={`${button} pointer-events-auto mx-auto w-full max-w-[760px] lg:w-auto`}>
           {busy ? "Creating…" : `Looks good, create list (${kept.length})`}
         </button>
       </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, forgetList, usd, type List } from "../api";
 import { ListCard, spent, useSeenLists } from "../recent";
-import { card, mini } from "../ui";
+import { AccountLink, card, mini } from "../ui";
 
 const month = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
@@ -66,9 +66,12 @@ export default function HistoryPage() {
 
   return (
     <main className="flex flex-col gap-5">
-      <Link href="/" className="text-base font-medium text-muted lg:hidden">
-        ← Lists
-      </Link>
+      <div className="flex items-center justify-between lg:hidden">
+        <Link href="/" className="text-base font-medium text-muted-on-bg">
+          ← Lists
+        </Link>
+        <AccountLink className="text-base font-medium text-muted-on-bg" />
+      </div>
       <h1 className="text-[32px] tracking-[-0.015em] lg:text-[48px] lg:font-medium">History</h1>
 
       {status && (
@@ -78,13 +81,13 @@ export default function HistoryPage() {
       )}
 
       {!lists ? (
-        <p className="text-base text-muted">Loading…</p>
+        <p className="text-base text-muted-on-bg">Loading…</p>
       ) : lists === "failed" ? (
-        <p role="status" className="text-base text-muted">
+        <p role="status" className="text-base text-muted-on-bg">
           Your lists could not be loaded right now. They are still saved; reload the page to try again.
         </p>
       ) : lists.length === 0 ? (
-        <p className="text-base text-muted">No lists yet. Lists you make or open on this device show up here.</p>
+        <p className="text-base text-muted-on-bg">No lists yet. Lists you make or open on this device show up here.</p>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:gap-5">

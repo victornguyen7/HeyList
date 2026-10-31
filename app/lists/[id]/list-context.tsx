@@ -6,7 +6,7 @@ import { createContext, use, useEffect, useRef, useState } from "react";
 import { api, cachedLists, cacheLists, captureMessage, memberKey, rememberList, rememberMember, type Capture, type List, type Member } from "../../api";
 import { accountName, supabase, useSession } from "../../auth";
 import { listChanged, onListChanged } from "../../realtime";
-import { Avatar, button, card } from "../../ui";
+import { Avatar, button, buttonGlass, card } from "../../ui";
 
 type Ctx = {
   list: List;
@@ -60,6 +60,8 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
   const [joined, setJoined] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  // The list couldn't load and there's no saved copy to show.
+  const [failed, setFailed] = useState<{ listId: string; code?: string; message: string } | null>(null);
   const session = useSession();
   const savedName = accountName(session);
 
@@ -79,7 +81,10 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
         setListState((current) => (current?.id === loaded.id && current !== saved.current ? current : loaded));
       });
     if (!orderId || !approved) {
-      load().catch((e) => setStatus(`Could not load the list: ${e.message}`));
+      load().catch((e) => {
+        if (saved.current?.id === listId) setStatus(`Could not load the latest copy of this list. ${e.message}`);
+        else setFailed({ listId, code: e.code, message: e.message });
+      });
       return;
     }
     // Capture is idempotent on the backend for a while, so a repeat (Strict Mode) returns the same result.
@@ -187,19 +192,39 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
     </button>
   );
 
+  if (!list && failed?.listId === listId) {
+    const missing = failed.code === "LIST_NOT_FOUND";
+    return (
+      <div className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:p-8`}>
+        <h1 className="text-[28px] leading-tight tracking-[-0.015em]">{missing ? "List not found" : "This list couldn't load"}</h1>
+        <p className="text-base text-muted">{failed.message}</p>
+        <div className="flex flex-wrap gap-2">
+          {!missing && (
+            <button type="button" onClick={() => window.location.reload()} className={button}>
+              Try again
+            </button>
+          )}
+          <Link href="/" className={missing ? button : buttonGlass}>
+            Go to your lists
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   // The header (Figma v2): on the website the title has its own row with Share link beside it, and the tabs sit on
   // the row below, so a long title wraps instead of squeezing the tabs onto two lines.
   return (
     <div className="flex w-full flex-col gap-3.5 lg:gap-7">
       <div className="flex items-center justify-between lg:hidden">
-        <Link href="/" className="text-base font-medium text-muted">
+        <Link href="/" className="text-base font-medium text-muted-on-bg">
           ← Lists
         </Link>
         {shareButton}
       </div>
 
       <header className="flex flex-col gap-2 lg:gap-3">
-        <Link href="/" className="hidden text-[15px] text-muted lg:block">
+        <Link href="/" className="hidden text-[15px] text-muted-on-bg lg:block">
           ← My lists
         </Link>
         <div className="flex items-end justify-between gap-6">
@@ -214,7 +239,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
                   <Avatar key={m.id} name={m.name} ring />
                 ))}
               </span>
-              <span className="text-sm font-medium text-muted">
+              <span className="text-sm font-medium text-muted-on-bg">
                 {list.members.length} {list.members.length === 1 ? "person" : "people"}
                 {me ? ` · you are ${list.members.find((m) => m.id === me)?.name}` : " · you haven't joined"}
               </span>
@@ -238,11 +263,29 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {message && (
-        <p role="status" className={`${card} text-base whitespace-pre-line`}>
+      {/* A toast above the tab bar, so it's seen from anywhere on a long page. Always mounted, so screen readers announce
+          each message; it stays until dismissed, because it can be an error or a reminder to copy. */}
+      <div
+        className={`fixed inset-x-4 bottom-[100px] z-30 lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-[420px] ${message ? `${card} flex items-start gap-3 bg-bg` : "pointer-events-none"}`}
+      >
+        <p role="status" className="min-w-0 flex-1 self-center text-base break-words whitespace-pre-line">
           {message}
         </p>
-      )}
+        {message && !(orderId && approved && !status) && (
+          <button
+            type="button"
+            aria-label="Dismiss message"
+            onClick={() => {
+              setStatus(null);
+              // A cancelled payment's message comes from the address, so it goes when the address is cleaned.
+              if (orderId) router.replace(pathname, { scroll: false });
+            }}
+            className="-my-2 -mr-2 flex size-11 shrink-0 items-center justify-center rounded-full text-xl text-muted"
+          >
+            ×
+          </button>
+        )}
+      </div>
 
       {list && (
         <>

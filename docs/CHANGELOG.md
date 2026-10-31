@@ -1,5 +1,28 @@
 # HeyList — Changelog
 
+## 2026-10-31
+
+### Added
+
+- **Add and remove items after a list is made**: Progress has **+ Add an item**, and an item's expanded row has **Remove**, which asks first because it goes for everyone on the list. These use the existing backend routes.
+- **Account link on phones**: Home and History show **Log in**, or **Account** once logged in, as the web nav now does. The phone login page has **← Lists**.
+
+### Fixed
+
+UI audit against Figma Soft glass v2, each checked in a browser against a fake backend (not on a real phone or the live backend).
+
+- **Contrast**: `--muted`, `--money` and `--ai` are darker than the Figma values, and a new `--muted-on-bg` is used for text directly on the gradient, so text reaches WCAG AA. The Figma variables still have the old values.
+- **Pay button**: it collapsed to about 23 px while the PayPal SDK loaded or if it failed. It's 48 px now.
+- **Messages on list pages**: they appeared at the top of the page, off screen when scrolled. They're a toast above the tab bar now, announced to screen readers, and stay until dismissed.
+- **AI review**: the pinned button's layer blocked taps on **+ Add an item**; it no longer does. Quantity buttons went from 15×20 px to 32 px. Notes show in full instead of being cut off.
+- **Keyboard focus**: the prompt, item fields, drop circles and receipt upload now show a focus ring.
+- **Expandable rows**: item rows and "How this was worked out" have a chevron, so it's clear they open.
+- **List errors**: a bad link shows "List not found" with a way back, not "Loading…" and a raw code. Unknown errors no longer show their code.
+- **Budget**: Money says in words when the rest of the list would go over budget, not just in colour.
+- **Large amounts**: amounts have thousands separators ("$1,234.56"), and the Progress stats fit at 320 px.
+- **Voice input**: the mic's pulse respects reduced motion, "Listening… speak now" shows, and a denied mic or no speech now says what to do.
+- **More actions sheet**: it's a native dialog now. Esc closes it, focus stays inside and returns to the button afterwards.
+
 ## 2026-10-28
 
 ### Added
