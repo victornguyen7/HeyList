@@ -43,7 +43,8 @@ Sources, checked 2026-10-15:
 - Nothing calls Claude for now. Ollama does starting lists, receipt matching (`receipts.match_lines`) and, while Textract is unavailable, receipt reading (`receipts.read_with_ollama`).
 - When Claude comes back: `claude-haiku-5-5`, the cheapest current model ($0.10 per million input tokens, $0.50 per million output tokens, under 100K-token prompts), low effort, bounded `max_tokens`. Don't switch to a larger model without the owner's agreement.
 - A matching call takes at most 150 receipt lines and 300 list items, and is made only after lines were found and only when the list has open items.
-- Paid routes are rate-limited: 10 receipt scans per list per hour and 20 starting lists per hour across all clients (`allow()` in `backend/main.py`; the backend sits behind proxies, so it can't safely tell clients apart). There are no accounts, so anyone with a list link could otherwise keep spending.
+- A photo of a paper list costs one Textract call and one Ollama call (two Ollama calls while Textract is unavailable), and counts as a starting list. A photo to check off an item costs one Ollama call, and none when the list has nothing open.
+- Paid routes are rate-limited: 10 receipt scans per list per hour, 20 starting lists per hour and 100 check-off photos per hour across all clients (`allow()` in `backend/main.py`; the backend sits behind proxies, so it can't safely tell clients apart). There are no accounts, so anyone with a list link could otherwise keep spending.
 
 **Tests and development**
 
@@ -66,4 +67,4 @@ Sources, checked 2026-10-15:
 
 ## 4. AWS keys (Textract)
 
-The same handling applies to `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. In addition, the IAM user for this app should have only the permission it needs, `textract:AnalyzeExpense`, and nothing else. A leaked key with broad permissions could run up charges on any AWS service.
+The same handling applies to `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. In addition, the IAM user for this app should have only the permissions it needs, `textract:AnalyzeExpense` and `textract:DetectDocumentText`, and nothing else. A leaked key with broad permissions could run up charges on any AWS service.

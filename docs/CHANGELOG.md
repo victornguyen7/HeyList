@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Photo of a paper list**: Home has **Take a photo of a paper list**. Textract reads the page (`DetectDocumentText`), or the Ollama vision model while Textract is unavailable, and the lines go through the existing starting-list step to the usual review screen (decision 70). The photo isn't kept.
+- **Check off with a photo**: on Progress, a photo of one thing proposes which open item it is; the person confirms the item and types what they paid, and that price counts in the budget and the split (decision 71). The photo isn't kept.
 - **Add and remove items after a list is made**: Progress has **+ Add an item**, and an item's expanded row has **Remove**, which asks first because it goes for everyone on the list. These use the existing backend routes.
 - **Account link on phones**: Home and History show **Log in**, or **Account** once logged in, as the web nav now does. The phone login page has **← Lists**.
 

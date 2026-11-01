@@ -114,7 +114,15 @@ Every item can have a person responsible for buying it, and the list keeps who p
 4. The person checks the proposals and corrects any line with a dropdown (decision 5), types any blank price or fee (or leaves it blank), then confirms. The screen says whether the lines and fees add up to the receipt total.
 5. Matched items are checked off with the receipt's prices (several lines can be one item) and the scanner as buyer; unmatched lines become extras. A typed price is marked typed. The photo is kept in the private `receipts` bucket as proof.
 
-### Photo recognition (planned: spec and learning plan only)
+### Photo of a paper list (built)
+
+On Home, "Take a photo of a paper list" opens the back camera. Textract `DetectDocumentText` reads the lines (the Ollama vision model while Textract is unavailable), the AI turns them into items with nothing added, and the person checks them on the usual review screen. Lines that were hard to read carry a note. Nothing is saved until "create list"; the photo is never saved (decision 70).
+
+### Check off with a photo (built)
+
+On Progress, "Check off with a photo" opens the back camera. The AI proposes which open item the photo shows; the person confirms or picks the item and types what they paid, and the price counts in the budget and the split. It shows as "Marked bought by hand", since a photo isn't proof of purchase; the photo is never saved (decision 71).
+
+### Photo recognition of several items (planned: spec and learning plan only)
 
 **Goal:** point the camera at real things (an open suitcase, a shopping bag, a shelf) and the app recognises which list items are in view, then checks them off once the person confirms. Example: a photo of a packed suitcase checks off toothbrush, charger and passport.
 

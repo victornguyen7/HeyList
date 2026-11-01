@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { api, captureMessage, proofLabel, refundNote, usd, type Capture, type Item, type List } from "../../api";
 import { PayPalButtons } from "../../paypal-buttons";
+import { PhotoTick } from "../../photo-tick";
 import { ShopAgent } from "../../shop-agent";
 import { Check, menuRow, mini, PayCard, payPayPal, Ring } from "../../ui";
 import { buttonAi, card, outline, row, useList } from "./list-context";
@@ -79,6 +80,12 @@ export default function ProgressPage() {
     const priceCents = priceText.trim() ? Math.round(Number(priceText.replace("$", "")) * 100) : null;
     if (priceCents !== null && !(priceCents >= 0)) return setStatus("That price wasn't a number, so nothing was changed.");
     setTicking(null);
+    await patchItem(item, { checked: true, memberId: me, priceCents });
+  }
+
+  // The same tick, with the item and the price confirmed on the photo's card; a blank price leaves it out of the budget.
+  async function tickFromPhoto(item: Item, priceCents: number | null) {
+    setStatus(null);
     await patchItem(item, { checked: true, memberId: me, priceCents });
   }
 
@@ -492,6 +499,7 @@ export default function ProgressPage() {
             {open.length} {open.length === 1 ? "item" : "items"} · ~{usd(open.reduce((sum, item) => sum + cost(item), 0))}
           </span>
         </div>
+        {me && !mode && open.some((item) => !held(item)) && <PhotoTick listId={list.id} items={open.filter((item) => !held(item))} onTick={tickFromPhoto} onError={setStatus} />}
         {open.length === 0 ? (
           <p className="text-base text-muted-on-bg">{items.length === 0 ? "Nothing on this list yet. Add the first item below." : "Everything is done."}</p>
         ) : (

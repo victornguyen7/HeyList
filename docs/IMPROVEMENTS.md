@@ -14,6 +14,49 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
 | 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7C built 2026-10-28; 7D built and removed (decision 63); 7E optional; 7F dropped |
 | 8 | Effortless core loop, ready for judges | 8B–8D built 2026-10-28; 8A code part (README) done, owner tasks left; 8F, 8G built 2026-10-28; 8E later |
+| 9 | Camera: paper lists, check off with a photo, packing from a bag photo | 9A, 9B built 2026-10-31, not tried live; 9C brainstorm only |
+
+### Phase 9 — camera (owner's request, 2026-10-31)
+
+Phase 8 keeps new features out unless they make the loop easier, and earlier notes called photo recognition too big. The owner chose to add these two anyway, in narrow forms: no new table and no schema run, and one photo at a time.
+
+| Part | Built | Decisions |
+|---|---|---|
+| 9A | **Take a photo of a paper list** on Home → Textract `DetectDocumentText` (Ollama vision as the fallback) → `llm.starting_list()` → the usual review screen | 70 |
+| 9B | **Check off with a photo** on Progress → Ollama vision proposes the item → the person confirms it and types the price → the usual tick, counted in the budget | 71 |
+
+- **Tests:** 176 backend tests pass (17 new, in `backend/test_photos.py`, all mocked). `tsc` and `eslint` clean. Both flows were driven in Chrome at phone size against a fake backend, which found one bug (an invisible disabled button, fixed).
+- **Not done yet:**
+  - **No real photo has been through Textract or Ollama**: that needs the owner's approval (RULES.md). Handwriting quality and how well the model tells similar items apart are unmeasured.
+  - Trying the camera itself on a phone: the browser test uploads a file.
+  - The app's IAM user has `textract:DetectDocumentText` (added by the owner, 2026-10-31; checked with the keys in `.env.local` by sending an invalid file, which Textract refused as unsupported, not as access denied). If Textract ever refuses, the Ollama vision model reads paper lists instead, which works but flags no line as hard to read.
+
+#### 9C — packing list from a photo of an empty bag (brainstorm, not built)
+
+**Is it possible? Yes, and most of it exists:** the camera, the vision call and the review screen. The catch is what the photo can really tell us. "Holiday for 5 days" decides what goes on the list. An empty bag only says roughly how much fits, and with nothing for scale in the frame, a model can't measure volume; it can only tell a cabin case from a large suitcase. So the feature should be about **fitting**, not about the photo writing the list.
+
+**Suggested flow**
+
+1. Photo plus a sentence ("5 days in Bali, beach and one nice dinner").
+2. One vision call returns the bag's size class (small backpack, cabin case, medium, large), which the person can change with one tap, since it's a guess.
+3. `starting_list()` writes the list as it does today, plus a size (small, medium or large) for each item.
+4. Code, not the AI (decision 10), adds up the sizes against the bag and shows a **space bar** where the budget bar is: "about 80% full", or "over: drop a few items". Dropping items works as it does for the budget.
+
+**Why this and not "the AI decides what fits":** a meter the person can see and correct is honest about being rough. A list silently cut down by a model isn't.
+
+**Ideas that could come with it**
+
+| Idea | Worth it? |
+|---|---|
+| Things already in the bag are left off the list | Yes, cheap: the same photo, and a real use of it |
+| After packing, a photo of the open bag ticks off what it can see (SPEC's photo recognition) | Best demo moment, but small items in a pile are the hard case; measure first |
+| One list per traveller, for a family | Later: fits sharing, but needs per-person items |
+| Airline weight limits | No: a guess from a photo would be presented as a fact |
+| Weather at the destination | Later: a new service for a small gain; the AI already knows typical climates |
+
+**Risk, and the test to run first:** the photo may add nothing over three size buttons, which would be cheaper and never wrong. Before building, run about 5 real bags and descriptions with and without the photo (paid calls, owner's approval). If the lists don't really differ, ship the size buttons and drop the photo.
+
+**Size:** about a day, with the review screen's space bar as the largest part. It fits SPEC's first use case, packing before a holiday, but the 5 November items in 8A come first.
 
 ### Phase 1 — purchase verification (done)
 

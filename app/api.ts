@@ -148,8 +148,10 @@ export const usd = (cents: number) =>
 const MESSAGES: Record<string, string> = {
   AI_UNAVAILABLE: "The list helper is not answering right now. Try again in a moment.",
   UNREADABLE_IMAGE: "That photo could not be read. Try again with the whole receipt flat and in focus.",
+  UNREADABLE_LIST: "That photo could not be read. Try again with the whole page flat, in good light and in focus.",
   NO_LINES_FOUND: "No items were found on that receipt.",
-  SCANNING_UNAVAILABLE: "Receipt scanning is not available right now.",
+  NO_ITEMS_FOUND: "No items were found in that photo. Try again closer to the list, or type it instead.",
+  SCANNING_UNAVAILABLE: "Reading photos is not available right now. Try again in a moment.",
   MATCHING_UNAVAILABLE: "Receipt matching is not available right now.",
   NO_MEMBERS: "Add at least one person first.",
   TOO_MANY_REQUESTS: "That was done a lot just now. Please wait a while and try again.",

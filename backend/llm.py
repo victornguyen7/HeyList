@@ -102,9 +102,10 @@ def closest_examples(description: str) -> list[dict]:
     return sorted(EXAMPLES, key=lambda example: -len(asked & words(example["request"])))[:EXAMPLE_COUNT]
 
 
-def starting_list(description: str, budget_cents: int | None = None) -> dict:
+def starting_list(description: str, budget_cents: int | None = None, fallback_title: str | None = None) -> dict:
     """A suggested list for the user to confirm or edit (decision 5); nothing is saved here.
-    The reply is checked field by field, because the schema only shapes it."""
+    The reply is checked field by field, because the schema only shapes it. A reply with no title is named
+    fallback_title, or else after the description."""
     request = description if budget_cents is None else f"{description}\nBudget: {budget_cents} cents"
     shown = []
     for example in closest_examples(description):
@@ -138,7 +139,7 @@ def starting_list(description: str, budget_cents: int | None = None) -> dict:
             }
         )
     return {
-        "title": str(reply.get("title", "")).strip()[:120] or description.strip()[:120],
+        "title": str(reply.get("title", "")).strip()[:120] or fallback_title or description.strip()[:120],
         "kind": reply.get("kind") if reply.get("kind") in KINDS else "other",
         "items": items,
     }

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { api, rememberMember, usd, type List } from "./api";
-import { AccountLink, Brand, button, card, chip, row } from "./ui";
+import { shrink } from "./photo";
+import { AccountLink, Brand, button, buttonGlass, card, chip, row } from "./ui";
 
 // priceSource (decision 49): paid = what people paid for it before, store = a store product chosen for it, estimate = the AI's guess.
 type Suggestion = {
@@ -60,6 +61,9 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
   const [dropped, setDropped] = useState<Set<number>>(new Set());
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // A paper list is being read, and the review on screen came from one.
+  const [reading, setReading] = useState(false);
+  const [fromPhoto, setFromPhoto] = useState(false);
   const [listening, setListening] = useState(false);
   const [extra, setExtra] = useState("");
   const canListen = useSyncExternalStore(
@@ -119,10 +123,33 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
       setSuggestion(suggested);
       setSeconds(took);
       setDropped(new Set());
+      setFromPhoto(false);
     } catch (err) {
       setStatus((err as Error).message);
     }
     setBusy(false);
+  }
+
+  // A photo of a paper list goes to the same review screen, so misread items are fixed before anything is saved.
+  async function readPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    setReading(true);
+    setStatus(null);
+    try {
+      const body = await shrink(file);
+      const [suggested, took] = await timed(() => api<Suggestion>("/api/lists/from-photo", { method: "POST", body }));
+      setSuggestion(suggested);
+      setSeconds(took);
+      setDropped(new Set());
+      setFromPhoto(true);
+    } catch (err) {
+      setStatus((err as Error).message);
+    }
+    setBusy(false);
+    setReading(false);
   }
 
   async function create() {
@@ -216,9 +243,18 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
               {listening ? "Listening… speak now" : ""}
             </span>
             {budgetCents !== undefined && <span className="text-sm text-muted">Budget: {usd(budgetCents)}</span>}
-            <button type="submit" disabled={busy || !description.trim()} className={`${button} w-full lg:w-[168px]`}>
-              {busy ? "Making your list…" : "Make my list"}
-            </button>
+            <div className="flex flex-col gap-2.5 lg:flex-row">
+              <button type="submit" disabled={busy || !description.trim()} className={`${button} w-full lg:w-[168px]`}>
+                {busy && !reading ? "Making your list…" : "Make my list"}
+              </button>
+              {/* capture="environment" opens the back camera on phones; on a computer it is a file picker. */}
+              <label className={`${buttonGlass} cursor-pointer gap-2 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy ? "pointer-events-none opacity-40" : ""}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- 24px design asset */}
+                <img src="/ui/camera.svg" alt="" width={24} height={24} />
+                {reading ? "Reading your list…" : "Take a photo of a paper list"}
+                <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={readPhoto} disabled={busy} />
+              </label>
+            </div>
           </form>
           {message}
 
@@ -250,7 +286,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
       <span className={`${chip} flex items-center gap-1.5 self-start px-3 py-[7px] text-[13px] text-ai`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- design asset */}
         <img src="/ui/sparkle.svg" alt="" width={16} height={16} />
-        AI made {suggestion.items.length} items in {seconds} {seconds === 1 ? "second" : "seconds"}
+        {fromPhoto ? "AI read" : "AI made"} {suggestion.items.length} {suggestion.items.length === 1 ? "item" : "items"} in {seconds} {seconds === 1 ? "second" : "seconds"}
       </span>
       <h1 className="text-[32px] tracking-[-0.015em] lg:text-[48px] lg:font-medium">{suggestion.title}</h1>
 
@@ -273,7 +309,9 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
       </div>
       {budgetCents !== undefined && total > budgetCents && <p className="text-base font-medium text-text">Tap the circle on a few items to drop them and fit the budget.</p>}
 
-      <p className="text-[15px] text-muted-on-bg">Tap anything to change it. Tap a circle to drop that item.</p>
+      <p className="text-[15px] text-muted-on-bg">
+        {fromPhoto && "Check these against your paper list. "}Tap anything to change it. Tap a circle to drop that item.
+      </p>
       <ul className="flex flex-col gap-2.5">
         {suggestion.items.map((item, index) => {
           const off = dropped.has(index);

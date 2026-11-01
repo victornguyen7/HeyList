@@ -18,6 +18,7 @@ import llm
 import market
 import money
 import paypal
+import photos
 import receipts
 
 log = logging.getLogger(__name__)
@@ -1070,18 +1071,89 @@ RECEIPT_TYPES = {"image/jpeg": "jpg", "image/png": "png"}
 MAX_RECEIPT_BYTES = 5_000_000
 
 
-@app.post("/api/lists/{list_id}/receipts")
-async def scan_receipt(list_id: str, request: Request):
-    """The body is the photo itself. Reads it, proposes a list item for each line, and stores the receipt
-    unconfirmed: nothing is checked off until POST /api/receipts/{id}/confirm (decision 5)."""
+async def photo_body(request: Request) -> tuple[str, bytes] | JSONResponse:
+    """The photo sent as the request's body with its content type, or the error to return."""
     content_type = request.headers.get("content-type", "").split(";")[0].strip()
     if content_type not in RECEIPT_TYPES:
         return error("UNSUPPORTED_IMAGE", 415)
     image = await request.body()
     if not image or len(image) > MAX_RECEIPT_BYTES:
         return error("IMAGE_TOO_LARGE" if image else "INVALID_BODY", 413 if image else 400)
+    return content_type, image
+
+
+@app.post("/api/lists/{list_id}/receipts")
+async def scan_receipt(list_id: str, request: Request):
+    """The body is the photo itself. Reads it, proposes a list item for each line, and stores the receipt
+    unconfirmed: nothing is checked off until POST /api/receipts/{id}/confirm (decision 5)."""
+    photo = await photo_body(request)
+    if isinstance(photo, JSONResponse):
+        return photo
+    content_type, image = photo
     # Textract, Ollama and Supabase are blocking calls; keep them off the event loop.
     return await run_in_threadpool(_scan, list_id, request.query_params.get("memberId"), image, content_type, request)
+
+
+@app.post("/api/lists/from-photo")
+async def list_from_photo(request: Request):
+    """A photo of a paper list -> the same suggestion as POST /api/lists/suggest. Nothing is saved, photo included."""
+    photo = await photo_body(request)
+    if isinstance(photo, JSONResponse):
+        return photo
+    return await run_in_threadpool(_list_from_photo, photo[1])
+
+
+def _list_from_photo(image: bytes):
+    # A suggestion like any other, so it shares their cap.
+    if not allow("suggest", 20, 3600):
+        return error("TOO_MANY_REQUESTS", 429)
+    try:
+        lines = photos.read_list(image)
+        if not lines:
+            return error("NO_ITEMS_FOUND", 422)
+        # No budget: a budget tells the AI to drop items, and this list is what the person wrote. The review screen
+        # still checks the total against a budget they typed.
+        suggestion = llm.starting_list(photos.list_request(lines), fallback_title="List from a photo")
+    except receipts.ReceiptError as exc:
+        log.warning("Reading a paper list failed: %s (%r)", exc, exc.__cause__)
+        return error(str(exc), 422 if str(exc) == "UNREADABLE_LIST" else 502)
+    except Exception:
+        log.exception("Reading a paper list failed")
+        return error("AI_UNAVAILABLE", 502)
+    if not suggestion["items"]:
+        return error("NO_ITEMS_FOUND", 422)
+    try:
+        remember_prices(suggestion["items"])
+    except Exception:
+        log.exception("Price memory failed")
+    return suggestion
+
+
+@app.post("/api/lists/{list_id}/item-photo")
+async def item_from_photo(list_id: str, request: Request):
+    """A photo of one thing -> {itemId, seen}: which open item it looks like. Checks nothing off and keeps nothing: the
+    person confirms the item and types the price, then PATCH /api/items/{id} ticks it like any hand tick (decision 70)."""
+    photo = await photo_body(request)
+    if isinstance(photo, JSONResponse):
+        return photo
+    return await run_in_threadpool(_item_from_photo, list_id, photo[1])
+
+
+def _item_from_photo(list_id: str, image: bytes):
+    if not find("lists", list_id):
+        return error("LIST_NOT_FOUND", 404)
+    held = {item_id for order in db.select("orders", list_id=list_id, status="PENDING") for item_id in order["item_ids"]}
+    items = [item for item in db.select("items", "position", list_id=list_id) if not item["checked_at"] and item["id"] not in held]
+    if not items:
+        return {"itemId": None, "seen": ""}
+    # One Ollama call a photo. One cap for everyone: a per-list cap is easy to get round by making lists.
+    if not allow("item-photo", 100, 3600):
+        return error("TOO_MANY_REQUESTS", 429)
+    try:
+        return photos.identify_item(image, items)
+    except receipts.ReceiptError as exc:
+        log.warning("Reading an item photo failed: %s (%r)", exc, exc.__cause__)
+        return error(str(exc), 422 if str(exc) == "RECEIPT_TOO_LONG" else 502)
 
 
 def _scan(list_id: str, member_id, image: bytes, content_type: str, request: Request):

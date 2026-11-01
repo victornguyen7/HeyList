@@ -40,7 +40,9 @@ Core features:
 - [ ] Type
 - [x] Voice (browser speech recognition, decision 47)
 - [ ] Photo as proof
-- [ ] Photo recognition (spec in [SPEC.md](SPEC.md#photo-recognition-planned-spec-and-learning-plan-only))
+- [x] Photo of a paper list (decision 70); check off one item with a photo and ask its price (decision 71). Not tried live yet
+- [ ] Packing list from a photo of an empty bag (brainstorm in [IMPROVEMENTS.md](IMPROVEMENTS.md), phase 9)
+- [ ] Photo recognition of several items at once (spec in [SPEC.md](SPEC.md#photo-recognition-of-several-items-planned-spec-and-learning-plan-only))
   - [ ] Learn: send a photo plus item names to a vision model (the Ollama model, which already reads receipts; or Claude Haiku 5.5 later) and read back structured matches; try 20 real photos and note hits and misses
   - [ ] Learn: AWS Rekognition `DetectLabels` on the same photos, to compare its generic labels with option A
   - [ ] Learn: TensorFlow.js COCO-SSD or MediaPipe Object Detector on a live camera feed in the browser, to see what real-time detection can and can't name
