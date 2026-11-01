@@ -11,6 +11,8 @@ type Suggestion = {
   title: string;
   kind: string;
   items: { name: string; quantity: number; estPriceCents: number | null; note: string | null; priceSource?: "paid" | "store" | "estimate" | null }[];
+  // From a photo: printed lines left out of a handwritten list, as print showing through the paper (decision 70).
+  leftOut?: string[];
 };
 const sourceLabel = { paid: "paid before", store: "store price", estimate: "AI guess" };
 
@@ -312,6 +314,15 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
       <p className="text-[15px] text-muted-on-bg">
         {fromPhoto && "Check these against your paper list. "}Tap anything to change it. Tap a circle to drop that item.
       </p>
+      {suggestion.leftOut && suggestion.leftOut.length > 0 && (
+        <details className="text-[15px] text-muted-on-bg">
+          <summary className="cursor-pointer">
+            Left out {suggestion.leftOut.length} printed {suggestion.leftOut.length === 1 ? "line" : "lines"}, which looked like the other side of the paper showing through
+          </summary>
+          <p className="mt-1.5 font-mono text-[13px] break-words">{suggestion.leftOut.join(" · ")}</p>
+          <p className="mt-1.5">If one belongs on your list, add it below.</p>
+        </details>
+      )}
       <ul className="flex flex-col gap-2.5">
         {suggestion.items.map((item, index) => {
           const off = dropped.has(index);

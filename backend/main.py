@@ -1108,12 +1108,12 @@ def _list_from_photo(image: bytes):
     if not allow("suggest", 20, 3600):
         return error("TOO_MANY_REQUESTS", 429)
     try:
-        lines = photos.read_list(image)
-        if not lines:
+        read = photos.read_list(image)
+        if not read["lines"]:
             return error("NO_ITEMS_FOUND", 422)
         # No budget: a budget tells the AI to drop items, and this list is what the person wrote. The review screen
         # still checks the total against a budget they typed.
-        suggestion = llm.starting_list(photos.list_request(lines), fallback_title="List from a photo")
+        suggestion = llm.starting_list(photos.list_request(read["lines"]), fallback_title="List from a photo")
     except receipts.ReceiptError as exc:
         log.warning("Reading a paper list failed: %s (%r)", exc, exc.__cause__)
         return error(str(exc), 422 if str(exc) == "UNREADABLE_LIST" else 502)
@@ -1126,7 +1126,7 @@ def _list_from_photo(image: bytes):
         remember_prices(suggestion["items"])
     except Exception:
         log.exception("Price memory failed")
-    return suggestion
+    return suggestion | {"leftOut": read["leftOut"]}
 
 
 @app.post("/api/lists/{list_id}/item-photo")

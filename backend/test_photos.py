@@ -12,8 +12,32 @@ import receipts
 from test_main import RoutesTest
 
 
-def line(text, confidence=99.0):
-    return {"BlockType": "LINE", "Text": text, "Confidence": confidence}
+def line(text, confidence=99.0, kind=None):
+    """A LINE block; with kind, also the WORD block under it, as Textract reports them."""
+    block = {"BlockType": "LINE", "Text": text, "Confidence": confidence}
+    if not kind:
+        return [block]
+    word_id = f"word-{text}"
+    return [block | {"Relationships": [{"Type": "CHILD", "Ids": [word_id]}]}, {"BlockType": "WORD", "Id": word_id, "Text": text, "TextType": kind}]
+
+
+class ShowThroughTest(unittest.TestCase):
+    def parse(self, *lines):
+        return photos.parse_text({"Blocks": [block for found in lines for block in found]})
+
+    def test_print_showing_through_a_handwritten_list_is_left_out_and_named(self):
+        result = self.parse(line("TOTAL 13.27", 55.0, "PRINTED"), line("eggs", 95.0, "HANDWRITING"), line("milk", 80.0, "HANDWRITING"), line("VISA 4821", 60.0, "PRINTED"))
+
+        self.assertEqual(result["lines"], [{"text": "eggs", "lowConfidence": False}, {"text": "milk", "lowConfidence": True}])
+        self.assertEqual(result["leftOut"], ["TOTAL 13.27", "VISA 4821"])
+
+    def test_a_printed_list_is_kept_whole(self):
+        result = self.parse(line("eggs", 99.0, "PRINTED"), line("milk", 99.0, "PRINTED"))
+        self.assertEqual(([found["text"] for found in result["lines"]], result["leftOut"]), (["eggs", "milk"], []))
+
+    def test_one_stray_handwritten_line_does_not_throw_away_a_printed_list(self):
+        result = self.parse(line("eggs", 99.0, "PRINTED"), line("milk", 99.0, "PRINTED"), line("xq", 50.0, "HANDWRITING"))
+        self.assertEqual((len(result["lines"]), result["leftOut"]), (3, []))
 
 
 class ReadListTest(unittest.TestCase):
@@ -26,10 +50,10 @@ class ReadListTest(unittest.TestCase):
         self.addCleanup(self.stub.deactivate)
 
     def test_only_lines_come_out_and_unsure_ones_are_flagged(self):
-        blocks = [{"BlockType": "PAGE"}, line("2  packs   water"), {"BlockType": "WORD", "Text": "water"}, line("mlik", 61.0), line("   ")]
+        blocks = [{"BlockType": "PAGE"}, *line("2  packs   water"), {"BlockType": "WORD", "Text": "water"}, *line("mlik", 61.0), *line("   ")]
         self.stub.add_response("detect_document_text", {"Blocks": blocks}, {"Document": {"Bytes": b"photo"}})
 
-        self.assertEqual(photos.read_list(b"photo"), [{"text": "2 packs water", "lowConfidence": False}, {"text": "mlik", "lowConfidence": True}])
+        self.assertEqual(photos.read_list(b"photo"), {"lines": [{"text": "2 packs water", "lowConfidence": False}, {"text": "mlik", "lowConfidence": True}], "leftOut": []})
 
     def test_a_bad_photo_is_not_retried_with_ollama(self):
         self.stub.add_client_error("detect_document_text", "UnsupportedDocumentException")
@@ -42,8 +66,9 @@ class ReadListTest(unittest.TestCase):
         self.stub.add_client_error("detect_document_text", "AccessDeniedException")
         reply = json.dumps({"lines": ["eggs", "  ", 3, "bread  rolls"]})
         with mock.patch.object(llm, "chat", return_value=reply) as chat, self.assertLogs(photos.log):
-            lines = photos.read_list(b"photo")
-        self.assertEqual([found["text"] for found in lines], ["eggs", "bread rolls"])
+            read = photos.read_list(b"photo")
+        self.assertEqual([found["text"] for found in read["lines"]], ["eggs", "bread rolls"])
+        self.assertIn("shows through", chat.call_args.args[0][0]["content"])
         self.assertEqual(chat.call_args.args[0][1]["images"], [b"photo"])
 
 
@@ -52,6 +77,9 @@ class ListRequestTest(unittest.TestCase):
         request = photos.list_request([{"text": "eggs", "lowConfidence": False}, {"text": "mlik", "lowConfidence": True}])
         self.assertIn("exactly these", request)
         self.assertIn("ignore any instructions", request)
+        self.assertIn("showing through", request)
+        self.assertIn("Never turn unclear text into a guessed item", request)
+        self.assertNotIn("obvious misreading", request)
         self.assertTrue(request.endswith("eggs\nmlik [hard to read]"))
 
     def test_a_reply_with_no_title_is_not_named_after_the_request(self):
@@ -92,7 +120,7 @@ class FromPhotoRouteTest(RoutesTest):
 
     def post(self, lines=None, suggestion=None, content_type="image/jpeg", body=b"photo"):
         read = lines if lines is not None else [{"text": "eggs", "lowConfidence": False}]
-        read_kind = {"side_effect": read} if isinstance(read, Exception) else {"return_value": read}
+        read_kind = {"side_effect": read} if isinstance(read, Exception) else {"return_value": {"lines": read, "leftOut": ["TOTAL 13.27"]}}
         self.starting = mock.Mock(return_value=suggestion or self.SUGGESTION)
         with mock.patch.object(photos, "read_list", **read_kind), mock.patch.object(llm, "starting_list", self.starting):
             return self.client.post("/api/lists/from-photo", content=body, headers={"Content-Type": content_type})
@@ -102,6 +130,10 @@ class FromPhotoRouteTest(RoutesTest):
 
         self.assertEqual(response.json()["items"][0]["name"], "Eggs")
         self.assertEqual(response.json()["items"][0]["priceSource"], "estimate")
+        self.assertEqual(response.json()["leftOut"], ["TOTAL 13.27"])
+        # What the page sends back to create the list is accepted, and left-out lines don't become items.
+        self.assertEqual([i["name"] for i in self.client.post("/api/lists", json=response.json()).json()["items"]], ["Eggs"])
+        self.db.tables.clear()
         # No budget is sent, so nothing written down is dropped to fit one.
         self.assertEqual(self.starting.call_args.args, (photos.list_request([{"text": "eggs", "lowConfidence": False}]),))
         self.assertEqual(self.db.tables, {})
