@@ -94,6 +94,8 @@ def list_request(lines: list[dict]) -> str:
     return (
         "These lines were read from a photo of a paper list. They list the things needed, so the list is exactly these.\n"
         "Leave out a heading or a date, but use a heading for the title. A line may hold several things, or a quantity.\n"
+        'Handwritten digits are often misread as letters at the start of a line: "Zapples" is 2 apples, "Spears" could be '
+        '5 pears, "lorange" 1 orange. Fix spelling, but keep the person\'s words: don\'t change them to a brand or another name.\n'
         "The paper may be thin, such as the back of a receipt, so some lines may be text showing through from the other "
         "side: leave out store names, totals, codes, lines that are only prices, and anything garbled or reversed.\n"
         "If a line ends in [hard to read], keep it only if it clearly names something a person would need, with spelling "

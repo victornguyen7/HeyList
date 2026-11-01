@@ -80,6 +80,7 @@ class ListRequestTest(unittest.TestCase):
         self.assertIn("showing through", request)
         self.assertIn("Never turn unclear text into a guessed item", request)
         self.assertNotIn("obvious misreading", request)
+        self.assertIn('"Zapples" is 2 apples', request)
         self.assertTrue(request.endswith("eggs\nmlik [hard to read]"))
 
     def test_a_reply_with_no_title_is_not_named_after_the_request(self):

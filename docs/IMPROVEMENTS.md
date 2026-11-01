@@ -27,7 +27,8 @@ Phase 8 keeps new features out unless they make the loop easier, and earlier not
 
 - **Tests:** 176 backend tests pass (17 new, in `backend/test_photos.py`, all mocked). `tsc` and `eslint` clean. Both flows were driven in Chrome at phone size against a fake backend, which found one bug (an invisible disabled button, fixed).
 - **Not done yet:**
-  - **No real photo has been through Textract or Ollama**: that needs the owner's approval (RULES.md). Handwriting quality and how well the model tells similar items apart are unmeasured.
+  - **9A, one real photo (2026-10-31, owner-approved):** a handwritten list on the back of a receipt, "2 apples, 3 bananas, 4 coca drinks". Textract read 18 lines: 14 of show-through labelled printed (left out by code), and 1 labelled handwriting ("ИАИ ОИАЦ", the mirrored "JIANG NAN", confidence 41%), which only the AI removed. The final list was right: apples ×2, bananas ×3, Coca drinks ×4. Cost: 1 Textract call, 2 Ollama calls (741 in / 182 out, then 808 in / 181 out). One photo, and the prompt's "Zapples" example comes from this photo, so the quantity fix isn't independent proof. Real lines scored 70–75%, so on handwriting every item gets the "hard to read" note.
+  - **9B has not been run on a real photo**: how well the model tells similar items apart is unmeasured.
   - Trying the camera itself on a phone: the browser test uploads a file.
   - The app's IAM user has `textract:DetectDocumentText` (added by the owner, 2026-10-31; checked with the keys in `.env.local` by sending an invalid file, which Textract refused as unsupported, not as access denied). If Textract ever refuses, the Ollama vision model reads paper lists instead, which works but flags no line as hard to read.
 
