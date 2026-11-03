@@ -20,12 +20,24 @@ def web(url) -> str | None:
     return url if isinstance(url, str) and url.startswith(("https://", "http://")) else None
 
 
-def product(raw: dict) -> dict | None:
+# Where everything that isn't food is priced (decision 75): what most people would pay at Walmart or Target today.
+# Food comes from Kroger (kroger.py), since Channel3 carries no real groceries.
+BIG_STORES = ("walmart.com", "target.com")
+
+
+def domain(offer: dict) -> str:
+    return str(offer.get("domain") or "").lower().removeprefix("www.")
+
+
+def product(raw: dict, stores: tuple[str, ...] | None = None) -> dict | None:
     """What HeyList keeps of a Channel3 product: its cheapest in-stock offer in US dollars (PayPal Checkout charges
-    USD). None when it has no such offer. Channel3 prices are amounts in dollars, like 12.99."""
+    USD), from one of stores when given. None when it has no such offer. Channel3 prices are amounts in dollars,
+    like 12.99."""
     offers = []
     for offer in raw.get("offers") or []:
         price = offer.get("price") or {}
+        if stores and domain(offer) not in stores:
+            continue
         if offer.get("availability") == "InStock" and price.get("currency") == "USD" and web(offer.get("url")):
             cents = int(Decimal(str(price.get("price", 0))) * 100)
             if 0 < cents <= 10_000_000:
@@ -48,12 +60,14 @@ def product(raw: dict) -> dict | None:
     }
 
 
-def search(name: str) -> list[dict]:
-    """Up to 10 products for an item name, in Channel3's order. Search matches words, not meaning (a "milk" face
-    cleanser for milk), so the route has them checked by llm.store_matches before showing any."""
-    response = client().post("/v1/search", json={"query": name, "limit": 10})
+def search(name: str, stores: tuple[str, ...] | None = None) -> list[dict]:
+    """Up to 10 products for an item name, in Channel3's order, only from stores when given (priced from those
+    stores' offers). Search matches words, not meaning (a "milk" face cleanser for milk), so callers have them
+    checked by the AI (llm.store_matches, llm.market_matches) before using any."""
+    body = {"query": name, "limit": 10} | ({"filters": {"website_ids": list(stores)}} if stores else {})
+    response = client().post("/v1/search", json=body)
     response.raise_for_status()
-    found = (product(raw) for raw in response.json().get("products") or [])
+    found = (product(raw, stores) for raw in response.json().get("products") or [])
     return [p for p in found if p]
 
 

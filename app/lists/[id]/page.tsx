@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { api, captureMessage, proofLabel, refundNote, usd, type Capture, type Item, type List, type Receipt } from "../../api";
+import { api, captureMessage, priceShown, proofLabel, refundNote, usd, type Capture, type Item, type List, type Receipt } from "../../api";
 import { PayPalButtons } from "../../paypal-buttons";
 import { PhotoTick } from "../../photo-tick";
 import { usePayPalRedirect } from "../../paypal-redirect";
@@ -326,8 +326,9 @@ export default function ProgressPage() {
             </form>
           )}
         </div>
-        <span className={`mt-0.5 shrink-0 text-base font-medium tabular-nums lg:font-semibold ${isDone ? "text-list" : ""}`}>
-          {isDone ? (item.priceCents !== null ? usd(item.priceCents) : "—") : item.estPriceCents !== null ? `${item.product ? "" : "~"}${usd(cost(item))}` : "—"}
+        <span className={`mt-0.5 flex shrink-0 flex-col items-end text-base font-medium tabular-nums lg:font-semibold ${isDone ? "text-list" : ""}`}>
+          {isDone ? (item.priceCents !== null ? usd(item.priceCents) : "—") : item.estPriceCents !== null ? `${priceShown(item).approx ? "~" : ""}${usd(cost(item))}` : "—"}
+          {!isDone && item.estPriceCents !== null && priceShown(item).label && <span className="text-[12px] font-normal text-muted">{priceShown(item).label}</span>}
         </span>
       </li>
     );

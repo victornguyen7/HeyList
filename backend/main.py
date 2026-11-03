@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse, Response
 from starlette.concurrency import run_in_threadpool
 
 import db
+import kroger
 import llm
 import market
 import money
@@ -129,6 +130,11 @@ def locked(member_id: str | None, request: Request) -> bool:
     return not user or user["id"] != rows[0]["user_id"]
 
 
+# The stores a market price can come from (decisions 73-75), and where a saved price can come from (decision 49).
+PRICE_STORES = (*market.BIG_STORES, kroger.STORE)
+PRICE_SOURCES = ("paid", "store", "market", "estimate")
+
+
 def new_items(list_id: str, items, start: int = 0) -> list[dict]:
     if not isinstance(items, list) or len(items) > 100:
         raise ValueError("bad items")
@@ -138,6 +144,10 @@ def new_items(list_id: str, items, start: int = 0) -> list[dict]:
             "name": text(item["name"]),
             "note": text(item["note"], 200) if item.get("note") is not None else None,
             "est_price_cents": cents(item.get("estPriceCents")),
+            # Where the price came from (decisions 49, 73-75), only with a price: one of the known sources, and for a
+            # market price one of the stores HeyList prices from.
+            "price_source": item.get("priceSource") if item.get("priceSource") in PRICE_SOURCES and item.get("estPriceCents") else None,
+            "price_store": item.get("priceStore") if item.get("priceStore") in PRICE_STORES and item.get("estPriceCents") and item.get("priceSource") in ("market", None) else None,
             "quantity": quantity(item.get("quantity", 1)),
             "position": start + index,
             # Already had (the review's "Already have"): on the list, checked off, nothing to buy or split.
@@ -384,13 +394,71 @@ def add_items(list_id: str, body=Depends(json_body)):
         return error("INVALID_BODY", 400)
     unpriced = [row for row in rows if row["est_price_cents"] is None]
     for row, priced in zip(unpriced, price_unpriced([row["name"] for row in unpriced], the_list["title"])):
-        row["est_price_cents"] = priced["estPriceCents"]
+        row["est_price_cents"], row["price_store"] = priced["estPriceCents"], priced.get("priceStore")
+        row["price_source"] = priced.get("priceSource") if priced["estPriceCents"] else None
     return [camel(row) for row in db.insert("items", rows)]
 
 
+def market_prices(items: list[dict], list_title: str) -> list[dict]:
+    """Today's store price for each item that has none better than a guess: what people paid and a chosen store
+    product stay (remember_prices runs first). Food is priced at Kroger (decision 74); everything else at Walmart or
+    Target through Channel3 (market.BIG_STORES, decision 75):
+    1. Kroger is searched for every item (free; only when its keys are set). One AI call checks its results and says
+       which items are food. Food keeps Kroger's price.
+    2. The rest (not food, or not matched at Kroger) are searched at Walmart and Target, with one more AI check. A
+       non-food item neither sells keeps the Kroger price it got.
+    The price is the lower middle of the checked results, so one odd listing doesn't set it, with its store. An item
+    nobody sells, or any failure, keeps the price it had. Changes items in place and returns them."""
+    # The same name twice is searched and checked once.
+    wanted: dict[str, dict] = {}
+    for item in items:
+        if item.get("priceSource") in ("estimate", None):
+            wanted.setdefault(item["name"].strip().lower(), item)
+    found: dict[str, dict] = {}
+    at_kroger: dict[str, dict] = {}
+    if wanted and kroger.enabled():
+        at_kroger, food = _store_prices(wanted, list_title, kroger.search, "kroger", 1000)
+        found |= {key: product for key, product in at_kroger.items() if food.get(key) is not False}
+    rest = {key: item for key, item in wanted.items() if key not in found}
+    if rest:
+        found |= _store_prices(rest, list_title, lambda name: market.search(name, market.BIG_STORES), "market", 100)[0]
+    # Not food, and neither Walmart nor Target has it: Kroger's price is still better than a guess.
+    found = at_kroger | found
+    for item in items:
+        best = found.get(item["name"].strip().lower()) if item.get("priceSource") in ("estimate", None) else None
+        if best:
+            item["estPriceCents"], item["priceSource"], item["priceStore"] = best["priceCents"], "market", best["store"]
+    return items
+
+
+def _store_prices(wanted: dict[str, dict], list_title: str, search, cap: str, per_hour: int) -> tuple[dict[str, dict], dict[str, bool | None]]:
+    """({name key: the product whose price to use}, {name key: whether it is food}) for the names one store source
+    can price. Searches count toward that source's cap; whatever doesn't fit, or fails, is left out for the next
+    source or the AI's guess."""
+    wanted = {key: item for key, item in wanted.items() if allow(cap, per_hour, 3600)}
+    if not wanted:
+        return {}, {}
+    try:
+        with ThreadPoolExecutor(SHOP_THREADS) as pool:
+            results = list(pool.map(lambda item: search(item["name"]), wanted.values()))
+        searched = [{"key": key, "name": item["name"], "note": item.get("note"), "products": products} for (key, item), products in zip(wanted.items(), results)]
+        with_results = [entry for entry in searched if entry["products"]]
+        matched, food = llm.market_matches(with_results, list_title) if with_results else ([], [])
+    except Exception:
+        log.exception("Store prices from %s failed", cap)
+        return {}, {}
+    picks = {}
+    for entry, products in zip(with_results, matched):
+        if products:
+            ordered = sorted(products, key=lambda p: p["priceCents"])
+            picks[entry["key"]] = ordered[(len(ordered) - 1) // 2]  # the lower middle one, a real listing's price
+    return picks, {entry["key"]: is_food for entry, is_food in zip(with_results, food)}
+
+
 def price_unpriced(names: list[str], context: str | None) -> list[dict]:
-    """{name, estPriceCents, priceSource} for each name, in order: price memory first (remember_prices), then one AI
-    call for what it doesn't know. Never fails: no price is better than refusing to add an item."""
+    """{name, estPriceCents, priceSource} for each name, in order: price memory first (remember_prices), then the
+    big stores' price today (market_prices), then one AI call for what neither knows. Never fails: no price is better
+    than refusing to add an item."""
     items = [{"name": name, "estPriceCents": None} for name in names]
     if not items:
         return items
@@ -398,6 +466,7 @@ def price_unpriced(names: list[str], context: str | None) -> list[dict]:
         remember_prices(items)
     except Exception:
         log.exception("Price memory failed")
+    market_prices(items, context or "a shopping list")
     guess = [item for item in items if item["estPriceCents"] is None]
     # One cap for everyone, as for suggestions; each call prices many names at once.
     if guess and allow("prices", 200, 3600):
@@ -435,9 +504,9 @@ def update_item(item_id: str, request: Request, body=Depends(json_body)):
             values["name"] = text(body["name"])
         if "estPriceCents" in body:
             values["est_price_cents"] = cents(body["estPriceCents"])
-        # A store product describes this name at this price; change either and it no longer does.
+        # A store product, or a store's price, describes this name at this price; change either and it no longer does.
         if "name" in body or "estPriceCents" in body:
-            values["product"] = None
+            values["product"] = values["price_store"] = values["price_source"] = None
         if "quantity" in body:
             values["quantity"] = quantity(body["quantity"])
         if "claimedBy" in body:
@@ -525,7 +594,7 @@ def choose_product(item_id: str, body=Depends(json_body)):
         return error("MARKET_UNAVAILABLE", 502)
     if not product:
         return error("PRODUCT_NOT_FOUND", 404)
-    values = {"product": product | {"fetchedAt": now()}, "est_price_cents": product["priceCents"]}
+    values = {"product": product | {"fetchedAt": now()}, "est_price_cents": product["priceCents"], "price_store": None, "price_source": None}
     # checked_at=None: an item checked off while Channel3 answered keeps the price it was bought at.
     saved = db.update("items", values, id=item["id"], checked_at=None)
     if not saved:
@@ -625,7 +694,7 @@ def store_prices_changed(items: list[dict]) -> bool:
             log.exception("Store price check failed; charging the saved price")
             continue
         # Gone from the store: the last price seen stays, as an estimate without a store label.
-        values = {"product": fresh | {"fetchedAt": now()}, "est_price_cents": fresh["priceCents"]} if fresh else {"product": None}
+        values = {"product": fresh | {"fetchedAt": now()}, "est_price_cents": fresh["priceCents"], "price_store": None, "price_source": None} if fresh else {"product": None}
         db.update("items", values, id=item["id"], checked_at=None, order_id=None)
         changed |= not fresh or fresh["priceCents"] != item["est_price_cents"]
     return changed
@@ -705,7 +774,7 @@ def record_capture(order: dict, result: dict) -> dict:
                 # What PayPal charged, not today's price; orders from before prices were stored fall back.
                 "price_cents": order["prices"].get(item["id"], item["est_price_cents"] * item["quantity"]),
                 "order_id": order_id,
-                **({"product": product, "est_price_cents": product["priceCents"]} if product else {}),
+                **({"product": product, "est_price_cents": product["priceCents"], "price_store": None, "price_source": None} if product else {}),
             },
             id=item["id"],
             checked_at=None,
@@ -1090,6 +1159,8 @@ def suggest_list(body=Depends(json_body)):
         return error("AI_UNAVAILABLE", 502)
     try:
         remember_prices(suggestion["items"])
+        # Today's big-store prices replace the AI's guesses (decision 73).
+        market_prices(suggestion["items"], suggestion["title"])
     except Exception:
         # Price memory is an extra; the AI's estimates still make a usable list (e.g. before the schema is run).
         log.exception("Price memory failed")
@@ -1180,6 +1251,8 @@ def _list_from_photo(image: bytes):
         return error("NO_ITEMS_FOUND", 422)
     try:
         remember_prices(suggestion["items"])
+        # Today's big-store prices replace the AI's guesses (decision 73).
+        market_prices(suggestion["items"], suggestion["title"])
     except Exception:
         log.exception("Price memory failed")
     return suggestion | {"leftOut": read["leftOut"]}

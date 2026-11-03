@@ -154,3 +154,16 @@ class ReminderTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MarketMatchTest(unittest.TestCase):
+    def test_one_call_checks_every_item_and_odd_numbers_are_ignored(self):
+        products = lambda *titles: [{"title": t, "priceCents": 100 * n, "category": "Grocery"} for n, t in enumerate(titles, 1)]
+        items = [{"name": "Milk", "note": None, "products": products("Whole milk", "Milk cleanser")}, {"name": "Eggs", "note": "a dozen", "products": products("Toy eggs")}]
+        with mock.patch.object(llm, "chat", return_value='{"matches": [[1, 7, "2"]], "food": [true, "yes"]}') as chat:
+            chosen, food = llm.market_matches(items, "Groceries")
+        self.assertEqual([[p["title"] for p in picked] for picked in chosen], [["Whole milk"], []])
+        self.assertEqual(food, [True, None])
+        request = chat.call_args.args[0][1]["content"]
+        self.assertIn("1. Milk\n  1. Whole milk - $1.00 (Grocery)", request)
+        self.assertIn("2. Eggs (note: a dozen)", request)

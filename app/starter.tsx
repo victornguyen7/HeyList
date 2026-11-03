@@ -2,19 +2,22 @@
 
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { api, usd, type List } from "./api";
+import { api, storeName, usd, type List } from "./api";
 import { shrink } from "./photo";
 import { AccountLink, Brand, button, buttonGlass, card, chip, row } from "./ui";
 
-// priceSource (decision 49): paid = what people paid for it before, store = a store product chosen for it, estimate = the AI's guess.
+// priceSource (decisions 49, 73): paid = what people paid for it before, store = a store product chosen for it,
+// market = today's price at a big store (priceStore, e.g. walmart.com), estimate = the AI's guess.
 type Suggestion = {
   title: string;
   kind: string;
-  items: { name: string; quantity: number; estPriceCents: number | null; note: string | null; priceSource?: "paid" | "store" | "estimate" | null; owned?: boolean }[];
+  items: { name: string; quantity: number; estPriceCents: number | null; note: string | null; priceSource?: "paid" | "store" | "market" | "estimate" | null; priceStore?: string | null; owned?: boolean }[];
   // From a photo: printed lines left out of a handwritten list, as print showing through the paper (decision 70).
   leftOut?: string[];
 };
-const sourceLabel = { paid: "paid before", store: "store price", estimate: "AI guess" };
+const sourceLabel = { paid: "paid before", store: "store price", market: "store price", estimate: "AI guess" };
+const priceLabel = (item: { priceSource?: keyof typeof sourceLabel | null; priceStore?: string | null }) =>
+  item.priceSource === "market" && item.priceStore ? storeName(item.priceStore) : item.priceSource ? sourceLabel[item.priceSource] : null;
 
 // Whole dollars without ".00", as in the design's budget card ("$186 of $200 budget").
 const dollars = (cents: number) => (cents % 100 === 0 ? `$${(cents / 100).toLocaleString("en-US")}` : usd(cents));
@@ -323,7 +326,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
               </span>
               <span className={`flex shrink-0 flex-col items-end text-base font-medium whitespace-nowrap tabular-nums ${item.owned ? "text-muted line-through" : ""}`}>
                 {item.estPriceCents ? `${item.priceSource === "estimate" ? "~" : ""}${usd(item.estPriceCents * item.quantity)}` : "—"}
-                {item.estPriceCents && item.priceSource ? <span className="text-[13px] font-normal text-muted">{sourceLabel[item.priceSource]}</span> : null}
+                {item.estPriceCents && item.priceSource ? <span className="text-[13px] font-normal text-muted">{priceLabel(item)}</span> : null}
               </span>
               </div>
                 <span className="flex items-center gap-2 pl-[42px] text-[13px] text-muted">
@@ -372,7 +375,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
           setExtra("");
           // Priced like the rest: what people paid before, a store price, or the AI's guess. It shows "—" until then,
           // and stays that way if no price comes back.
-          api<{ items: { estPriceCents: number | null; priceSource: Suggestion["items"][number]["priceSource"] }[] }>("/api/prices", {
+          api<{ items: { estPriceCents: number | null; priceSource: Suggestion["items"][number]["priceSource"]; priceStore?: string | null }[] }>("/api/prices", {
             method: "POST",
             body: JSON.stringify({ names: [name], context: suggestion.title }),
           })
@@ -380,7 +383,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
               if (!priced?.estPriceCents) return;
               setSuggestion((current) =>
                 current && current.items[index]?.name === name
-                  ? { ...current, items: current.items.map((item, i) => (i === index ? { ...item, estPriceCents: priced.estPriceCents, priceSource: priced.priceSource } : item)) }
+                  ? { ...current, items: current.items.map((item, i) => (i === index ? { ...item, estPriceCents: priced.estPriceCents, priceSource: priced.priceSource, priceStore: priced.priceStore } : item)) }
                   : current,
               );
             })

@@ -102,6 +102,12 @@ create table if not exists items (
   -- A real product chosen from a store search (Channel3, decision 50): title, store, url, imageUrl, priceCents
   -- (one unit, read by the server, and copied into est_price_cents), productId, fetchedAt.
   product jsonb,
+  -- The store a market price came from (decisions 73-75), e.g. walmart.com or kroger.com. Cleared when the name or
+  -- price changes or a product is chosen, since the price is then no longer that store's.
+  price_store text,
+  -- Where est_price_cents came from (decisions 49, 73): paid (what people paid for it before), store (a store product
+  -- chosen for it before), market (today's price at price_store) or estimate (the AI's guess). Cleared with price_store.
+  price_source text check (price_source in ('paid', 'store', 'market', 'estimate')),
   -- Who said they will buy it.
   claimed_by uuid references members (id) on delete set null,
   -- Who checked it off (and paid, when there is a price).
@@ -184,3 +190,5 @@ alter table items add column if not exists price_typed boolean not null default 
 drop table if exists invoices;
 alter table items add column if not exists owned boolean not null default false;
 alter table orders add column if not exists products jsonb not null default '{}';
+alter table items add column if not exists price_store text;
+alter table items add column if not exists price_source text check (price_source in ('paid', 'store', 'market', 'estimate'));

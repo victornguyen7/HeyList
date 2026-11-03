@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api, cachedLists, cacheLists, seenLists, usd, type List } from "./api";
+import { api, cachedLists, cacheLists, priceShown, seenLists, usd, type Item, type List } from "./api";
 import { card, Ring } from "./ui";
 
 export const spent = (list: List) => list.items.reduce((sum, item) => sum + (item.checkedAt ? (item.priceCents ?? 0) : 0), 0);
@@ -32,7 +32,28 @@ export function useSeenLists() {
 // Figma "List card": progress ring, title, how far along, what was spent. children are actions, in a footer row under
 // it (Figma v2 "History card") so they never squeeze the title. The title gets two lines and what was spent sits on the
 // line under it, not in a column beside it (Figma "Overflow fixes", D).
-export function ListCard({ list, children }: { list: List; children?: React.ReactNode }) {
+// One item's price and where it came from, for the card's item list: what was paid for a bought item, else the
+// estimate with its source, as on Progress.
+function ItemPrice({ item }: { item: Item }) {
+  if (item.owned) return <PriceCell amount="—" label="already had" />;
+  if (item.checkedAt) return <PriceCell amount={item.priceCents !== null ? usd(item.priceCents) : "—"} label="bought" />;
+  if (item.estPriceCents === null) return <PriceCell amount="—" label={null} />;
+  const shown = priceShown(item);
+  return <PriceCell amount={`${shown.approx ? "~" : ""}${usd(item.estPriceCents * item.quantity)}`} label={shown.label} />;
+}
+
+function PriceCell({ amount, label }: { amount: string; label: string | null }) {
+  return (
+    <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
+      <span className="font-medium">{amount}</span>
+      {label && <span className="w-[5.5rem] text-right text-[12px] text-muted">{label}</span>}
+      {!label && <span className="w-[5.5rem]" />}
+    </span>
+  );
+}
+
+// withItems (History): a tap-to-open list of every item with its price and where the price came from.
+export function ListCard({ list, children, withItems = false }: { list: List; children?: React.ReactNode; withItems?: boolean }) {
   const done = list.items.filter((item) => item.checkedAt).length;
   return (
     <div className={`${card} flex flex-col gap-3`}>
@@ -50,6 +71,27 @@ export function ListCard({ list, children }: { list: List; children?: React.Reac
           </span>
         </span>
       </Link>
+      {withItems && list.items.length > 0 && (
+        <details className="group text-sm">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 font-medium text-muted [&::-webkit-details-marker]:hidden">
+            {list.items.length} {list.items.length === 1 ? "item" : "items"}
+            <span aria-hidden className="group-open:rotate-90">
+              ›
+            </span>
+          </summary>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {list.items.map((item) => (
+              <li key={item.id} className="flex items-baseline justify-between gap-3">
+                <span className={`min-w-0 truncate ${item.checkedAt ? "text-muted line-through" : ""}`}>
+                  {item.name}
+                  {item.quantity > 1 && <span className="text-muted"> ×{item.quantity}</span>}
+                </span>
+                <ItemPrice item={item} />
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {children && <div className="flex items-center justify-between gap-4">{children}</div>}
     </div>
   );

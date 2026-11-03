@@ -1,6 +1,6 @@
 "use client";
 
-import { usd } from "../../../api";
+import { priceShown, usd } from "../../../api";
 import { EqualShare, SettleUp, useSplit, WhoPaid } from "../../../split";
 import { card, useList } from "../list-context";
 
@@ -15,6 +15,17 @@ export default function MoneyPage() {
   const left = list.items.reduce((sum, item) => sum + (item.checkedAt ? 0 : (item.estPriceCents ?? 0) * item.quantity), 0);
   // How far over the budget the list ends up once the rest is bought, said in words as well as colour.
   const projectedOver = list.budgetCents !== null ? spent + left - list.budgetCents : 0;
+  // Where the still-to-buy estimate comes from, by the labels Progress shows (Walmart, Kroger, paid before, AI guess),
+  // largest first, so it's clear how much of it is a real store price and how much a guess. "~" marks guesses.
+  const bySource = new Map<string, { cents: number; approx: boolean }>();
+  for (const item of list.items) {
+    if (item.checkedAt || item.estPriceCents === null) continue;
+    const shown = priceShown(item);
+    const key = item.product ? "chosen product" : (shown.label ?? "no source");
+    const group = bySource.get(key) ?? { cents: 0, approx: shown.approx };
+    bySource.set(key, { cents: group.cents + item.estPriceCents * item.quantity, approx: group.approx });
+  }
+  const sources = [...bySource.entries()].sort((a, b) => b[1].cents - a[1].cents);
   const extras = list.receipts.filter((r) => r.confirmedAt).flatMap((r) => r.extras);
   const extrasCents = extras.reduce((sum, extra) => sum + (extra.priceCents ?? 0), 0);
 
@@ -37,6 +48,15 @@ export default function MoneyPage() {
                   }`
                 : `No budget set · about ${usd(left)} still to buy`}
             </span>
+            {sources.length > 0 && (
+              <ul aria-label="Still to buy, by where the price comes from" className="flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted">
+                {sources.map(([label, { cents, approx }]) => (
+                  <li key={label} className="whitespace-nowrap tabular-nums">
+                    {label} <span className="font-medium text-text">{approx ? "~" : ""}{usd(cents)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 

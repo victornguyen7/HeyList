@@ -99,7 +99,7 @@ export default function HistoryPage() {
           <ul className="grid grid-cols-1 gap-2.5 lg:grid-cols-2 lg:gap-5">
             {lists.map((list) => (
               <li key={list.id}>
-                <ListCard list={list}>
+                <ListCard list={list} withItems>
                   <button type="button" onClick={() => again(list)} className={mini}>
                     Buy again
                   </button>

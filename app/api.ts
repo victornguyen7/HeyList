@@ -23,7 +23,26 @@ export type Item = {
   receiptId: string | null;
   // A real product chosen from a store search (Channel3, decision 50); its price is estPriceCents.
   product: Product | null;
+  // The store a market price came from (decisions 73-75), e.g. "walmart.com"; null for a guess.
+  priceStore: string | null;
+  // Where estPriceCents came from (decision 49): paid before, a store product chosen before, a store's price today,
+  // or the AI's guess. null for an item priced by hand or before sources were saved.
+  priceSource: "paid" | "store" | "market" | "estimate" | null;
 };
+
+// "walmart.com" -> "Walmart", shown under a store's price.
+const STORE_NAMES: Record<string, string> = { "walmart.com": "Walmart", "target.com": "Target", "kroger.com": "Kroger" };
+export const storeName = (domain: string) => STORE_NAMES[domain] ?? domain;
+
+/** How an open item's price is shown: "~" only for a guess, and the label under it (the store, "paid before", "AI guess"). */
+export function priceShown(item: Pick<Item, "product" | "priceStore" | "priceSource">): { approx: boolean; label: string | null } {
+  if (item.product) return { approx: false, label: null };
+  if (item.priceStore) return { approx: false, label: storeName(item.priceStore) };
+  if (item.priceSource === "paid") return { approx: false, label: "paid before" };
+  if (item.priceSource === "store") return { approx: false, label: "store price" };
+  // A guess says so, as on the review screen; a price with no source (typed in, or saved before sources were) is just "~".
+  return { approx: true, label: item.priceSource === "estimate" ? "AI guess" : null };
+}
 export type Product = { productId: string; title: string; store: string; url: string; imageUrl: string | null; priceCents: number };
 // priceCents is null where the photo's price couldn't be read surely; typed marks one the person typed in.
 export type ReceiptLine = { text: string; priceCents: number | null; lowConfidence: boolean; itemId: string | null; typed?: boolean };

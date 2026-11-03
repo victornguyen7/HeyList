@@ -8,6 +8,7 @@ import httpx
 from fastapi.testclient import TestClient
 
 import db
+import kroger
 import llm
 import main
 import market
@@ -104,6 +105,14 @@ class RoutesTest(unittest.TestCase):
             patch.start()
             self.addCleanup(patch.stop)
         main._calls.clear()
+        # No store searches in tests unless a test asks for them: nothing reaches Channel3.
+        search = mock.patch.object(market, "search", return_value=[])
+        self.market_search = search.start()
+        self.addCleanup(search.stop)
+        # Kroger is off unless a test turns it on.
+        krog = mock.patch.object(kroger, "enabled", return_value=False)
+        self.kroger_on = krog.start()
+        self.addCleanup(krog.stop)
         # No AI price guesses in tests unless a test asks for them.
         estimate = mock.patch.object(llm, "estimate_prices", side_effect=lambda names, context=None: [None] * len(names))
         self.estimate = estimate.start()
@@ -175,6 +184,35 @@ class PricesTest(RoutesTest):
             added = self.client.post(f"/api/lists/{the_list['id']}/items", json={"items": [{"name": "Milk"}]})
         self.assertEqual((added.status_code, added.json()[0]["estPriceCents"]), (200, None))
         self.assertEqual(self.client.post("/api/prices", json={"names": []}).status_code, 400)
+
+
+class PriceStoreTest(RoutesTest):
+    def test_the_store_a_price_came_from_is_kept_and_cleared_when_the_price_changes(self):
+        items = self.new_list([
+            {"name": "Charcoal", "estPriceCents": 1029, "priceSource": "market", "priceStore": "walmart.com"},
+            {"name": "Ketchup", "estPriceCents": 369, "priceSource": "market", "priceStore": "kroger.com"},
+            {"name": "Rope", "estPriceCents": 800, "priceSource": "made-up", "priceStore": "evil.example"},  # unknown source and store
+            {"name": "Tent", "priceSource": "estimate", "priceStore": "target.com"},  # no price, so neither
+            {"name": "Sunscreen", "estPriceCents": 899, "priceSource": "paid", "priceStore": "target.com"},  # paid before: no store
+            {"name": "Towel", "estPriceCents": 1200, "priceSource": "estimate"},
+        ])["items"]
+        self.assertEqual([(i["priceSource"], i["priceStore"]) for i in items],
+                         [("market", "walmart.com"), ("market", "kroger.com"), (None, None), (None, None), ("paid", None), ("estimate", None)])
+
+        saved = self.client.patch(f"/api/items/{items[0]['id']}", json={"estPriceCents": 1500}).json()
+        self.assertEqual((saved["estPriceCents"], saved["priceSource"], saved["priceStore"]), (1500, None, None))
+        # A quantity change keeps it: still that store's price for one.
+        self.assertEqual(self.client.patch(f"/api/items/{items[1]['id']}", json={"quantity": 3}).json()["priceStore"], "kroger.com")
+
+    def test_an_item_added_on_progress_keeps_its_store(self):
+        the_list = self.new_list([{"name": "Tent", "estPriceCents": 9000}])
+        self.market_search.side_effect = lambda name, stores=None: [ProductRoutesTest.PRODUCT | {"title": "Paper plates", "priceCents": 300, "store": "target.com"}]
+        mock.patch.object(llm, "market_matches", side_effect=lambda items, title: ([i["products"] for i in items], [False] * len(items))).start()
+        self.addCleanup(mock.patch.stopall)
+
+        added = self.client.post(f"/api/lists/{the_list['id']}/items", json={"items": [{"name": "Paper plates"}]}).json()
+
+        self.assertEqual((added[0]["estPriceCents"], added[0]["priceSource"], added[0]["priceStore"]), (300, "market", "target.com"))
 
 
 class SampleListTest(RoutesTest):
@@ -718,6 +756,90 @@ class StartingListTest(RoutesTest):
 
         self.assertEqual([(i["estPriceCents"], i["priceSource"]) for i in items], [(950, "paid"), (4999, "store"), (800, "estimate"), (None, None)])
 
+    def test_guesses_are_replaced_by_todays_big_store_price(self):
+        self.mock_llm(return_value={"title": "Beach", "kind": "trip", "items": [
+            {"name": "Sunscreen", "quantity": 1, "estPriceCents": 500},
+            {"name": "Unicorn saddle", "quantity": 1, "estPriceCents": 4000},
+            {"name": "Towel", "quantity": 1, "estPriceCents": None},
+        ]})
+        found = {
+            "Sunscreen": [ProductRoutesTest.PRODUCT | {"title": t, "priceCents": c, "store": s} for t, c, s in
+                          (("SPF 50 lotion", 1098, "target.com"), ("Milk cleanser", 300, "walmart.com"), ("SPF 30 spray", 897, "walmart.com"), ("SPF 50 stick", 1297, "target.com"))],
+            "Unicorn saddle": [],
+            "Towel": [ProductRoutesTest.PRODUCT | {"title": "Beach towel", "priceCents": 1500, "store": "walmart.com"}],
+        }
+        self.market_search.side_effect = lambda name, stores=None: found[name]
+        # The AI keeps the three real sunscreens and the towel; the cleanser only shares a word.
+        matches = mock.patch.object(llm, "market_matches", side_effect=lambda items, title: ([[p for p in i["products"] if "cleanser" not in p["title"]] for i in items], [None] * len(items))).start()
+        self.addCleanup(mock.patch.stopall)
+
+        items = self.client.post("/api/lists/suggest", json={"description": "Beach"}).json()["items"]
+
+        # Sunscreen: the middle of 8.97, 10.98 and 12.97. The saddle no big store sells keeps the AI's guess.
+        self.assertEqual([(i["estPriceCents"], i["priceSource"], i.get("priceStore")) for i in items],
+                         [(1098, "market", "target.com"), (4000, "estimate", None), (1500, "market", "walmart.com")])
+        self.assertTrue(all(call.args[1] == ("walmart.com", "target.com") for call in self.market_search.call_args_list))
+        # One AI check for the whole list, only for the items with results.
+        self.assertEqual([i["name"] for i in matches.call_args.args[0]], ["Sunscreen", "Towel"])
+
+    def test_what_people_paid_beats_the_market_and_a_market_failure_keeps_the_guess(self):
+        old = self.new_list([{"name": "Tent"}])["items"][0]
+        self.db.update("items", {"checked_at": "earlier", "order_id": "ORDER1", "price_cents": 12000}, id=old["id"])
+        self.mock_llm(return_value={"title": "Trip", "kind": "trip", "items": [
+            {"name": "Tent", "quantity": 1, "estPriceCents": 9000}, {"name": "Rope", "quantity": 1, "estPriceCents": 800}]})
+        self.market_search.side_effect = RuntimeError("Channel3 down")
+
+        with self.assertLogs(main.log):
+            items = self.client.post("/api/lists/suggest", json={"description": "Trip"}).json()["items"]
+
+        self.assertEqual([(i["estPriceCents"], i["priceSource"]) for i in items], [(12000, "paid"), (800, "estimate")])
+        self.assertEqual([call.args[0] for call in self.market_search.call_args_list], ["Rope"])
+
+    def test_food_is_priced_at_kroger_and_everything_else_at_walmart_or_target(self):
+        self.kroger_on.return_value = True
+        self.mock_llm(return_value={"title": "BBQ", "kind": "groceries", "items": [
+            {"name": "Ketchup", "quantity": 1, "estPriceCents": 350},
+            {"name": "Charcoal", "quantity": 1, "estPriceCents": 1200},
+            {"name": "ketchup", "quantity": 2, "estPriceCents": 350},
+            {"name": "Paper plates", "quantity": 1, "estPriceCents": 400},
+            {"name": "Tent", "quantity": 1, "estPriceCents": 9000},
+        ]})
+        k = lambda title, cents: {"productId": title, "title": title, "store": "kroger.com", "priceCents": cents, "category": "x"}
+        at_kroger = {"Ketchup": [k("Heinz Tomato Ketchup (20 oz)", 279), k("Kroger Ketchup (24 oz)", 199), k("Ketchup costume", 2999)],
+                     "Charcoal": [k("Kroger Charcoal (15 lb)", 899)], "Paper plates": [k("Kroger Paper Plates (50 ct)", 599)], "Tent": []}
+        search_kroger = mock.patch.object(kroger, "search", side_effect=lambda name: at_kroger[name]).start()
+        at_big = {"Charcoal": [ProductRoutesTest.PRODUCT | {"title": "Kingsford Charcoal", "priceCents": 1497, "store": "walmart.com"}], "Paper plates": [],
+                  "Tent": [ProductRoutesTest.PRODUCT | {"title": "Ozark Trail 4-Person Tent", "priceCents": 6997, "store": "walmart.com"}]}
+        self.market_search.side_effect = lambda name, stores=None: at_big[name]
+        food = {"Ketchup": True, "Charcoal": False, "Paper plates": False, "Tent": False}
+        matches = mock.patch.object(llm, "market_matches", side_effect=lambda items, title: (
+            [[p for p in i["products"] if "costume" not in p["title"]] for i in items], [food[i["name"]] for i in items])).start()
+        self.addCleanup(mock.patch.stopall)
+
+        items = self.client.post("/api/lists/suggest", json={"description": "BBQ"}).json()["items"]
+
+        # Ketchup (food): Kroger. Charcoal and the tent: Walmart. Plates: Walmart and Target have none, so Kroger's.
+        self.assertEqual([(i["estPriceCents"], i["priceStore"]) for i in items],
+                         [(199, "kroger.com"), (1497, "walmart.com"), (199, "kroger.com"), (599, "kroger.com"), (6997, "walmart.com")])
+        # Searched at the same time, so in any order.
+        self.assertEqual(sorted(c.args[0] for c in search_kroger.call_args_list), ["Charcoal", "Ketchup", "Paper plates", "Tent"])
+        # Walmart and Target only for what isn't food or wasn't at Kroger; never for the ketchup.
+        self.assertEqual(sorted(c.args[0] for c in self.market_search.call_args_list), ["Charcoal", "Paper plates", "Tent"])
+        self.assertEqual(matches.call_count, 2)
+
+    def test_a_kroger_failure_falls_back_to_the_big_stores(self):
+        self.kroger_on.return_value = True
+        self.mock_llm(return_value={"title": "x", "kind": "other", "items": [{"name": "Rope", "quantity": 1, "estPriceCents": 800}]})
+        mock.patch.object(kroger, "search", side_effect=RuntimeError("401")).start()
+        self.market_search.side_effect = lambda name, stores=None: [ProductRoutesTest.PRODUCT | {"title": "Rope", "priceCents": 999, "store": "target.com"}]
+        mock.patch.object(llm, "market_matches", side_effect=lambda items, title: ([i["products"] for i in items], [None] * len(items))).start()
+        self.addCleanup(mock.patch.stopall)
+
+        with self.assertLogs(main.log):
+            items = self.client.post("/api/lists/suggest", json={"description": "x"}).json()["items"]
+
+        self.assertEqual((items[0]["estPriceCents"], items[0]["priceStore"]), (999, "target.com"))
+
     def test_a_price_memory_failure_still_returns_the_suggestion(self):
         self.mock_llm(return_value={"title": "x", "kind": "other", "items": [{"name": "Tent", "quantity": 1, "estPriceCents": 9000}]})
         with mock.patch.object(db, "select", side_effect=RuntimeError("no name_key column")), self.assertLogs(main.log):
@@ -787,7 +909,7 @@ class ShopTest(RoutesTest):
             "Milk": [],
             "Gas": [ProductRoutesTest.PRODUCT | {"productId": "G1", "priceCents": 2500}],
         }
-        self.search = mock.patch.object(market, "search", side_effect=lambda name: self.products[name]).start()
+        self.search = mock.patch.object(market, "search", side_effect=lambda name, stores=None: self.products.get(name, [])).start()
         mock.patch.object(llm, "store_matches", side_effect=lambda name, note, title, found: found).start()
         self.addCleanup(mock.patch.stopall)
 
@@ -836,6 +958,9 @@ class ShopTest(RoutesTest):
         self.db.insert("orders", [{"id": "O1", "list_id": self.list["id"], "item_ids": [self.lamp["id"]], "status": "PENDING"}])
         other = self.new_list([{"name": "Gas"}])["items"][0]
         many = self.client.post(f"/api/lists/{self.list['id']}/items", json={"items": [{"name": "Gas"}] * 11}).json()
+        # Pricing the added items looked "Gas" up once at the big stores; the shop requests below must not search.
+        self.assertEqual(self.search.call_count, 1)
+        self.search.reset_mock()
 
         for items in ((self.tent,), (self.lamp,), (other,), (self.gas, self.gas), ()):
             with self.subTest(items=[i["name"] for i in items]):
