@@ -10,7 +10,7 @@ import { AccountLink, Brand, button, buttonGlass, card, chip, row } from "./ui";
 type Suggestion = {
   title: string;
   kind: string;
-  items: { name: string; quantity: number; estPriceCents: number | null; note: string | null; priceSource?: "paid" | "store" | "estimate" | null }[];
+  items: { name: string; quantity: number; estPriceCents: number | null; note: string | null; priceSource?: "paid" | "store" | "estimate" | null; owned?: boolean }[];
   // From a photo: printed lines left out of a handwritten list, as print showing through the paper (decision 70).
   leftOut?: string[];
 };
@@ -242,7 +242,8 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
   }
 
   const kept = suggestion.items.filter((item, index) => !dropped.has(index) && item.name.trim());
-  const total = kept.reduce((sum, item) => sum + (item.estPriceCents ?? 0) * item.quantity, 0);
+  // What someone already has costs nothing, so it stays out of the total and the budget.
+  const total = kept.reduce((sum, item) => sum + (item.owned ? 0 : (item.estPriceCents ?? 0) * item.quantity), 0);
 
   return (
     // The bottom padding (with the Shell's) clears the pinned button below, so the last field can always be reached.
@@ -275,7 +276,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
       {budgetCents !== undefined && total > budgetCents && <p className="text-base font-medium text-text">Tap the circle on a few items to drop them and fit the budget.</p>}
 
       <p className="text-[15px] text-muted-on-bg">
-        {fromPhoto && "Check these against your paper list. "}Tap anything to change it. Tap a circle to drop that item.
+        {fromPhoto && "Check these against your paper list. "}Tap anything to change it. Tap a circle to drop that item. Mark what you already have, so nobody buys it.
       </p>
       {suggestion.leftOut && suggestion.leftOut.length > 0 && (
         <details className="text-[15px] text-muted-on-bg">
@@ -325,8 +326,27 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                   </button>
                 </span>
                 {item.note && <span className="text-[13px] text-money">{item.note}</span>}
+                {/* Have it or buy it: what's already owned goes on the list checked off, at no cost. */}
+                <span role="radiogroup" aria-label={`Do you have ${item.name}?`} className={`mt-1.5 flex self-start rounded-full bg-surface-2 p-0.5 text-[13px] font-medium ${off ? "pointer-events-none" : ""}`}>
+                  {([
+                    [false, "Need to buy"],
+                    [true, "Already have"],
+                  ] as const).map(([owned, label]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      role="radio"
+                      aria-checked={Boolean(item.owned) === owned}
+                      disabled={off}
+                      onClick={() => change(index, { owned })}
+                      className={`h-8 rounded-full px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text ${Boolean(item.owned) === owned ? "bg-list text-on-accent" : "text-muted"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </span>
               </span>
-              <span className="flex shrink-0 flex-col items-end text-base font-medium tabular-nums">
+              <span className={`flex shrink-0 flex-col items-end text-base font-medium tabular-nums ${item.owned ? "text-muted line-through" : ""}`}>
                 {item.estPriceCents ? `${item.priceSource === "estimate" ? "~" : ""}${usd(item.estPriceCents * item.quantity)}` : "—"}
                 {item.estPriceCents && item.priceSource ? <span className="text-[13px] font-normal text-muted">{sourceLabel[item.priceSource]}</span> : null}
               </span>

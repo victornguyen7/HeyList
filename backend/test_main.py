@@ -23,7 +23,7 @@ COLUMNS = {
 # Column defaults the routes read back.
 DEFAULTS = {
     "lists": {"kind": "other"},
-    "items": {"position": 0, "quantity": 1, "price_typed": False},
+    "items": {"position": 0, "quantity": 1, "price_typed": False, "owned": False},
     "orders": {"status": "CREATED", "prices": {}, "refunds": {}},
     "settlements": {"status": "CREATED"},
     "receipts": {"lines": [], "fees": [], "extras": []},
@@ -59,6 +59,9 @@ class FakeDB:
         return sorted((dict(row) for row in self.rows(table, filters)), key=lambda row: row.get(order) or 0)
 
     def insert(self, table, rows):
+        # PostgREST fills a key some rows leave out with null rather than the default, so rows must agree.
+        if len({frozenset(row) for row in rows}) > 1:
+            raise AssertionError(f"rows inserted into {table} have different keys")
         added = []
         for row in rows:
             added.append({
@@ -112,6 +115,30 @@ class RoutesTest(unittest.TestCase):
         patch = mock.patch.object(paypal, name, **kwargs)
         self.addCleanup(patch.stop)
         return patch.start()
+
+
+class OwnedItemsTest(RoutesTest):
+    def test_an_item_already_had_is_checked_off_at_no_cost(self):
+        state = self.new_list([{"name": "Tent", "estPriceCents": 9000, "owned": True}, {"name": "Firewood", "estPriceCents": 1200}])
+        tent, firewood = state["items"]
+        self.assertTrue(tent["owned"])
+        self.assertIsNotNone(tent["checkedAt"])
+        self.assertIsNone(tent["priceCents"])
+        self.assertIsNone(tent["boughtBy"])
+        self.assertFalse(firewood["owned"])
+        self.assertIsNone(firewood["checkedAt"])
+
+    def test_a_list_whose_items_fail_to_save_is_taken_back(self):
+        with mock.patch.object(db, "insert", side_effect=[[{"id": "list-1"}], RuntimeError("boom")]), mock.patch.object(db, "delete") as delete:
+            with self.assertRaises(RuntimeError):
+                self.client.post("/api/lists", json={"title": "Trip", "items": [{"name": "Tent"}]})
+        delete.assert_called_once_with("lists", id="list-1")
+
+    def test_unticking_an_item_already_had_means_it_is_needed(self):
+        tent = self.new_list([{"name": "Tent", "owned": True}])["items"][0]
+        saved = self.client.patch(f"/api/items/{tent['id']}", json={"checked": False}).json()
+        self.assertFalse(saved["owned"])
+        self.assertIsNone(saved["checkedAt"])
 
 
 class SampleListTest(RoutesTest):

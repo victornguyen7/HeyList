@@ -17,6 +17,8 @@ export type Item = {
   claimedBy: string | null;
   boughtBy: string | null;
   checkedAt: string | null;
+  // Already had when the list was made: checked off, not bought.
+  owned: boolean;
   orderId: string | null;
   receiptId: string | null;
   // A real product chosen from a store search (Channel3, decision 50); its price is estPriceCents.
@@ -118,6 +120,7 @@ export function cacheLists(lists: List[]) {
 export function proofLabel(item: Item, orders: Order[]): string | null {
   if (item.orderId) return "Paid with PayPal";
   if (item.receiptId) return "On a receipt";
+  if (item.owned) return "Already had";
   if (item.checkedAt) return "Marked bought by hand";
   if (orders.some((order) => order.status === "PENDING" && order.itemIds.includes(item.id))) return "Payment pending at PayPal";
   return null;

@@ -140,6 +140,10 @@ def new_items(list_id: str, items, start: int = 0) -> list[dict]:
             "est_price_cents": cents(item.get("estPriceCents")),
             "quantity": quantity(item.get("quantity", 1)),
             "position": start + index,
+            # Already had (the review's "Already have"): on the list, checked off, nothing to buy or split.
+            # Set on every row: a bulk insert fills a key one row leaves out with null, not the column default.
+            "owned": item.get("owned") is True,
+            "checked_at": now() if item.get("owned") is True else None,
         }
         for index, item in enumerate(items)
     ]
@@ -236,7 +240,12 @@ def create_list(body=Depends(json_body)):
         return error("INVALID_BODY", 400)
 
     list_id = db.insert("lists", [row])[0]["id"]
-    db.insert("items", new_items(list_id, body.get("items", [])))
+    try:
+        db.insert("items", new_items(list_id, body.get("items", [])))
+    except Exception:
+        # Two separate writes, not a transaction: take the list back, so a failed save leaves no empty list behind.
+        db.delete("lists", id=list_id)
+        raise
     return list_state(list_id)
 
 
@@ -274,7 +283,9 @@ def create_sample():
                 "position": position,
                 "claimed_by": members.get(claimed),
                 # Marked bought by hand, as people do when they bought it before the list existed.
-                **({"checked_at": bought_at, "bought_by": members[claimed], "price_cents": paid} if paid else {}),
+                "checked_at": bought_at if paid else None,
+                "bought_by": members[claimed] if paid else None,
+                "price_cents": paid,
             }
             for position, (name, cents_each, count, claimed, paid) in enumerate(SAMPLE_ITEMS)
         ],
@@ -392,12 +403,13 @@ def update_item(item_id: str, request: Request, body=Depends(json_body)):
         if body.get("checked") is True:
             values |= {
                 "checked_at": now(),
+                "owned": False,
                 "bought_by": member_of(item["list_id"], body.get("memberId")),
                 # What the person says they paid, when they check off without a receipt.
                 "price_cents": cents(body.get("priceCents")),
             }
         elif body.get("checked") is False:
-            values |= {"checked_at": None, "bought_by": None, "price_cents": None, "receipt_id": None, "price_typed": False}
+            values |= {"checked_at": None, "bought_by": None, "price_cents": None, "receipt_id": None, "price_typed": False, "owned": False}
         if not values:
             raise ValueError("nothing to change")
     except BAD_INPUT:

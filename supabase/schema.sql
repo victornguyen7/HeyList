@@ -104,6 +104,8 @@ create table if not exists items (
   -- Who checked it off (and paid, when there is a price).
   bought_by uuid references members (id) on delete set null,
   checked_at timestamptz,
+  -- Someone already had it when the list was made: checked off without being bought, so it costs nothing.
+  owned boolean not null default false,
   -- The proof: at most one of these is set.
   receipt_id uuid references receipts (id) on delete set null,
   order_id text references orders (id) on delete set null,
@@ -177,3 +179,4 @@ alter table receipts add column if not exists fees jsonb not null default '[]';
 alter table items add column if not exists price_typed boolean not null default false;
 -- PayPal invoices were never sent (decision 60 replaced them with settlements), so the table was always empty.
 drop table if exists invoices;
+alter table items add column if not exists owned boolean not null default false;

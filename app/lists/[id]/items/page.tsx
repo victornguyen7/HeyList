@@ -37,7 +37,7 @@ export default function ItemsPage() {
               <StoreSearch item={item} onChosen={(saved) => setList((current) => ({ ...current, items: current.items.map((i) => (i.id === saved.id ? saved : i)) }))} />
             </span>
             <span className={`mt-0.5 shrink-0 text-base font-medium tabular-nums ${item.checkedAt ? "text-list" : ""}`}>
-              {item.checkedAt ? usd(item.priceCents ?? 0) : item.estPriceCents !== null ? `${item.product ? "" : "~"}${usd(item.estPriceCents * item.quantity)}` : "—"}
+              {item.owned ? "—" : item.checkedAt ? usd(item.priceCents ?? 0) : item.estPriceCents !== null ? `${item.product ? "" : "~"}${usd(item.estPriceCents * item.quantity)}` : "—"}
             </span>
           </li>
         );
