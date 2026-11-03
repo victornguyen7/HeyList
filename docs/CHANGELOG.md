@@ -7,6 +7,7 @@
 - **Already have** (decision 72): each item on the AI review screen has **Need to buy / Already have**. What someone already has goes on the list checked off, shown as "Already had", with no price, buyer or share, and it stays out of the total and the budget. **Schema:** `items.owned`, so run `supabase/schema.sql` again.
 - **Receipts from Take a photo** (decision 72): the photo button on Progress (now **Take a photo**) also recognises a receipt, scans it at full size and opens the receipt review right there on Progress. **Not now, finish it later in Receipts** keeps the scan unconfirmed. While a photo is read, a box shows the photo and each step as it happens, with the seconds the current step has taken, and says which step failed.
 - **Find in stores on Progress**: an item's expanded row has the same store search as the Items tab. A chosen store price shows without the `~` on Progress too.
+- **More from Render** (decision 74): `render.yaml` now has health checks on both services (`GET /api/health` on heylist-api), the `heylist-shared` environment group for the two service URLs, and the `heylist-sweep` cron job. Every 15 minutes it asks PayPal again about payments still pending (`POST /api/cron/sweep`, `backend/cron_sweep.py`), in case a webhook was missed. **Setup:** sync the Blueprint on Render; `CRON_SECRET` is generated, nothing to type. 8 new tests (210 pass).
 - **New logo**: a slate-blue speech bubble with a tick (Figma "Logo — soft glass options", A), also used as the browser tab icon (`app/icon.svg`, `public/ui/logo.svg`).
 
 ### Changed

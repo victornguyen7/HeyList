@@ -1,4 +1,5 @@
 import decimal
+import hmac
 import logging
 import os
 import re
@@ -218,6 +219,13 @@ def list_state(list_id: str) -> dict:
 # link could repeat them; these caps bound what one list or one client can spend.
 # ponytail: in-memory, per process, reset on restart; move to the database if the app runs on several processes.
 _calls: dict[str, deque] = defaultdict(deque)
+
+
+@app.get("/api/health")
+def health():
+    """Render's health check (render.yaml): a new deploy gets traffic only once this answers. It checks only that the
+    app is up, not Supabase or PayPal, so an outage elsewhere doesn't make Render restart a working backend."""
+    return {"ok": True}
 
 
 def allow(key: str, limit: int, seconds: int) -> bool:
@@ -745,6 +753,36 @@ def refresh_order(order_id: str):
             log.exception("Get order failed")
         return error("PAYPAL_ERROR", 502)
     return record_capture(orders[0], result) if orders else record_settlement(settlement, result) # pyright: ignore[reportArgumentType]
+
+
+SWEEP_LIMIT = 50  # pending payments asked about per run; the rest wait for the next run
+
+
+@app.post("/api/cron/sweep")
+def sweep(request: Request):
+    """Run by the Render cron job (render.yaml, `backend/cron_sweep.py`): asks PayPal again about every list order
+    and settle-up payment still PENDING, as Check again does, in case a webhook was missed (decision 74). Only
+    PayPal sandbox calls, nothing paid. Needs `Authorization: Bearer <CRON_SECRET>`; without CRON_SECRET it is off."""
+    secret = os.environ.get("CRON_SECRET")
+    given = request.headers.get("authorization", "").removeprefix("Bearer ")
+    if not secret or not hmac.compare_digest(given.encode(), secret.encode()):
+        return error("NOT_FOUND", 404)
+    pending = [(row, True) for row in db.select("orders", status="PENDING")] + [(row, False) for row in db.select("settlements", status="PENDING")]
+    checked, completed, failed = 0, 0, 0
+    for row, is_order in pending[:SWEEP_LIMIT]:
+        checked += 1
+        try:
+            result = paypal.get_order(row["id"])
+        except Exception as exc:
+            failed += 1
+            if not isinstance(exc, paypal.PayPalError):
+                log.exception("Sweep: get order %s failed", row["id"])
+            continue
+        if result["status"] == "PENDING":
+            continue
+        record_capture(row, result) if is_order else record_settlement(row, result)
+        completed += result["status"] == "COMPLETED"
+    return {"pending": len(pending), "checked": checked, "completed": completed, "failed": failed}
 
 
 def record_capture(order: dict, result: dict) -> dict:

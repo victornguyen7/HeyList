@@ -130,6 +130,12 @@ class RoutesTest(unittest.TestCase):
         return patch.start()
 
 
+class HealthTest(RoutesTest):
+    def test_health_answers_without_touching_the_database(self):
+        with mock.patch.object(db, "select", side_effect=AssertionError("no db call")):
+            self.assertEqual(self.client.get("/api/health").json(), {"ok": True})
+
+
 class OwnedItemsTest(RoutesTest):
     def test_an_item_already_had_is_checked_off_at_no_cost(self):
         state = self.new_list([{"name": "Tent", "estPriceCents": 9000, "owned": True}, {"name": "Firewood", "estPriceCents": 1200}])
@@ -572,6 +578,36 @@ class CheckoutTest(RoutesTest):
         self.assertEqual(self.client.get(f"/api/lists/{self.list['id']}").json()["orders"], [])
         self.mock_paypal("create_order", return_value={"orderId": "ORDER2", "approveUrl": "https://pay"})
         self.assertEqual(self.order(self.adapter).status_code, 200)
+
+    def sweep(self, secret="s3cret"):
+        return self.client.post("/api/cron/sweep", headers={"Authorization": f"Bearer {secret}"})
+
+    def test_the_cron_sweep_finishes_a_pending_payment(self):
+        self.capture("PENDING")
+        get = self.mock_paypal("get_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
+        with mock.patch.dict(main.os.environ, {"CRON_SECRET": "s3cret"}):
+            self.assertEqual(self.sweep().json(), {"pending": 1, "checked": 1, "completed": 1, "failed": 0})
+            # Nothing pending is left, so the next run asks PayPal nothing.
+            self.assertEqual(self.sweep().json(), {"pending": 0, "checked": 0, "completed": 0, "failed": 0})
+        get.assert_called_once_with("ORDER1")
+        self.assertEqual(sorted(i["name"] for i in self.db.select("items", order_id="ORDER1")), ["Adapter", "Sunscreen"])
+
+    def test_the_cron_sweep_leaves_a_still_pending_payment_and_counts_failures(self):
+        self.capture("PENDING")
+        with mock.patch.dict(main.os.environ, {"CRON_SECRET": "s3cret"}):
+            self.mock_paypal("get_order", return_value={"orderId": "ORDER1", "status": "PENDING", "captureId": "CAP1"})
+            self.assertEqual(self.sweep().json()["completed"], 0)
+            self.mock_paypal("get_order", side_effect=paypal.PayPalError(500, "INTERNAL_SERVER_ERROR"))
+            self.assertEqual(self.sweep().json()["failed"], 1)
+        self.assertEqual(self.db.tables["orders"][0]["status"], "PENDING")
+
+    def test_the_cron_sweep_needs_its_secret(self):
+        get = self.mock_paypal("get_order")
+        self.assertEqual(self.sweep().status_code, 404)  # CRON_SECRET unset: off
+        with mock.patch.dict(main.os.environ, {"CRON_SECRET": "s3cret"}):
+            self.assertEqual(self.sweep("wrong").status_code, 404)
+            self.assertEqual(self.client.post("/api/cron/sweep").status_code, 404)
+        get.assert_not_called()
 
     def test_paypal_errors_map_to_status_codes(self):
         self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
@@ -1274,6 +1310,16 @@ class SettleUpTest(RoutesTest):
 
         self.mock_paypal("get_order", return_value={"orderId": "SETTLE1", "status": "COMPLETED", "captureId": "CAP1"})
         self.assertEqual(self.client.post("/api/orders/SETTLE1/refresh").json()["status"], "COMPLETED")
+        self.assertEqual(self.state()["split"]["transfers"], [])
+
+    def test_the_cron_sweep_finishes_a_pending_settle_up_payment(self):
+        self.pay(email="ann@example.com")
+        self.mock_paypal("capture_order", return_value={"orderId": "SETTLE1", "status": "PENDING", "captureId": "CAP1"})
+        self.client.post("/api/orders/SETTLE1/capture")
+        self.mock_paypal("get_order", return_value={"orderId": "SETTLE1", "status": "COMPLETED", "captureId": "CAP1"})
+        with mock.patch.dict(main.os.environ, {"CRON_SECRET": "s3cret"}):
+            response = self.client.post("/api/cron/sweep", headers={"Authorization": "Bearer s3cret"})
+        self.assertEqual(response.json()["completed"], 1)
         self.assertEqual(self.state()["split"]["transfers"], [])
 
 

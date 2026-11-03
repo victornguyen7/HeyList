@@ -1,5 +1,16 @@
 # Render Blueprint: New → Blueprint → pick this repo.
 # Secrets are sync: false, so Render asks for their values on first deploy; values never live here.
+
+# Plain values every service needs, kept in one place (decision 74). An environment group can't hold sync: false
+# secrets, so PayPal and Supabase keys stay on each service.
+envVarGroups:
+  - name: heylist-shared
+    envVars:
+      - key: APP_URL # the heylist-web URL, for PayPal return links
+        value: https://heylist-web.onrender.com
+      - key: BACKEND_URL # the heylist-api public URL; heylist-web reads it at build time, so a change needs a redeploy
+        value: https://heylist-api.onrender.com
+
 services:
   - type: web
     name: heylist-api
@@ -8,11 +19,13 @@ services:
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health # a deploy gets traffic only once this answers
     envVars:
+      - fromGroup: heylist-shared
       - key: PYTHON_VERSION # same as local development
         value: "3.14.9"
-      - key: APP_URL # the heylist-web URL, for PayPal return links
-        value: https://heylist-web.onrender.com
+      - key: CRON_SECRET # lets heylist-sweep call /api/cron/sweep; Render generates it once
+        generateValue: true
       - key: PAYPAL_CLIENT_ID
         sync: false
       - key: PAYPAL_CLIENT_SECRET
@@ -48,12 +61,32 @@ services:
     plan: starter # $7/month, 512 MB RAM, always on
     buildCommand: npm ci && npm run build
     startCommand: npm start
+    healthCheckPath: /
     envVars:
-      - key: BACKEND_URL # the heylist-api public URL; read at build time, so a change needs a redeploy
-        value: https://heylist-api.onrender.com
+      - fromGroup: heylist-shared
       - key: SUPABASE_URL # for login (app/auth.ts); read at build time
         sync: false
       - key: SUPABASE_PUBLISHABLE_KEY
         sync: false
       - key: PAYPAL_CLIENT_ID # the same sandbox app as heylist-api; public, for the PayPal and Venmo buttons; read at build time
         sync: false
+
+  # Every 15 minutes, asks PayPal again about payments still pending, in case a webhook was missed (decision 74).
+  # Only free PayPal sandbox calls; no AI, Channel3 or Textract.
+  - type: cron
+    name: heylist-sweep
+    runtime: python
+    plan: starter # billed only while it runs, a few seconds each time
+    schedule: "*/15 * * * *"
+    rootDir: backend
+    buildCommand: echo "standard library only, nothing to install"
+    startCommand: python cron_sweep.py
+    envVars:
+      - fromGroup: heylist-shared
+      - key: PYTHON_VERSION
+        value: "3.14.9"
+      - key: CRON_SECRET
+        fromService:
+          type: web
+          name: heylist-api
+          envVarKey: CRON_SECRET

@@ -53,7 +53,7 @@ Labels claim only what the evidence shows: a capture proves payment, not deliver
 | **Channel3** product search | Real products and prices for "Find in stores" and "Shop this list for me". The chosen price is re-read on the server and is what PayPal charges. |
 | **Web Speech API** | Voice input in supported browsers |
 | **APIMatic** Context Plugin, **Postman** | PayPal SDK guidance and API testing during development |
-| **Render** | Hosting (`render.yaml`) |
+| **Render** | Blueprint (`render.yaml`): web services `heylist-api` and `heylist-web` with health checks, a shared environment group, and the `heylist-sweep` cron job that finishes pending PayPal payments every 15 minutes |
 | **Claude Code** | Coding assistant during development |
 
 **Measured, not assumed:**

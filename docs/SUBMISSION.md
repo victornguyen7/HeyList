@@ -66,7 +66,7 @@ Cut in this order: the product swap in the cart, the receipt match fix, Cam's ph
 
 ### Before recording
 
-- [ ] Hosted site up on Render, schema up to date: run `supabase/schema.sql` again on the live database (`items.owned` is new, 2026-11-02).
+- [ ] Render Blueprint synced, so `heylist-sweep` and the health checks exist (Blueprints → heylist → Manual sync). Hosted site up, schema up to date: run `supabase/schema.sql` again on the live database (`items.owned` is new, 2026-11-02).
 - [ ] Three people on the list. Ann logged in on the filming phone; Ben and Cam on a second phone or browser.
 - [ ] **Ann's PayPal email saved** for settle-up, and it's a **sandbox** account different from the merchant, so the money visibly goes to her (decision 60). Cam's sandbox **personal** buyer account logged in once, so approval is fast.
 - [ ] Webhook registered and `PAYPAL_WEBHOOK_ID` set, so a pending capture still finishes on camera.
@@ -114,7 +114,7 @@ Every item shows what its status rests on: "Paid with PayPal", "On a receipt", "
 | PayPal Server SDK (Python, APIMatic-generated) and APIMatic Context Plugins | Calling PayPal; SDK usage guidance while building |
 | Supabase | Postgres, receipt storage, Auth (email and password), Realtime list updates |
 | Web Speech API | Voice input |
-| Render | Hosting (`render.yaml`) |
+| Render | Blueprint (`render.yaml`): web services `heylist-api` and `heylist-web` with health checks, a shared environment group, and the `heylist-sweep` cron job that finishes pending PayPal payments every 15 minutes |
 | Claude Code | Coding assistant during development |
 
 Check this table against `.env.example` and `backend/` before submitting; remove anything that isn't used.

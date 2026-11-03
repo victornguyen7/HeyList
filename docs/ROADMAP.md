@@ -72,7 +72,7 @@ Infrastructure:
 - [x] FastAPI backend, proxied under `/api` by Next.js
 - [x] PayPal sandbox: Orders API via the PayPal Server SDK, JS SDK v6 buttons with Venmo, webhooks (Invoicing dropped, decision 60)
 - [x] LLM with vision via the Ollama API: starting lists, receipt matching, store-match checks, reminders, photo checks; Ollama vision reads receipts and paper lists when Textract is unavailable (decision 38)
-- [x] Deploy on Render (`render.yaml` Blueprint: heylist-api and heylist-web)
+- [x] Deploy on Render (`render.yaml` Blueprint: heylist-api and heylist-web with health checks, the heylist-shared env group, and the heylist-sweep cron job, decision 74)
 - [ ] Sponsor tools: APIMatic Context Plugin, Postman — APIMatic in use (PayPal Server SDK and its Context Plugin skills)
 
 Validation:
