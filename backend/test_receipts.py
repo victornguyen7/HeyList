@@ -47,6 +47,24 @@ class ParseTest(unittest.TestCase):
 
         self.assertEqual([(line["text"], line["priceCents"], line["lowConfidence"]) for line in result["lines"]], [("EGGS", None, True), ("BAG", None, False)])
 
+    def test_an_unsure_price_the_subtotal_confirms_is_kept(self):
+        # The Walmart receipt in the eval set: 12.94 read at 42% confidence, and 14.97 + 12.94 + 2.48 = 30.39.
+        lines = ([field("ITEM", "GRILL COVER"), field("PRICE", "14.97")], [field("ITEM", "FIBER CHOICE"), field("PRICE", "12.94", 42.3)], [field("ITEM", "CELERY"), field("PRICE", "2.48")])
+        result = receipts.parse_expense(expense(*lines, total="32.52", summary=[field("SUBTOTAL", "30.39"), field("TAX", "2.13")]))
+        # Still flagged, so the person looks at it.
+        self.assertEqual([(line["priceCents"], line["lowConfidence"]) for line in result["lines"]], [(1497, False), (1294, True), (248, False)])
+        self.assertEqual(result["fees"], [{"kind": "tax", "name": "Tax", "amountCents": 213}])
+
+    def test_an_unsure_price_stays_blank_unless_a_sure_subtotal_adds_up(self):
+        lines = ([field("ITEM", "EGGS"), field("PRICE", "3.49", 61.0)], [field("ITEM", "BREAD"), field("PRICE", "2.00")])
+        for summary in ([field("SUBTOTAL", "5.50")], [field("SUBTOTAL", "5.49", 70.0)], []):
+            with self.subTest(summary=summary):
+                result = receipts.parse_expense(expense(*lines, total="5.49", summary=summary))
+                self.assertIsNone(result["lines"][0]["priceCents"])
+        # A blank price Textract read nothing for can't be confirmed either.
+        result = receipts.parse_expense(expense([field("ITEM", "EGGS")], [field("ITEM", "BREAD"), field("PRICE", "2.00")], summary=[field("SUBTOTAL", "2.00")]))
+        self.assertIsNone(result["lines"][0]["priceCents"])
+
     def test_discounts_are_fees_and_free_or_nameless_lines_are_dropped(self):
         result = receipts.parse_expense(
             expense(

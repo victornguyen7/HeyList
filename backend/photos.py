@@ -106,12 +106,13 @@ def list_request(lines: list[dict]) -> str:
 
 ITEM_SCHEMA = {
     "type": "object",
-    "properties": {"seen": {"type": "string"}, "item": {"type": ["integer", "null"]}},
-    "required": ["seen", "item"],
+    "properties": {"seen": {"type": "string"}, "item": {"type": ["integer", "null"]}, "receipt": {"type": "boolean"}},
+    "required": ["seen", "item", "receipt"],
 }
 
-ITEM_PROMPT = """Someone is checking items off a shared list by taking a photo of what they got.
-Look at the photo, reading any label, and give the number of the list item it shows. Be exact: when two items are
+ITEM_PROMPT = """Someone is checking items off a shared list by taking a photo of what they got, or of the receipt for it.
+receipt is true when the photo is a store receipt or bill (a printed slip of purchases with prices); then item is null.
+Otherwise look at the photo, reading any label, and give the number of the list item it shows. Be exact: when two items are
 alike, choose the one the photo really is, and "almond milk" is not "milk" unless nothing closer is on the list.
 Give null if the photo shows none of them, or you can't tell.
 seen says what the photo shows in at most six plain words ("bottle of sunscreen").
@@ -121,7 +122,8 @@ Reply with only a JSON object matching this schema:
 
 
 def identify_item(image: bytes, items: list[dict]) -> dict:
-    """{"itemId", "seen"}: the open item the photo shows, or None. The model only proposes, and only sees names, so a
+    """{"itemId", "seen", "receipt"}: the open item the photo shows, or None; receipt is True for a photo of a receipt,
+    which the page then scans as one. The model only proposes, and only sees names, so a
     reply out of range becomes no match and the person picks the item by hand. Raises ReceiptError when it can't run."""
     if len(items) > MAX_OPEN_ITEMS:
         raise receipts.ReceiptError("RECEIPT_TOO_LONG")
@@ -130,11 +132,14 @@ def identify_item(image: bytes, items: list[dict]) -> dict:
         messages = [{"role": "system", "content": ITEM_PROMPT}, {"role": "user", "content": f"List items:\n{names}", "images": [image]}]
         reply = llm.json_reply(llm.chat(messages, ITEM_SCHEMA))
     except ValueError:  # no JSON in the reply
-        return {"itemId": None, "seen": ""}
+        return {"itemId": None, "seen": "", "receipt": False}
     except Exception as exc:  # no key, network, Ollama errors
         raise receipts.ReceiptError("SCANNING_UNAVAILABLE") from exc
     number, seen = reply.get("item"), reply.get("seen")
+    if reply.get("receipt") is True:
+        return {"itemId": None, "seen": "a receipt", "receipt": True}
     return {
         "itemId": items[number]["id"] if type(number) is int and 0 <= number < len(items) else None,
         "seen": " ".join(seen.split())[:80] if isinstance(seen, str) else "",
+        "receipt": False,
     }

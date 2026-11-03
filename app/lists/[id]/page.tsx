@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { api, captureMessage, proofLabel, refundNote, usd, type Capture, type Item, type List } from "../../api";
+import { api, captureMessage, proofLabel, refundNote, usd, type Capture, type Item, type List, type Receipt } from "../../api";
 import { PayPalButtons } from "../../paypal-buttons";
 import { PhotoTick } from "../../photo-tick";
+import { ReceiptScan } from "../../receipt-scan";
 import { ShopAgent } from "../../shop-agent";
+import { StoreSearch } from "../../store-search";
 import { Check, menuRow, mini, PayCard, payPayPal, Ring } from "../../ui";
 import { buttonAi, card, outline, row, useList } from "./list-context";
 
@@ -29,6 +31,8 @@ export default function ProgressPage() {
   const [busy, setBusy] = useState(false);
   // The item being ticked by hand, and the price typed for it (asked in the row, not in a pop-up).
   const [ticking, setTicking] = useState<string | null>(null);
+  // A receipt photographed with "Check off with a photo", under review on this page.
+  const [scannedReceipt, setScannedReceipt] = useState<Receipt | null>(null);
   const [priceText, setPriceText] = useState("");
   // The name typed into "+ Add an item".
   const [extra, setExtra] = useState("");
@@ -281,6 +285,10 @@ export default function ProgressPage() {
                   Remove
                 </button>
               </div>
+              {/* The same store search as the Items tab: a chosen product's price is what "Pay with PayPal" charges. */}
+              <div className="mt-2">
+                <StoreSearch item={item} onChosen={(saved) => setList((current) => ({ ...current, items: current.items.map((i) => (i.id === saved.id ? saved : i)) }))} />
+              </div>
             </details>
           )}
           <span className={`text-[13px] ${held(item) ? "text-money" : "text-muted"}`}>
@@ -311,7 +319,7 @@ export default function ProgressPage() {
           )}
         </div>
         <span className={`mt-0.5 shrink-0 text-base font-medium tabular-nums lg:font-semibold ${isDone ? "text-list" : ""}`}>
-          {isDone ? (item.priceCents !== null ? usd(item.priceCents) : "—") : item.estPriceCents !== null ? `~${usd(cost(item))}` : "—"}
+          {isDone ? (item.priceCents !== null ? usd(item.priceCents) : "—") : item.estPriceCents !== null ? `${item.product ? "" : "~"}${usd(cost(item))}` : "—"}
         </span>
       </li>
     );
@@ -499,7 +507,13 @@ export default function ProgressPage() {
             {open.length} {open.length === 1 ? "item" : "items"} · ~{usd(open.reduce((sum, item) => sum + cost(item), 0))}
           </span>
         </div>
-        {me && !mode && open.some((item) => !held(item)) && <PhotoTick listId={list.id} items={open.filter((item) => !held(item))} onTick={tickFromPhoto} onError={setStatus} />}
+        {me && !mode && !scannedReceipt && open.some((item) => !held(item)) && (
+          <PhotoTick listId={list.id} memberId={me} items={open.filter((item) => !held(item))} onTick={tickFromPhoto} onReceipt={setScannedReceipt} onError={setStatus} />
+        )}
+        {/* A photo of a receipt is reviewed right here, as on the Receipts tab. */}
+        {scannedReceipt && (
+          <ReceiptScan key={scannedReceipt.id} list={list} memberId={me} onDone={setList} scanned={scannedReceipt} onClose={() => setScannedReceipt(null)} />
+        )}
         {open.length === 0 ? (
           <p className="text-base text-muted-on-bg">{items.length === 0 ? "Nothing on this list yet. Add the first item below." : "Everything is done."}</p>
         ) : (

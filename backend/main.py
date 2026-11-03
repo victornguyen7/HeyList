@@ -1143,7 +1143,8 @@ def _list_from_photo(image: bytes):
 
 @app.post("/api/lists/{list_id}/item-photo")
 async def item_from_photo(list_id: str, request: Request):
-    """A photo of one thing -> {itemId, seen}: which open item it looks like. Checks nothing off and keeps nothing: the
+    """A photo of one thing -> {itemId, seen, receipt}: which open item it looks like, or receipt: true when it is a
+    receipt, which the page then sends to POST /api/lists/{id}/receipts. Checks nothing off and keeps nothing: the
     person confirms the item and types the price, then PATCH /api/items/{id} ticks it like any hand tick (decision 70)."""
     photo = await photo_body(request)
     if isinstance(photo, JSONResponse):
@@ -1157,7 +1158,7 @@ def _item_from_photo(list_id: str, image: bytes):
     held = {item_id for order in db.select("orders", list_id=list_id, status="PENDING") for item_id in order["item_ids"]}
     items = [item for item in db.select("items", "position", list_id=list_id) if not item["checked_at"] and item["id"] not in held]
     if not items:
-        return {"itemId": None, "seen": ""}
+        return {"itemId": None, "seen": "", "receipt": False}
     # One Ollama call a photo. One cap for everyone: a per-list cap is easy to get round by making lists.
     if not allow("item-photo", 100, 3600):
         return error("TOO_MANY_REQUESTS", 429)

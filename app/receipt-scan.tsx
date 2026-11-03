@@ -10,22 +10,24 @@ const FEE_KINDS: Record<ReceiptFee["kind"], string> = { tax: "Tax", tip: "Tip", 
 // Take a photo of a receipt, check what the AI matched, then confirm to check those items off.
 // A price or fee the photo couldn't be read for surely is left blank for the person to type, never guessed (decision 57).
 // capture="environment" opens the back camera on phones; on a computer it is a file picker.
-export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: string | null; onDone: (list: List) => void }) {
-  const [receipt, setReceipt] = useState<Receipt | null>(null);
-  const [choices, setChoices] = useState<(string | null)[]>([]);
+// With scanned (a receipt photo taken on Progress), only its review shows, and onClose ends it; give it key={scanned.id}.
+export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list: List; memberId: string | null; onDone: (list: List) => void; scanned?: Receipt; onClose?: () => void }) {
+  const open: Item[] = list.items.filter((item) => !item.checkedAt);
+  // An item checked off since the scan can't be chosen any more; its line starts as an extra.
+  const choicesFor = (next: Receipt) => next.lines.map((line) => (open.some((item) => item.id === line.itemId) ? line.itemId : null));
+  const [receipt, setReceipt] = useState<Receipt | null>(scanned ?? null);
+  const [choices, setChoices] = useState<(string | null)[]>(() => (scanned ? choicesFor(scanned) : []));
   // What the person typed for blank prices and fees, one entry per line and per fee.
-  const [prices, setPrices] = useState<string[]>([]);
-  const [feeAmounts, setFeeAmounts] = useState<string[]>([]);
+  const [prices, setPrices] = useState<string[]>(() => scanned?.lines.map(() => "") ?? []);
+  const [feeAmounts, setFeeAmounts] = useState<string[]>(() => (scanned?.fees ?? []).map(() => ""));
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const open: Item[] = list.items.filter((item) => !item.checkedAt);
   // Scans someone walked away from before confirming; they can be finished here later.
   const waiting = list.receipts.filter((r) => !r.confirmedAt && r.id !== receipt?.id);
 
   function review(next: Receipt) {
     setReceipt(next);
-    // An item checked off since the scan can't be chosen any more; its line starts as an extra.
-    setChoices(next.lines.map((line) => (open.some((item) => item.id === line.itemId) ? line.itemId : null)));
+    setChoices(choicesFor(next));
     setPrices(next.lines.map(() => ""));
     setFeeAmounts((next.fees ?? []).map(() => ""));
     setStatus(null);
@@ -52,6 +54,7 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
     try {
       const body = { itemIds: choices, prices: prices.map(typedCents), feeAmounts: feeAmounts.map(typedCents) };
       onDone(await api<List>(`/api/receipts/${receipt!.id}/confirm`, { method: "POST", body: JSON.stringify(body) }));
+      if (onClose) return onClose();
       setReceipt(null);
       setStatus("Done. The matched items are checked off.");
     } catch (err) {
@@ -85,14 +88,16 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium lg:text-xl">Scan a receipt</h2>
-      {!memberId && <p className="text-base text-muted-on-bg">Join above first, so the receipt counts as yours.</p>}
-      <label className={`${buttonAi} cursor-pointer has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy || !memberId ? "pointer-events-none opacity-40" : ""}`}>
-        Take a photo of the receipt
-        <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={scan} disabled={busy || !memberId} />
-      </label>
+      <h2 className="text-lg font-medium lg:text-xl">{scanned ? "Check the receipt" : "Scan a receipt"}</h2>
+      {!scanned && !memberId && <p className="text-base text-muted-on-bg">Join above first, so the receipt counts as yours.</p>}
+      {!scanned && (
+        <label className={`${buttonAi} cursor-pointer has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy || !memberId ? "pointer-events-none opacity-40" : ""}`}>
+          Take a photo of the receipt
+          <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={scan} disabled={busy || !memberId} />
+        </label>
+      )}
 
-      {waiting.length > 0 && (
+      {!scanned && waiting.length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-base text-muted-on-bg">Scanned but not confirmed yet:</p>
           {waiting.map((r) => (
@@ -194,6 +199,12 @@ export function ReceiptScan({ list, memberId, onDone }: { list: List; memberId: 
           >
             Confirm and check off
           </button>
+          {onClose && (
+            // The scan is kept unconfirmed, so it can still be finished from the Receipts tab.
+            <button type="button" onClick={onClose} disabled={busy} className="self-center text-[15px] font-medium text-muted">
+              Not now, finish it later in Receipts
+            </button>
+          )}
         </>
       )}
     </section>

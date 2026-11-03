@@ -126,6 +126,8 @@ def parse_expense(response: dict) -> dict:
     "confidence", "lowConfidence"}; its priceCents is None when Textract couldn't read the price surely, so the
     person types it in. A fee is {"kind", "name", "amountCents"}. Negative lines (discounts, comps) are fees."""
     lines, line_fees, summary = [], [], []
+    # What Textract read for each line's price when it wasn't sure enough to show it, else None.
+    unsure: list[int | None] = []
     for document in response.get("ExpenseDocuments", []):
         summary += document.get("SummaryFields", [])
         for group in document.get("LineItemGroups", []):
@@ -148,10 +150,29 @@ def parse_expense(response: dict) -> dict:
                         "lowConfidence": confidence < LOW_CONFIDENCE,
                     }
                 )
+                unsure.append(price if price_confidence < LOW_CONFIDENCE else None)
+    _confirm_by_subtotal(lines, unsure, summary)
     prices = [line["priceCents"] for line in lines]
     lines_cents = sum(prices) if prices and None not in prices else None
     fees, total = _fees(summary, line_fees, lines_cents)
     return {"lines": lines, "fees": fees, "totalCents": total}
+
+
+def _confirm_by_subtotal(lines: list[dict], unsure: list[int | None], summary: list[dict]) -> None:
+    """Fills in the prices Textract read but wasn't sure of, when the receipt itself confirms them: with them, every
+    line's price adds up exactly to a subtotal Textract read surely. That is a check against the paper, not a guess
+    (decision 57 still holds: a price that isn't confirmed stays blank). Changes lines in place."""
+    blanks = [i for i, line in enumerate(lines) if line["priceCents"] is None]
+    if not blanks or any(unsure[i] is None or unsure[i] <= 0 for i in blanks):
+        return
+    subtotals = {
+        cents(field.get("ValueDetection", {}).get("Text"))
+        for field in summary
+        if field.get("Type", {}).get("Text") == "SUBTOTAL" and field.get("ValueDetection", {}).get("Confidence", 0) >= LOW_CONFIDENCE
+    }
+    if sum(line["priceCents"] or unsure[i] for i, line in enumerate(lines)) in subtotals:
+        for i in blanks:
+            lines[i]["priceCents"] = unsure[i]
 
 
 # Textract errors that mean "this image", as opposed to "Textract": the person can retake the photo.

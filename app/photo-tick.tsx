@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { api, usd, type Item } from "./api";
+import { api, usd, type Item, type Receipt } from "./api";
 import { shrink, typedCents } from "./photo";
 import { buttonGlass, card } from "./ui";
 
 // Take a photo of one thing you got: the AI proposes which open item it is, you confirm it and say what you paid, and
 // it is ticked like any hand tick, with that price counted in the budget. A photo shows the thing, not a purchase, so
 // it is not called proof and isn't kept (decision 70). A model only needs a small picture to tell what's in it.
-export function PhotoTick({ listId, items, onTick, onError }: { listId: string; items: Item[]; onTick: (item: Item, priceCents: number | null) => Promise<void>; onError: (message: string) => void }) {
+// A photo of a receipt is told apart in that same call and scanned as a receipt instead, at full size so its
+// small print can be read; onReceipt gets the scan to review.
+export function PhotoTick({ listId, memberId, items, onTick, onReceipt, onError }: { listId: string; memberId: string; items: Item[]; onTick: (item: Item, priceCents: number | null) => Promise<void>; onReceipt: (receipt: Receipt) => void; onError: (message: string) => void }) {
   const [busy, setBusy] = useState(false);
+  const [readingReceipt, setReadingReceipt] = useState(false);
   // Set once a photo has been read. itemId "" means the person still has to pick.
   const [found, setFound] = useState<{ itemId: string; seen: string; proposed: boolean } | null>(null);
   const [priceText, setPriceText] = useState("");
@@ -24,12 +27,18 @@ export function PhotoTick({ listId, items, onTick, onError }: { listId: string; 
     setFound(null);
     setPriceText("");
     try {
-      const reply = await api<{ itemId: string | null; seen: string }>(`/api/lists/${listId}/item-photo`, { method: "POST", body: await shrink(file, 1024) });
-      setFound({ itemId: reply.itemId ?? "", seen: reply.seen, proposed: Boolean(reply.itemId) });
+      const reply = await api<{ itemId: string | null; seen: string; receipt?: boolean }>(`/api/lists/${listId}/item-photo`, { method: "POST", body: await shrink(file, 1024) });
+      if (reply.receipt) {
+        setReadingReceipt(true);
+        onReceipt(await api<Receipt>(`/api/lists/${listId}/receipts?memberId=${memberId}`, { method: "POST", body: await shrink(file) }));
+      } else {
+        setFound({ itemId: reply.itemId ?? "", seen: reply.seen, proposed: Boolean(reply.itemId) });
+      }
     } catch (err) {
       onError((err as Error).message);
     }
     setBusy(false);
+    setReadingReceipt(false);
   }
 
   async function confirm(e: React.FormEvent) {
@@ -46,7 +55,7 @@ export function PhotoTick({ listId, items, onTick, onError }: { listId: string; 
       <label className={`${buttonGlass} cursor-pointer gap-2 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy ? "pointer-events-none opacity-40" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- 24px design asset */}
         <img src="/ui/camera.svg" alt="" width={24} height={24} />
-        <span role="status">{busy ? "Looking at your photo…" : "Check off with a photo"}</span>
+        <span role="status">{readingReceipt ? "Reading the receipt…" : busy ? "Looking at your photo…" : "Check off with a photo of an item or receipt"}</span>
         <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={read} disabled={busy} />
       </label>
     );

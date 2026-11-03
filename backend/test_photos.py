@@ -97,7 +97,7 @@ class IdentifyTest(unittest.TestCase):
 
     def test_the_model_sees_the_photo_and_names_only(self):
         found = self.identify('{"seen": "carton  of almond milk", "item": 1}')
-        self.assertEqual(found, {"itemId": "b", "seen": "carton of almond milk"})
+        self.assertEqual(found, {"itemId": "b", "seen": "carton of almond milk", "receipt": False})
         request = self.chat.call_args.args[0][1]
         self.assertEqual(request["images"], [b"photo"])
         self.assertEqual(request["content"], "List items:\n0. Milk\n1. Almond milk")
@@ -108,7 +108,11 @@ class IdentifyTest(unittest.TestCase):
                 self.assertIsNone(self.identify(f'{{"seen": "a dog", "item": {item}}}')["itemId"])
 
     def test_an_unusable_reply_lets_the_person_pick(self):
-        self.assertEqual(self.identify("sorry, no idea"), {"itemId": None, "seen": ""})
+        self.assertEqual(self.identify("sorry, no idea"), {"itemId": None, "seen": "", "receipt": False})
+
+    def test_a_receipt_is_told_apart_from_an_item(self):
+        self.assertEqual(self.identify('{"seen": "store receipt", "item": 0, "receipt": true}'), {"itemId": None, "seen": "a receipt", "receipt": True})
+        self.assertFalse(self.identify('{"seen": "milk", "item": 0, "receipt": "yes"}')["receipt"])
 
     def test_an_ollama_failure_is_reported(self):
         with mock.patch.object(llm, "chat", side_effect=RuntimeError("down")), self.assertRaises(receipts.ReceiptError) as caught:
@@ -181,7 +185,7 @@ class ItemPhotoRouteTest(RoutesTest):
     def test_with_nothing_open_no_paid_call_is_made(self):
         for item_id in (self.milk, self.bread, self.tent):
             self.db.update("items", {"checked_at": "earlier"}, id=item_id)
-        self.assertEqual(self.post().json(), {"itemId": None, "seen": ""})
+        self.assertEqual(self.post().json(), {"itemId": None, "seen": "", "receipt": False})
         self.identify.assert_not_called()
 
     def test_bad_requests_failures_and_the_cap(self):
