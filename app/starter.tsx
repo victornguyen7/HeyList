@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { api, rememberMember, usd, type List } from "./api";
+import { api, usd, type List } from "./api";
 import { shrink } from "./photo";
 import { AccountLink, Brand, button, buttonGlass, card, chip, row } from "./ui";
 
@@ -15,14 +15,6 @@ type Suggestion = {
   leftOut?: string[];
 };
 const sourceLabel = { paid: "paid before", store: "store price", estimate: "AI guess" };
-
-// Idea chips (Figma "Ideas"): each fills the prompt with an example to start from.
-const IDEAS = [
-  ["Trip", "Weekend camping trip for 3 friends, $150 budget", "text-list"],
-  ["Party", "Birthday party for 10 kids at home, $100 budget", "text-money"],
-  ["Groceries", "Weekly groceries for 2 adults", "text-list"],
-  ["Move-in", "Moving into a new flat with 2 roommates, $300 budget", "text-ai"],
-] as const;
 
 // Whole dollars without ".00", as in the design's budget card ("$186 of $200 budget").
 const dollars = (cents: number) => (cents % 100 === 0 ? `$${(cents / 100).toLocaleString("en-US")}` : usd(cents));
@@ -169,20 +161,6 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
     }
   }
 
-  // A ready-made trip with Ann and Ben, so one person can try sharing, paying and settling up (phase 8B).
-  async function trySample() {
-    setBusy(true);
-    try {
-      const { list, memberId } = await api<{ list: List; memberId: string }>("/api/lists/sample", { method: "POST" });
-      rememberMember(list.id, memberId);
-      created.current = true;
-      onCreated(list);
-    } catch (err) {
-      setStatus(`Could not open the sample: ${(err as Error).message}`);
-      setBusy(false);
-    }
-  }
-
   const message = status && (
     <p role="status" className={`${card} text-base`}>
       {status}
@@ -259,17 +237,6 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
             </div>
           </form>
           {message}
-
-          <div className="flex flex-wrap gap-2">
-            {IDEAS.map(([label, example, color]) => (
-              <button key={label} type="button" onClick={() => setDescription(example)} className={`${chip} ${color}`}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <button type="button" onClick={trySample} disabled={busy} className="self-start text-[15px] text-muted-on-bg underline underline-offset-4">
-            New here? See how it works with a sample trip
-          </button>
         </div>
         {side && <aside className="flex flex-col gap-5 lg:w-[440px] lg:shrink-0 lg:pt-10">{side}</aside>}
       </div>
