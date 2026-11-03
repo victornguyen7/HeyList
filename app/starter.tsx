@@ -189,8 +189,6 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
 
           <form onSubmit={suggest} className={`${card} flex flex-col gap-4 lg:gap-5 lg:p-7`}>
             <span className="flex items-center gap-2 text-sm font-medium text-ai">
-              {/* eslint-disable-next-line @next/next/no-img-element -- 18px design asset */}
-              <img src="/ui/sparkle.svg" alt="" width={18} height={18} />
               Describe it, AI builds the list
             </span>
             {/* The ring goes on the rounded box, so the whole field shows focus. */}
@@ -253,8 +251,6 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
         ← Back
       </button>
       <span className={`${chip} flex items-center gap-1.5 self-start px-3 py-[7px] text-[13px] text-ai`}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- design asset */}
-        <img src="/ui/sparkle.svg" alt="" width={16} height={16} />
         {fromPhoto ? "AI read" : "AI made"} {suggestion.items.length} {suggestion.items.length === 1 ? "item" : "items"} in {seconds} {seconds === 1 ? "second" : "seconds"}
       </span>
       <h1 className="text-[32px] tracking-[-0.015em] lg:text-[48px] lg:font-medium">{suggestion.title}</h1>
