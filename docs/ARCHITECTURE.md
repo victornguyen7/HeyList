@@ -39,7 +39,7 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 | Service | Used for | Status |
 |---|---|---|
 | Supabase | Postgres tables, the private `receipts` bucket (`supabase/schema.sql`), Auth (email and password, decision 68) | Built, with Realtime broadcast for live list updates (decision 59) |
-| PayPal sandbox | Orders API: create, capture, read, refund. The buyer approves in a JS SDK v6 pop-up (PayPal or Venmo, decision 67), or on PayPal's hosted page and is sent back to `APP_URL` (decision 56). Webhooks settle pending captures (decision 66) | Built, including settle-up orders paid to the person owed (decision 60), JS SDK v6 buttons with Venmo (decision 67) and webhooks (decision 66) |
+| PayPal sandbox | Orders API: create, capture, read, refund. The buyer approves in a JS SDK v6 pop-up (PayPal or Venmo, decision 67), or on PayPal's hosted page and is sent back to `APP_URL` (decision 56). Webhooks settle pending captures (decision 66), and the Render cron job re-checks any still pending every 15 minutes (decision 74) | Built, including settle-up orders paid to the person owed (decision 60), JS SDK v6 buttons with Venmo (decision 67) and webhooks (decision 66) |
 | Ollama API (cloud) | One LLM with vision (`OLLAMA_MODEL`, measured on `gemma4:31b`) | Built |
 | AWS Textract | Reading receipts, with a confidence per line | Built and tested on 289 real receipts (issue 15); Ollama reads receipts only when Textract is unavailable |
 | Channel3 | Real store products and prices (`backend/market.py`), results checked by the LLM (decision 51); the shopping agent's cart (decision 61) | Built |
@@ -62,16 +62,17 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
    type / voice (Web Speech API) / photo        PayPal checkout
                       |                                   |
                       v                                   v
-                    Next.js app on Render  ── /api/* ──►  FastAPI backend
-                                                          |
-          +-----------------------+-----------------------+
-          |                       |                       |
-          v                       v                       v
-   LLM with vision          Supabase                PayPal sandbox
-   (Ollama API)             lists                   Orders API
-   starting lists           receipts storage        Invoicing API
-   receipt reading          realtime
-   extras, price estimates
+                    Next.js app on Render  ── /api/* ──►  FastAPI backend on Render  ◄── Render cron job
+                                                          |                  (heylist-sweep, every 15 min:
+          +---------------+---------------+---------------+---------------+   pending PayPal payments)
+          |               |               |               |               |
+          v               v               v               v               v
+   LLM with vision   AWS Textract    Supabase        PayPal sandbox   Channel3
+   (Ollama API)      receipts,       lists, auth     Orders, Payments  product
+   starting lists,   paper lists     receipts        (refunds),        search
+   receipt matching,                 storage,        webhooks
+   store checks,                     realtime
+   photos, reminders
 ```
 
 ## Built so far
@@ -89,7 +90,7 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 | `backend/cron_sweep.py` | The Render cron job's command: calls `POST /api/cron/sweep` with `CRON_SECRET`, which asks PayPal again about every pending list order and settle-up payment (at most 50 a run), as Check again does. Standard library only. `GET /api/health` is Render's health check (decision 74) |
 | `backend/photos.py` | `read_list()` (Textract `DetectDocumentText` -> lines, flagged under 90% confidence; falls back to the Ollama vision model), `list_request()` (those lines as a request to `llm.starting_list()`), `identify_item()` (Ollama vision: photo + open item names -> which item it is, none, or `receipt: true` for a receipt). Nothing is saved (decisions 70, 71, 72) |
 | `backend/main.py` | Camera routes: `POST /api/lists/from-photo`, `POST /api/lists/{id}/item-photo`, with the photo as the body. |
-| `backend/main.py` | FastAPI app. Lists (`POST /api/lists`, `GET /api/lists?ids=a,b,c` for Home and History in one request, `GET`/`PATCH /api/lists/{id}`; every list comes with its `split`), members (`POST /api/lists/{id}/members`), items (`POST /api/lists/{id}/items`, `PATCH`/`DELETE /api/items/{id}`), store products (`GET /api/items/{id}/products`, `POST /api/items/{id}/product`), checkout (`POST /api/lists/{id}/orders` with `{"itemIds": [...]}`, `POST /api/orders/{order_id}/capture`, `POST /api/orders/{order_id}/refresh` for a pending capture), starting lists (`POST /api/lists/suggest`), splitting (`POST /api/lists/{id}/assign`, `GET /api/lists/{id}/split`), receipts (`POST /api/lists/{id}/receipts` with the photo as the body, `POST /api/receipts/{id}/confirm`, `GET /api/receipts/{id}/image`). the sample trip (`POST /api/lists/sample`, not called by any page since decision 73), reminders (`POST /api/lists/{id}/reminders`), PayPal webhooks (`POST /api/paypal/webhook`, verified with PayPal). Order routes take `"method": "venmo"` for the Venmo button. Errors are `{"error": CODE}` |
+| `backend/main.py` | FastAPI app. Lists (`POST /api/lists`, `GET /api/lists?ids=a,b,c` for Home and History in one request, `GET`/`PATCH /api/lists/{id}`; every list comes with its `split`), members (`POST /api/lists/{id}/members`), items (`POST /api/lists/{id}/items`, `PATCH`/`DELETE /api/items/{id}`), store products (`GET /api/items/{id}/products`, `POST /api/items/{id}/product`), checkout (`POST /api/lists/{id}/orders` with `{"itemIds": [...]}`, `POST /api/orders/{order_id}/capture`, `POST /api/orders/{order_id}/refresh` for a pending capture), starting lists (`POST /api/lists/suggest`), splitting (`POST /api/lists/{id}/assign`, `GET /api/lists/{id}/split`), receipts (`POST /api/lists/{id}/receipts` with the photo as the body, `POST /api/receipts/{id}/confirm`, `GET /api/receipts/{id}/image`). the sample trip (`POST /api/lists/sample`, not called by any page since decision 73), reminders (`POST /api/lists/{id}/reminders`), PayPal webhooks (`POST /api/paypal/webhook`, verified with PayPal), the Render health check (`GET /api/health`) and the cron sweep (`POST /api/cron/sweep`, needs `CRON_SECRET`, decision 74). Order routes take `"method": "venmo"` for the Venmo button. Errors are `{"error": CODE}` |
 | `app/ui.tsx` | Soft glass building blocks (decision 46): button, card, row and chip classes; `Ring`, `Avatar`, `Check`, `WebNav`, and `Shell` (background glows, web nav, page width) |
 | `app/paypal-buttons.tsx` | PayPal's JS SDK v6 buttons (decision 67): loads the sandbox SDK once, shows PayPal and (if eligible) Venmo, makes the order through our routes and captures it on approval; the redirect checkout shows until it's ready or if it fails |
 | `app/paypal-redirect.ts` | `usePayPalRedirect()`: sends the page to PayPal's checkout, and if the person comes back with Back (the page restored from the back/forward cache), puts the pay button back and says nothing was paid |

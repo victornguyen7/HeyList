@@ -22,7 +22,7 @@ The arc the judges should remember: **AI plans it, an agent shops it, PayPal pro
 | 0:55–1:30 | **An agent shops it** | As Ann on Progress: **More → Shop this list for me**. Tick headlamp, sleeping bag, sunscreen, marshmallows. The agent's cart: product cards with photo, store, price; the total fits what's left of the budget; marshmallows skipped with "No online store we search sells this". Swap one product. **Pay with PayPal**, approve on the sandbox page. Back on the list: "Paid with PayPal · Ann" on each | Agentic Commerce, Channel3, PayPal + AI |
 | 1:30–1:55 | **A receipt proves it** | As Ben on Progress, tap **Take a photo** and photograph a real grocery receipt. The steps box shows "It's a receipt", then the review opens on the same page: each line matched to an item, tax shown, lines add up to the total. Fix one match, **Confirm**. Items show "On a receipt · Ben" | Technical (AI), Innovation |
 | 1:55–2:30 | **PayPal settles it** | **Settle up**: "Cam → Ann $X", "Cam → Ben $Y". Tap **Remind Cam**: the AI-written message with the exact amount and link; share sheet. On Cam's phone: open the link, "I'm Cam, let me pay", PayPal (or Venmo) button pops up on the page, approve. Back on Ann's phone: the balance goes to $0 | PayPal + AI, Technical (PayPal), Impact |
-| 2:30–2:45 | **Every item has proof** | **Items** tab, scroll: "Paid with PayPal", "On a receipt", "Already had". Optional 2-second overlay: "Capture COMPLETED · webhooks · auto refund on double buys" | Technical, Design |
+| 2:30–2:45 | **Every item has proof** | **Items** tab, scroll: "Paid with PayPal", "On a receipt", "Already had". Optional 2-second overlay: "Capture COMPLETED · webhooks + Render cron backup · auto refund on double buys" | Technical, Design |
 | 2:45–2:50 | Close | Progress page at 100%, HeyList name | Presentation |
 
 ### Narration (read this)
@@ -86,7 +86,7 @@ HeyList is a mobile-first checklist website for groups. You describe what you ne
 Then HeyList helps you buy it and keeps track of what actually got done:
 
 - **Find in stores / Shop this list for me:** real products and prices from Channel3, with the AI keeping only products that really are the item. The shopping agent proposes a whole cart that fits what's left of the budget and says why it skipped anything. You approve it with one PayPal payment; the agent never pays on its own.
-- **Pay with PayPal or Venmo:** the server builds the order from the list's own prices (store prices read again first), and an item is checked off only when PayPal reports the **capture** as `COMPLETED`, recording who paid and how much. Webhooks finish pending payments. If someone pays for an item that was already bought, the charge is refunded automatically.
+- **Pay with PayPal or Venmo:** the server builds the order from the list's own prices (store prices read again first), and an item is checked off only when PayPal reports the **capture** as `COMPLETED`, recording who paid and how much. Webhooks finish pending payments, with a Render cron job as the backup. If someone pays for an item that was already bought, the charge is refunded automatically.
 - **Scan a receipt:** take a photo and HeyList sees it's a receipt. The AI reads it, matches each line to a list item, checks that the lines and tax add up to the total, and asks for any price it can't read instead of guessing. You confirm before anything is checked off.
 - **Settle up with PayPal:** from those recorded prices, code works out each person's share and the fewest payments. The AI drafts a friendly reminder with the exact amount and a link, and the friend pays the person owed directly with PayPal. The money never passes through HeyList.
 
@@ -94,7 +94,7 @@ Every item shows what its status rests on: "Paid with PayPal", "On a receipt", "
 
 **How we built it**
 
-- Next.js 16 (mobile-first website) → FastAPI backend → Supabase (lists, receipts, Auth, Realtime), hosted on Render.
+- Next.js 16 (mobile-first website) → FastAPI backend → Supabase (lists, receipts, Auth, Realtime), deployed on Render from one Blueprint: two web services with health checks, a shared environment group, and a cron job that re-checks pending PayPal payments every 15 minutes.
 - **PayPal** (sandbox), through PayPal's official Python Server SDK: Orders API v2 (create, capture, show order details, payee set to the person owed for settle-up) and Payments API v2 (refunds), plus JS SDK v6 buttons with Venmo and signature-verified webhooks. Idempotency keys on every call, capture status checked rather than order status, prices in integer cents and never taken from the browser.
 - **AI:** an Ollama-hosted vision model (`gemma4:31b`) for starting lists (structured JSON, every field validated in code), receipt matching, checking store results, what a photo shows, and reminders. AWS Textract reads receipts (`AnalyzeExpense`) and paper lists (`DetectDocumentText`), with the Ollama vision model as the fallback.
 - **The AI proposes; code decides.** Budgets, the cart fit, the split and settle-up are deterministic code, and a person confirms every AI suggestion.

@@ -503,6 +503,7 @@ Under **More**: scan, choose other items to pay for, Shop this list for me, shar
 - **Code:** `paypal.verify_webhook()` (REST: token, then verify-webhook-signature), `POST /api/paypal/webhook`, and the `webhook_events` table. `requests` is now pinned in `backend/requirements.txt`.
 - **Tests:** 8 new.
 - **Owner setup:** register the webhook in the sandbox app, set `PAYPAL_WEBHOOK_ID` on heylist-api and in `.env.local`, then run the schema. Not tried live yet.
+- **Backup added 2026-11-03** (decision 74): the `heylist-sweep` Render cron job runs the Check again code every 15 minutes for every payment still pending, so a missed webhook no longer leaves items held.
 
 Added 2026-10-28 at the owner's request, from the review of PayPal and sponsor tools. It's part of PayPal's "useful payment capabilities", and it removes a manual step: a payment that comes back pending finishes by itself.
 

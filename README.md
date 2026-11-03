@@ -42,7 +42,7 @@ Labels claim only what the evidence shows: a capture proves payment, not deliver
 - **Pay a friend:** for settle-up, the order's payee is the person owed, so money never passes through HeyList.
 - **Payments API v2 refunds** for double purchases, with idempotency keys on every call.
 - **JS SDK v6** PayPal and Venmo buttons, falling back to PayPal's hosted page.
-- **Webhooks**, signature-verified with PayPal, finish pending payments. Items are checked off on *capture* status, not order status.
+- **Webhooks**, signature-verified with PayPal, finish pending payments, and a **Render cron job** asks PayPal again every 15 minutes about any payment still pending, in case a webhook was missed. Items are checked off on *capture* status, not order status.
 
 ## AI and tools
 
@@ -67,6 +67,8 @@ Labels claim only what the evidence shows: a capture proves payment, not deliver
 Next.js 16 (React 19, mobile-first)  ──/api──▶  FastAPI (Python 3.14)  ──▶  PayPal · Ollama · Textract · Channel3
             ▲                                          │
             └──── Supabase Realtime ◀──── Supabase (Postgres, Storage, Auth)
+
+Render: heylist-web + heylist-api (health-checked) + heylist-sweep cron (every 15 min, finishes pending PayPal payments)
 ```
 
 Accounts are optional: guests join by name, and signed-in users (Supabase email and password) keep the same identity on every device. More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
