@@ -13,7 +13,7 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
 | 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7C built 2026-10-28; 7D built and removed (decision 63); 7E optional; 7F dropped |
-| 8 | Effortless core loop, ready for judges | 8B–8D built 2026-10-28 (8B's Home link removed 2026-11-02, decision 73); 8A code part (README) done, owner tasks left; 8F, 8G built 2026-10-28; 8E later |
+| 8 | Effortless core loop, ready for judges | 8B–8D built 2026-10-28 (8B's Home link removed 2026-11-02, decision 76); 8A code part (README) done, owner tasks left; 8F, 8G built 2026-10-28; 8E later |
 | 9 | Camera: paper lists, check off with a photo, packing from a bag photo | 9A, 9B built 2026-10-31; 9A tried on one real photo, 9B not tried live; 9B also scans receipts since 2026-11-02 (decision 72); 9C brainstorm only |
 
 ### Phase 9 — camera (owner's request, 2026-10-31)
@@ -423,7 +423,7 @@ The only part that can fail Stage One, so it comes first.
 
 #### 8B — "Try a sample list" on Home
 
-**Removed from Home 2026-11-02** (decision 73), with the idea chips; the route is still in the backend, unused. **Built 2026-10-28** (decision 64): `POST /api/lists/sample` and **New here? See how it works with a sample trip** under the idea chips. `rememberMember()` in `app/api.ts` is now shared with the list page. 3 new tests.
+**Removed from Home 2026-11-02** (decision 76), with the idea chips; the route is still in the backend, unused. **Built 2026-10-28** (decision 64): `POST /api/lists/sample` and **New here? See how it works with a sample trip** under the idea chips. `rememberMember()` in `app/api.ts` is now shared with the list page. 3 new tests.
 
 - **Problem:** HeyList shines with several people, but a new user (or a judge) is alone. Today they must invent a list, then pretend to be friends in other browsers before Settle up shows anything.
 - **Plan:** a quiet link under the starter, **See how it works with a sample trip**. It creates a real, normal list:
@@ -503,7 +503,7 @@ Under **More**: scan, choose other items to pay for, Shop this list for me, shar
 - **Code:** `paypal.verify_webhook()` (REST: token, then verify-webhook-signature), `POST /api/paypal/webhook`, and the `webhook_events` table. `requests` is now pinned in `backend/requirements.txt`.
 - **Tests:** 8 new.
 - **Owner setup:** register the webhook in the sandbox app, set `PAYPAL_WEBHOOK_ID` on heylist-api and in `.env.local`, then run the schema. Not tried live yet.
-- **Backup added 2026-11-03** (decision 74): the `heylist-sweep` Render cron job runs the Check again code every 15 minutes for every payment still pending, so a missed webhook no longer leaves items held.
+- **Backup added 2026-11-03** (decision 77): the `heylist-sweep` Render cron job runs the Check again code every 15 minutes for every payment still pending, so a missed webhook no longer leaves items held.
 
 Added 2026-10-28 at the owner's request, from the review of PayPal and sponsor tools. It's part of PayPal's "useful payment capabilities", and it removes a manual step: a payment that comes back pending finishes by itself.
 
@@ -524,7 +524,7 @@ Added 2026-10-28 at the owner's request, from the review of PayPal and sponsor t
 
 #### 8G — PayPal JS SDK v6 buttons, with Venmo
 
-**Built 2026-10-28** (decision 67).
+**Built 2026-10-28** (decision 67). **Pay Later added 2026-11-03** (decision 78): on Progress only, where PayPal says the buyer and the order's amount qualify, a third button pays the same PayPal order in instalments, with PayPal's `<paypal-message>` under the buttons. Not on Settle up (a friend's personal account) or Shop this list for me (still the redirect). Not tried on the sandbox yet. The PayPal Agent Toolkit was looked at the same day and left out (decision 79).
 - **Component:** `app/paypal-buttons.tsx`, used on Progress (pay for your items, and the choose-items pay mode) and on Settle up (pay the person you owe).
 - **Backend:** the order routes take `"method": "venmo"`, and a Venmo order has no `payment_source`, as in PayPal's v6 sample. The capture wording is shared (`captureMessage()` in `app/api.ts`).
 - **Tests:** 2 new backend tests.

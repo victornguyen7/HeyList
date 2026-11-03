@@ -1,5 +1,5 @@
 """The Render cron job's command (render.yaml, heylist-sweep): calls POST /api/cron/sweep on heylist-api, which asks
-PayPal again about payments still pending (decision 74). Standard library only, so the cron job needs no install.
+PayPal again about payments still pending (decision 77). Standard library only, so the cron job needs no install.
 
 Needs BACKEND_URL (heylist-api's public URL) and CRON_SECRET (the same value heylist-api has). Exits non-zero when
 the sweep fails, so Render marks the run as failed and can notify the owner.

@@ -44,7 +44,7 @@ Sources, checked 2026-10-15:
 - When Claude comes back: `claude-haiku-5-5`, the cheapest current model ($0.10 per million input tokens, $0.50 per million output tokens, under 100K-token prompts), low effort, bounded `max_tokens`. Don't switch to a larger model without the owner's agreement.
 - A matching call takes at most 150 receipt lines and 300 list items, and is made only after lines were found and only when the list has open items.
 - A photo of a paper list costs one Textract call and one Ollama call (two Ollama calls while Textract is unavailable), and counts as a starting list. A photo to check off an item costs one Ollama call, and none when the list has nothing open.
-- The Render cron job (`heylist-sweep`, decision 74) makes no paid calls: it only asks the PayPal sandbox about pending payments. Keep it that way; a scheduled job that called Ollama, Textract or Channel3 would spend money every 15 minutes with nobody watching. `CRON_SECRET` is handled like a key: Render generates it, and it is never printed or committed.
+- The Render cron job (`heylist-sweep`, decision 77) makes no paid calls: it only asks the PayPal sandbox about pending payments. Keep it that way; a scheduled job that called Ollama, Textract or Channel3 would spend money every 15 minutes with nobody watching. `CRON_SECRET` is handled like a key: Render generates it, and it is never printed or committed.
 - Paid routes are rate-limited: 10 receipt scans per list per hour, 20 starting lists per hour and 100 check-off photos per hour across all clients (`allow()` in `backend/main.py`; the backend sits behind proxies, so it can't safely tell clients apart). There are no accounts, so anyone with a list link could otherwise keep spending.
 
 **Tests and development**

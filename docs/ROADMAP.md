@@ -4,7 +4,7 @@ The project notes do not set dates or phases beyond "first", "stretch", and "lat
 
 ## Status
 
-Hackathon build complete and hosted on Render (2026-11-03). Home makes an AI starting list from one sentence, by voice or from a photo of a paper list, and marks what you already have. A list page lets people join by name, claim items, share out the rest, find real products and let the shopping agent propose a cart, pay through the PayPal sandbox (with Venmo), scan receipts, and settle up with PayPal. Left before the deadline: the demo video and the Devpost form ([SUBMISSION.md](SUBMISSION.md)).
+Hackathon build complete and hosted on Render (2026-11-03). Home makes an AI starting list from one sentence, by voice or from a photo of a paper list, and marks what you already have. A list page lets people join by name, claim items, share out the rest, find real products and let the shopping agent propose a cart, pay through the PayPal sandbox (with Venmo and Pay Later), scan receipts, and settle up with PayPal. Left before the deadline: the demo video and the Devpost form ([SUBMISSION.md](SUBMISSION.md)).
 
 ## First: hackathon build
 
@@ -70,9 +70,9 @@ Infrastructure:
 
 - [x] Supabase (lists, receipts storage, realtime)
 - [x] FastAPI backend, proxied under `/api` by Next.js
-- [x] PayPal sandbox: Orders API via the PayPal Server SDK, JS SDK v6 buttons with Venmo, webhooks (Invoicing dropped, decision 60)
+- [x] PayPal sandbox: Orders API via the PayPal Server SDK, JS SDK v6 buttons with Venmo and Pay Later (decision 78), webhooks, and a Render cron backup for pending payments (decision 77). Invoicing dropped (decision 60); the Agent Toolkit not used (decision 79)
 - [x] LLM with vision via the Ollama API: starting lists, receipt matching, store-match checks, reminders, photo checks; Ollama vision reads receipts and paper lists when Textract is unavailable (decision 38)
-- [x] Deploy on Render (`render.yaml` Blueprint: heylist-api and heylist-web with health checks, the heylist-shared env group, and the heylist-sweep cron job, decision 74)
+- [x] Deploy on Render (`render.yaml` Blueprint: heylist-api and heylist-web with health checks, the heylist-shared env group, and the heylist-sweep cron job, decision 77)
 - [ ] Sponsor tools: APIMatic Context Plugin, Postman — APIMatic in use (PayPal Server SDK and its Context Plugin skills)
 
 Validation:

@@ -22,10 +22,10 @@ How HeyList meets them:
 | PayPal developer platform, sandbox | Orders API v2 on the sandbox, through the PayPal Server SDK (sections 2–4) | Built |
 | PayPal central to the project | Buying from a list goes through PayPal Checkout, and a captured order is the proof an item was bought (decision 8). Settle up pays the person owed with PayPal: an order whose payee is their PayPal account (decision 60) | Built; settle-up not yet tried on the sandbox |
 | Meaningful AI | AI starting lists set the estimated prices that PayPal charges; AI receipt reading and matching check items off beside PayPal orders; both feed the who-owes-whom split | Built |
-| Working demo | Deployed on Render (`render.yaml`: two web services with health checks, and the `heylist-sweep` cron job, decision 74); local run steps in the README | Built; a live sandbox payment and refund were tested 2026-10-28 (issues 25, 37) |
+| Working demo | Deployed on Render (`render.yaml`: two web services with health checks, and the `heylist-sweep` cron job, decision 77); local run steps in the README | Built; a live sandbox payment and refund were tested 2026-10-28 (issues 25, 37) |
 | Open source license file | MIT, in `LICENSE` at the repo root (added 2026-10-27) | Added; the repo still has to be made public |
 | Demo video under 3 minutes | — | Not made |
-| Sponsor tools | APIMatic: the PayPal Server SDK is APIMatic-generated, and its Context Plugin skills were used (decision 23). Render hosts the app and runs the payment sweep (decision 74). Channel3 powers Find in stores and the shopping agent (decisions 50, 61). Postman not used | Built |
+| Sponsor tools | APIMatic: the PayPal Server SDK is APIMatic-generated, and its Context Plugin skills were used (decision 23). Render hosts the app and runs the payment sweep (decision 77). Channel3 powers Find in stores and the shopping agent (decisions 50, 61). Postman not used | Built |
 
 ## 2. What is built
 
@@ -56,7 +56,7 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 4. **Return.** PayPal sends the buyer to `APP_URL/lists/<id>?token=<order ID>&PayerID=...` after approval, or with only `?token=` after a cancel ("Payment cancelled." is shown). `app/lists/[id]/list-context.tsx` handles both on every list tab.
 5. **Capture.** The page posts to `POST /api/orders/{token}/capture`. The backend checks the ID's format (`400 INVALID_ORDER_ID`), that the order is one it created (`404 ORDER_NOT_FOUND`), then captures.
 6. **Check off.** Only when the **capture's** status is `COMPLETED` — not the order's, since an order can be `COMPLETED` while its payment is `PENDING` or `DECLINED` (decision 25) — the backend marks the order `COMPLETED` with `captured_at`, and for each item sets `checked_at`, `bought_by` (the buyer), `price_cents` (the price stored at create time, so a change made while the buyer was on PayPal doesn't alter what is recorded as paid) and `order_id`.
-   If the capture's status is `PENDING`, the order is stored as `PENDING`: Progress shows it with a **Check again** button and holds its items (decision 40). The button posts to `POST /api/orders/{id}/refresh`, which reads the order (`paypal.get_order()`, `GET /v2/checkout/orders/{id}`) and checks the items off if it has completed; any other status (declined, no capture) releases them. Nobody has to press it on the hosted site: PayPal's webhooks settle the capture (decision 66), and the `heylist-sweep` cron job on Render runs the same check every 15 minutes for anything still pending (`POST /api/cron/sweep`, decision 74).
+   If the capture's status is `PENDING`, the order is stored as `PENDING`: Progress shows it with a **Check again** button and holds its items (decision 40). The button posts to `POST /api/orders/{id}/refresh`, which reads the order (`paypal.get_order()`, `GET /v2/checkout/orders/{id}`) and checks the items off if it has completed; any other status (declined, no capture) releases them. Nobody has to press it on the hosted site: PayPal's webhooks settle the capture (decision 66), and the `heylist-sweep` cron job on Render runs the same check every 15 minutes for anything still pending (`POST /api/cron/sweep`, decision 77).
 7. **Clean up.** The page shows the result ("Paid. Those items are checked off.", or "Payment is pending; items stay unchecked for now."), then removes `?token=&PayerID=` from the address so a reload or a shared link can't capture again after PayPal's idempotency window.
 
 ## 4. Safety and edge cases
@@ -86,7 +86,7 @@ The SDK is `paypal-server-sdk` 2.4.0 (`backend/requirements.txt`), PayPal's offi
 ## 6. Planned, not built
 
 - **Settle-up on the live sandbox** (decision 60, replacing the invoices of decision 9). Built and unit-tested: `POST /api/lists/{id}/settlements` creates an Orders API order with `purchase_units[0].payee.email_address` set to the PayPal email of the person owed, for the amount in the current split. The capture and **Check again** routes handle it like a list order, and a completed one counts in the split (`settlements` table). Still to check: that the sandbox accepts a **personal** account as the payee (it needs a second sandbox personal account). If it refuses, the person owed needs a sandbox business account.
-- **JS SDK v6 buttons and webhooks, live:** built and unit-tested (decisions 66, 67). Still to try on the sandbox: the PayPal and Venmo pop-ups (Venmo needs the sandbox business account to have it, and a US buyer), and one webhook delivery to the Render URL.
+- **JS SDK v6 buttons and webhooks, live:** built and unit-tested (decisions 66, 67); Pay Later added 2026-11-03 (decision 78). Still to try on the sandbox: the PayPal and Venmo pop-ups (Venmo needs the sandbox business account to have it, and a US buyer), and one webhook delivery to the Render URL.
 - **Dark redesign.** The Figma draft puts a blue "Pay <name> with PayPal" button on each payment in Settle up ([ROADMAP](ROADMAP.md)). Built on the current design (decision 60).
 
 ## 7. Testing

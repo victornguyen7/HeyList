@@ -41,7 +41,7 @@ Labels claim only what the evidence shows: a capture proves payment, not deliver
 - **Orders API v2** through the official **PayPal Server SDK** (Python, APIMatic-generated): create and capture orders for list items. The server sets prices from the list in integer cents and never takes them from the browser.
 - **Pay a friend:** for settle-up, the order's payee is the person owed, so money never passes through HeyList.
 - **Payments API v2 refunds** for double purchases, with idempotency keys on every call.
-- **JS SDK v6** PayPal and Venmo buttons, falling back to PayPal's hosted page.
+- **JS SDK v6** PayPal, Venmo and **Pay Later** buttons (each where PayPal says the buyer qualifies, with PayPal's Pay Later message), falling back to PayPal's hosted page.
 - **Webhooks**, signature-verified with PayPal, finish pending payments, and a **Render cron job** asks PayPal again every 15 minutes about any payment still pending, in case a webhook was missed. Items are checked off on *capture* status, not order status.
 
 ## AI and tools

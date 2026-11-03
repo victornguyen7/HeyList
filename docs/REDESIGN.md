@@ -48,7 +48,7 @@ The page background is the Figma gradient (`#86a5b8` → `#aec2cf` → `#d8dee6`
 
 - **Budget in the sentence** (decision 47). The separate budget box is gone; "…, $200 budget" in the prompt sets it. Only an amount next to the word "budget" counts, so "$15 tickets" is not read as a budget.
 - **Voice input** (decision 47). The mic fills the prompt using the browser's own speech recognition (Chrome, Safari). It is hidden where the browser doesn't support it. Nothing else about voice is built.
-- **Idea chips.** Trip, Party, Groceries and Move-in fill the prompt with an example to edit. *Removed from Home 2026-11-02 (decision 73).*
+- **Idea chips.** Trip, Party, Groceries and Move-in fill the prompt with an example to edit. *Removed from Home 2026-11-02 (decision 76).*
 - **Pay $X.** On Progress, the Pay button opens pay mode with the items you claimed already chosen.
 - **Share link** button on list pages.
 - **Quantity and "who buys it"** moved behind a tap on the item name, so the list stays clean (design shows only name, subtitle and price).

@@ -63,7 +63,7 @@ Three ways to work with a list (type, voice, photo) are the heart of the app; ev
 2. **Share** by link if others are involved. People claim items they'll buy.
 3. **Check items off with proof:**
    - Scan a receipt: AI matches its lines to list items ("2% MILK 1GAL" → milk) and checks off several at once, with prices attached.
-   - Or buy in the app with PayPal Checkout: the PayPal order is the proof, no scan needed.
+   - Or buy in the app with PayPal Checkout (PayPal, Venmo, or Pay Later where PayPal offers it): the PayPal order is the proof, no scan needed.
 4. **Extras and gaps:** receipt lines that match nothing are flagged as extras ("3 items not on the list, $14.20"). Items still unchecked stay open, so you see what you forgot.
 5. **Settle up:** on shared lists, the app works out who owes whom and settles up with PayPal invoices.
 6. **History:** the finished list joins your history.
@@ -84,7 +84,7 @@ Three ways to work with a list (type, voice, photo) are the heart of the app; ev
 | Part | Responsibilities |
 |---|---|
 | AI | Smart starting lists from one sentence; voice input; reading receipts and matching lines to items; spotting extras; price estimates for the budget |
-| PayPal | Checkout for buying from the list (order = proof); Invoicing for settle-up on shared lists; PayPal orders stored beside receipts in each list's money view |
+| PayPal | Checkout for buying from the list (order = proof), with PayPal, Venmo and Pay Later buttons; settle-up paid with a PayPal order to the person owed (decision 60, replacing invoices); PayPal orders stored beside receipts in each list's money view |
 | Code | Split math, budget totals, assignment of unclaimed items |
 
 ## Feature specs

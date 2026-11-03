@@ -761,7 +761,7 @@ SWEEP_LIMIT = 50  # pending payments asked about per run; the rest wait for the 
 @app.post("/api/cron/sweep")
 def sweep(request: Request):
     """Run by the Render cron job (render.yaml, `backend/cron_sweep.py`): asks PayPal again about every list order
-    and settle-up payment still PENDING, as Check again does, in case a webhook was missed (decision 74). Only
+    and settle-up payment still PENDING, as Check again does, in case a webhook was missed (decision 77). Only
     PayPal sandbox calls, nothing paid. Needs `Authorization: Bearer <CRON_SECRET>`; without CRON_SECRET it is off."""
     secret = os.environ.get("CRON_SECRET")
     given = request.headers.get("authorization", "").removeprefix("Bearer ")

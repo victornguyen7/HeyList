@@ -1,7 +1,7 @@
 # Render Blueprint: New → Blueprint → pick this repo.
 # Secrets are sync: false, so Render asks for their values on first deploy; values never live here.
 
-# Plain values every service needs, kept in one place (decision 74). An environment group can't hold sync: false
+# Plain values every service needs, kept in one place (decision 77). An environment group can't hold sync: false
 # secrets, so PayPal and Supabase keys stay on each service.
 envVarGroups:
   - name: heylist-shared
@@ -71,7 +71,7 @@ services:
       - key: PAYPAL_CLIENT_ID # the same sandbox app as heylist-api; public, for the PayPal and Venmo buttons; read at build time
         sync: false
 
-  # Every 15 minutes, asks PayPal again about payments still pending, in case a webhook was missed (decision 74).
+  # Every 15 minutes, asks PayPal again about payments still pending, in case a webhook was missed (decision 77).
   # Only free PayPal sandbox calls; no AI, Channel3 or Textract.
   - type: cron
     name: heylist-sweep
