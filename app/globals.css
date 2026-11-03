@@ -56,6 +56,14 @@
       background-color 150ms ease,
       box-shadow 150ms ease;
   }
+  /* The hand cursor. Browsers give it to links but, since Tailwind v4, not to buttons; anything that can't be
+     pressed right now says so instead. */
+  :where(button:not(:disabled), a[href], summary, select:not(:disabled), [role="button"], [role="radio"], label:has(> input:not(:disabled))) {
+    cursor: pointer;
+  }
+  :where(button:disabled, select:disabled, label:has(> input:disabled)) {
+    cursor: not-allowed;
+  }
   @media (hover: hover) {
     :where(button:not(:disabled), a, summary, select:not(:disabled), [role="button"], label:has(> input:not(:disabled))):hover {
       opacity: 0.82;

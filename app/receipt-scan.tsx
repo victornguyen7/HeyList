@@ -91,7 +91,7 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
       <h2 className="text-lg font-medium lg:text-xl">{scanned ? "Check the receipt" : "Scan a receipt"}</h2>
       {!scanned && !memberId && <p className="text-base text-muted-on-bg">Join above first, so the receipt counts as yours.</p>}
       {!scanned && (
-        <label className={`${buttonAi} cursor-pointer has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy || !memberId ? "pointer-events-none opacity-40" : ""}`}>
+        <label className={`${buttonAi} has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy || !memberId ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}>
           Take a photo of the receipt
           <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={scan} disabled={busy || !memberId} />
         </label>

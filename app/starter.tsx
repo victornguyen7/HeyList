@@ -226,7 +226,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                 {busy && !reading ? "Making your list…" : "Make my list"}
               </button>
               {/* capture="environment" opens the back camera on phones; on a computer it is a file picker. */}
-              <label className={`${buttonGlass} cursor-pointer gap-2 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy ? "pointer-events-none opacity-40" : ""}`}>
+              <label className={`${buttonGlass} gap-2 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- 24px design asset */}
                 <img src="/ui/camera.svg" alt="" width={24} height={24} />
                 {reading ? "Reading your list…" : "Take a photo of a paper list"}
@@ -327,7 +327,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                 </span>
                 {item.note && <span className="text-[13px] text-money">{item.note}</span>}
                 {/* Have it or buy it: what's already owned goes on the list checked off, at no cost. */}
-                <span role="radiogroup" aria-label={`Do you have ${item.name}?`} className={`mt-1.5 flex self-start rounded-full bg-surface-2 p-0.5 text-[13px] font-medium ${off ? "pointer-events-none" : ""}`}>
+                <span role="radiogroup" aria-label={`Do you have ${item.name}?`} className="mt-1.5 flex self-start rounded-full bg-surface-2 p-0.5 text-[13px] font-medium">
                   {([
                     [false, "Need to buy"],
                     [true, "Already have"],
