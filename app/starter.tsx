@@ -181,16 +181,8 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
             </span>
           </div>
           <h1 className="text-[34px] tracking-[-0.015em] lg:text-[60px] lg:font-medium lg:tracking-[-0.02em]">What are we planning?</h1>
-          <p className="hidden text-[19px] leading-normal text-muted-on-bg lg:block">
-            Describe the situation. HeyList drafts the list, you keep what you need,
-            <br />
-            and everyone sees who paid for what.
-          </p>
 
           <form onSubmit={suggest} className={`${card} flex flex-col gap-4 lg:gap-5 lg:p-7`}>
-            <span className="flex items-center gap-2 text-sm font-medium text-ai">
-              Describe it, AI builds the list
-            </span>
             {/* The ring goes on the rounded box, so the whole field shows focus. */}
             <div className="flex items-center gap-3 rounded-[20px] bg-bg py-2.5 pr-2.5 pl-[18px] has-[textarea:focus-visible]:outline-2 has-[textarea:focus-visible]:outline-offset-2 has-[textarea:focus-visible]:outline-text">
               <textarea
@@ -277,11 +269,6 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
           </div>
         )}
       </div>
-      {budgetCents !== undefined && total > budgetCents && <p className="text-base font-medium text-text">Tap the circle on a few items to drop them and fit the budget.</p>}
-
-      <p className="text-[15px] text-muted-on-bg">
-        {fromPhoto && "Check these against your paper list. "}Tap anything to change it. Tap a circle to drop that item. Mark what you already have, so nobody buys it.
-      </p>
       {suggestion.leftOut && suggestion.leftOut.length > 0 && (
         <details className="text-[15px] text-muted-on-bg">
           <summary className="cursor-pointer">

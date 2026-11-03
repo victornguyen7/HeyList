@@ -83,7 +83,6 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
   if (!plan) {
     return (
       <div className="flex flex-col gap-2.5">
-        <p className="text-base text-muted-on-bg">Tick the items HeyList should find in online stores.</p>
         <button type="button" onClick={shop} disabled={itemIds.length === 0 || busy !== null} className={buttonAi}>
           {busy ? "Finding products…" : itemIds.length === 0 ? "Tick items to shop for" : `Find products for ${itemIds.length} ${itemIds.length === 1 ? "item" : "items"}`}
         </button>
@@ -97,12 +96,7 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
   const over = plan.budgetLeftCents !== null && total > plan.budgetLeftCents;
   return (
     <section className={`${card} flex flex-col gap-3`} aria-label="Proposed cart">
-      <div className="flex flex-col gap-0.5">
-        <h2 className="text-lg font-medium">Your cart</h2>
-        <p className="text-[13px] text-muted">
-          Found by HeyList{plan.budgetLeftCents !== null && ` to fit the ${usd(plan.budgetLeftCents)} left in the budget`}. Nothing is bought until you approve it on PayPal.
-        </p>
-      </div>
+      <h2 className="text-lg font-medium">Your cart</h2>
 
       {plan.cart.length > 0 && (
         <ul className="flex flex-col gap-2">
@@ -186,7 +180,6 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
           Cancel
         </button>
       </div>
-      <p className="text-[12px] text-muted">No order is placed with the stores yet: the sandbox payment goes to HeyList, and each product&apos;s store link is saved on its item.</p>
     </section>
   );
 }

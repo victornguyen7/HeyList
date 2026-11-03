@@ -308,10 +308,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
               joinAs,
               joinCard: me ? null : (
                 <form onSubmit={join} className={`${card} flex flex-col gap-3 border-ai/35`}>
-                  <span className="flex flex-col gap-0.5">
-                    <span className="text-[17px] font-medium">Join this list</span>
-                    <span className="text-sm text-muted">to claim, tick off and pay for items</span>
-                  </span>
+                  <span className="text-[17px] font-medium">Join this list</span>
                   {savedName ? (
                     <button type="submit" className={button}>
                       Join as {savedName}
@@ -334,7 +331,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
                       </div>
                       {!session && (
                         <Link href={`/login?next=${encodeURIComponent(base)}`} className="text-[13px] text-ai">
-                          Or log in with email, so you don&apos;t type your name next time
+                          Or log in
                         </Link>
                       )}
                     </>

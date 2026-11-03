@@ -122,7 +122,6 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
 
       {receipt && (
         <>
-          <p className="text-base text-muted-on-bg">Check each line, change any that are wrong, then confirm.</p>
           <ul className="flex flex-col gap-2">
             {receipt.lines.map((line, index) => (
               <li key={index} className={`${card} flex flex-col gap-2 text-base`}>
@@ -156,7 +155,7 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
           </ul>
           {fees.length > 0 && (
             <>
-              <p className="text-base text-muted-on-bg">Tax, tip and other fees. They&apos;re shared like the list items they were charged on.</p>
+              <h3 className="text-base font-medium">Tax and fees</h3>
               <ul className="flex flex-col gap-2">
                 {fees.map((fee, index) => (
                   <li key={index} className={`${card} flex flex-col gap-2 text-base`}>

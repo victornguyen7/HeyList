@@ -87,7 +87,7 @@ export default function HistoryPage() {
           Your lists could not be loaded right now. They are still saved; reload the page to try again.
         </p>
       ) : lists.length === 0 ? (
-        <p className="text-base text-muted-on-bg">No lists yet. Lists you make or open on this device show up here.</p>
+        <p className="text-base text-muted-on-bg">No lists yet.</p>
       ) : (
         <>
           {/* Stacked on phones: two columns of ~140 px pushed "$12,354.66" out of its card (Figma "Overflow fixes", D). */}

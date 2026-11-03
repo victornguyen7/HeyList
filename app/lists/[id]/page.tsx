@@ -451,7 +451,7 @@ export default function ProgressPage() {
           <>
             {joinCard}
             {main === "pay" && (
-              <PayCard title={payLabel} amount={usd(mineCost)} note="Ticked off for you as soon as PayPal confirms.">
+              <PayCard title={payLabel} amount={usd(mineCost)}>
                 <PayPalButtons createOrder={(method) => orderFor(mine.map((item) => item.id), method)} onApproved={captured} onError={setStatus}>
                   <button type="button" onClick={() => pay(mine.map((item) => item.id))} disabled={busy} className={payPayPal}>
                     {busy ? "Opening PayPal…" : "Pay with PayPal"}

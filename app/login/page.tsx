@@ -237,7 +237,6 @@ export default function Login() {
 
       {step === "signup" && (
         <form onSubmit={signUp} className="flex flex-col gap-3">
-          <p className="text-base text-muted">Your name is how friends see you on every list. You can still join lists as a guest without an account.</p>
           <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" aria-label="Your name" autoComplete="name" maxLength={40} required />
           {emailInput}
           {passwordInput("new-password", `Password (at least ${MIN_PASSWORD} characters)`)}

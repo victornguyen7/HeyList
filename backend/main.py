@@ -607,7 +607,7 @@ def capture_order(order_id: str):
         if not isinstance(exc, paypal.PayPalError):
             log.exception("Capture order failed")
         return error("PAYPAL_ERROR", 502)
-    return record_capture(orders[0], result) if orders else record_settlement(settlement, result)
+    return record_capture(orders[0], result) if orders else record_settlement(settlement, result) # pyright: ignore[reportArgumentType]
 
 
 def paid_order(order_id: str) -> tuple[list[dict], dict | None]:
@@ -625,7 +625,7 @@ def refresh_order(order_id: str):
     orders, settlement = paid_order(order_id)
     if not orders and not settlement:
         return error("ORDER_NOT_FOUND", 404)
-    if (orders[0] if orders else settlement)["status"] != "PENDING":
+    if (orders[0] if orders else settlement)["status"] != "PENDING": # pyright: ignore[reportOptionalSubscript]
         return error("ORDER_NOT_PENDING", 409)
     try:
         result = paypal.get_order(order_id)
@@ -633,7 +633,7 @@ def refresh_order(order_id: str):
         if not isinstance(exc, paypal.PayPalError):
             log.exception("Get order failed")
         return error("PAYPAL_ERROR", 502)
-    return record_capture(orders[0], result) if orders else record_settlement(settlement, result)
+    return record_capture(orders[0], result) if orders else record_settlement(settlement, result) # pyright: ignore[reportArgumentType]
 
 
 def record_capture(order: dict, result: dict) -> dict:
@@ -803,11 +803,11 @@ def shop_checkout(list_id: str, request: Request, body=Depends(json_body)):
         return error("PRODUCT_NOT_FOUND", 404)
 
     # The order is priced from the stores, not from what is saved on the items, which stay as they are until it is paid.
-    priced = [item | {"est_price_cents": fresh[item["id"]]["priceCents"]} for item in items]
+    priced = [item | {"est_price_cents": fresh[item["id"]]["priceCents"]} for item in items] # pyright: ignore[reportOptionalSubscript]
     if sum(item["est_price_cents"] * item["quantity"] for item in priced) != seen_total:
-        return JSONResponse({"error": "PRICE_CHANGED", "prices": {item_id: product["priceCents"] for item_id, product in fresh.items()}}, status_code=409)
+        return JSONResponse({"error": "PRICE_CHANGED", "prices": {item_id: product["priceCents"] for item_id, product in fresh.items()}}, status_code=409) # pyright: ignore[reportOptionalSubscript]
     fetched_at = now()
-    return open_order(list_id, priced, member_id, venmo, products={item_id: product | {"fetchedAt": fetched_at} for item_id, product in fresh.items()})
+    return open_order(list_id, priced, member_id, venmo, products={item_id: product | {"fetchedAt": fetched_at} for item_id, product in fresh.items()}) # pyright: ignore[reportOptionalOperand]
 
 
 # PayPal webhooks
@@ -834,7 +834,7 @@ def paypal_webhook(request: Request, event=Depends(json_body)):
     resource = event.get("resource") or {}
     if event.get("event_type") == "PAYMENT.CAPTURE.REFUNDED":
         return record_outside_refund(event, resource)
-    status = CAPTURE_EVENTS.get(event.get("event_type"))
+    status = CAPTURE_EVENTS.get(event.get("event_type")) # pyright: ignore[reportArgumentType]
     order_id = ((resource.get("supplementary_data") or {}).get("related_ids") or {}).get("order_id")
     if not status or not isinstance(order_id, str) or not first_delivery(event):
         return {"handled": False}
@@ -865,7 +865,7 @@ def record_outside_refund(event: dict, resource: dict) -> dict:
     up = next((link.get("href") or "" for link in resource.get("links") or [] if link.get("rel") == "up"), "")
     capture_id, refund_id, amount = up.rsplit("/", 1)[-1], resource.get("id"), resource.get("amount") or {}
     try:
-        refunded = decimal.Decimal(amount.get("value")) * 100
+        refunded = decimal.Decimal(amount.get("value")) * 100 # pyright: ignore[reportArgumentType]
     except (TypeError, decimal.InvalidOperation):
         refunded = decimal.Decimal(0)
     if (

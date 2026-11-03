@@ -82,7 +82,6 @@ export function WhoPaid({ list, split }: { list: List; split: Split }) {
           </div>
         );
       })}
-      <p className="text-[13px] text-muted">Tick = equal share. Dark paid more, clay paid less.</p>
       {split.boughtTwice.map((twice) => (
         <p key={twice.orderId + twice.itemId} className="text-[13px] text-money">
           {list.items.find((item) => item.id === twice.itemId)?.name ?? "An item"} was bought again with PayPal ({usd(twice.cents)}) after it was already
@@ -158,7 +157,7 @@ function PayBack({ transfer }: { transfer: Transfer }) {
           className={field}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder={`${to}'s PayPal email`}
+          placeholder="Their PayPal email"
           aria-label={`${to}'s PayPal email`}
           maxLength={254}
           required
@@ -169,7 +168,6 @@ function PayBack({ transfer }: { transfer: Transfer }) {
           Pay {to} with PayPal
         </button>
       </PayPalButtons>
-      <p className="text-xs text-muted">Goes straight to {to}&apos;s PayPal account.</p>
     </form>
   );
 }
@@ -292,7 +290,6 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
             <span className="text-list">everyone&apos;s even</span>
           </>
         )}
-        {count > 0 && <span className="text-[15px] tracking-normal text-muted-on-bg">We worked out the fewest payments for you.</span>}
       </div>
 
       {split.transfers.map((t, index) => (
@@ -319,9 +316,6 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
           {t.from !== me && <Remind transfer={t} />}
         </div>
       ))}
-      {count > 0 && !split.transfers.some((t) => t.from === me) && (
-        <p className="text-[13px] text-muted-on-bg">Whoever owes can pay from their own phone with PayPal, straight to the person owed.</p>
-      )}
 
       <Payments list={list} name={name} />
 
@@ -330,8 +324,7 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
           <h2 className="text-lg font-medium">How this was worked out</h2>
           <p className="text-base">
             {usd(split.totalCents)} was spent on list items, shared equally by {split.members.length} {split.members.length === 1 ? "person" : "people"}:{" "}
-            {usd(Math.floor(split.totalCents / split.members.length))} each
-            {split.totalCents % split.members.length > 0 && " (the odd cents go to the first people who joined)"}.
+            {usd(Math.floor(split.totalCents / split.members.length))} each.
           </p>
           {split.members.map((m) => (
             <details key={m.memberId} className={`${card} group text-base`}>
@@ -405,11 +398,6 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
               )}
             </details>
           ))}
-          <p className="text-[13px] text-muted-on-bg">
-            Only list items count, with their part of a receipt&apos;s tax, tip and fees. Receipt lines that weren&apos;t on the list,
-            and their part of the fees, are personal and not shared
-            {split.unattributedCents > 0 && `, and ${usd(split.unattributedCents)} checked off without a name isn't counted`}.
-          </p>
         </section>
       )}
     </div>
