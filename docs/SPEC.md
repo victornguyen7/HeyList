@@ -120,7 +120,11 @@ On Home, "Take a photo of a paper list" opens the back camera. Textract `DetectD
 
 ### Check off with a photo (built)
 
-On Progress, "Check off with a photo" opens the back camera. The AI proposes which open item the photo shows; the person confirms or picks the item and types what they paid, and the price counts in the budget and the split. It shows as "Marked bought by hand", since a photo isn't proof of purchase; the photo is never saved (decision 71).
+On Progress, "Take a photo" opens the back camera. The AI proposes which open item the photo shows; the person confirms or picks the item and types what they paid, and the price counts in the budget and the split. It shows as "Marked bought by hand", since a photo isn't proof of purchase; the photo is never saved (decision 71). If the photo is a receipt, it is scanned as one and its review opens on Progress, as on the Receipts tab (decision 72). While it works, a box shows each step and how long the current one has taken.
+
+### Already have (built)
+
+On the review screen, each item has **Need to buy / Already have**. What someone already has goes on the list checked off as "Already had", with no buyer and no price, so it isn't paid for, split or counted in the budget (decision 72).
 
 ### Photo recognition of several items (planned: spec and learning plan only)
 

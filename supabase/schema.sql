@@ -74,6 +74,9 @@ create table if not exists orders (
   -- {"<item id>": {"refundId": "...", "cents": 1499, "status": "COMPLETED"}} (decision 39).
   -- A refund made in PayPal's dashboard is saved under its refund ID with "outside": true (issue 46).
   refunds jsonb not null default '{}',
+  -- The store products a "Shop this list for me" cart pays for: {"<item id>": product}. Saved on the items only when
+  -- the capture completes, so leaving PayPal without paying changes nothing on the list.
+  products jsonb not null default '{}',
   created_at timestamptz not null default now(),
   captured_at timestamptz
 );
@@ -180,3 +183,4 @@ alter table items add column if not exists price_typed boolean not null default 
 -- PayPal invoices were never sent (decision 60 replaced them with settlements), so the table was always empty.
 drop table if exists invoices;
 alter table items add column if not exists owned boolean not null default false;
+alter table orders add column if not exists products jsonb not null default '{}';

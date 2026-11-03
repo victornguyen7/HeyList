@@ -529,9 +529,10 @@ def by_venmo(body: dict) -> bool:
     return method == "venmo"
 
 
-def open_order(list_id: str, items: list[dict], member_id: str | None, venmo: bool = False):
-    """Creates the PayPal order for these items at their saved prices and stores it, so the capture knows what it
-    paid for. The caller checked the items can be bought."""
+def open_order(list_id: str, items: list[dict], member_id: str | None, venmo: bool = False, products: dict | None = None):
+    """Creates the PayPal order for these items at their est_price_cents and stores it, so the capture knows what it
+    paid for. The caller checked the items can be bought. products ({item ID: store product}) are saved on the items
+    by the capture, not before."""
     try:
         order = paypal.create_order(
             [{"name": item["name"], "priceCents": item["est_price_cents"], "quantity": item["quantity"]} for item in items],
@@ -555,6 +556,7 @@ def open_order(list_id: str, items: list[dict], member_id: str | None, venmo: bo
                 "item_ids": [item["id"] for item in items],
                 "prices": {item["id"]: item["est_price_cents"] * item["quantity"] for item in items},
                 "total_cents": sum(item["est_price_cents"] * item["quantity"] for item in items),
+                "products": products or {},
             }
         ],
     )
@@ -650,6 +652,9 @@ def record_capture(order: dict, result: dict) -> dict:
             continue
         # checked_at=None makes the check and the write one step, so a receipt confirmed at the same moment
         # can't be overwritten.
+        # A store product from "Shop this list for me" is saved on its item now that it is paid for, not when the
+        # checkout opened (orders from before products were stored have none).
+        product = (order.get("products") or {}).get(item["id"])
         if not db.update(
             "items",
             {
@@ -658,6 +663,7 @@ def record_capture(order: dict, result: dict) -> dict:
                 # What PayPal charged, not today's price; orders from before prices were stored fall back.
                 "price_cents": order["prices"].get(item["id"], item["est_price_cents"] * item["quantity"]),
                 "order_id": order_id,
+                **({"product": product, "est_price_cents": product["priceCents"]} if product else {}),
             },
             id=item["id"],
             checked_at=None,
@@ -758,9 +764,11 @@ def shop_list(list_id: str, body=Depends(json_body)):
 @app.post("/api/lists/{list_id}/shop/checkout")
 def shop_checkout(list_id: str, request: Request, body=Depends(json_body)):
     """{memberId, picks: [{itemId, productId}], totalCents}: the cart the person approved. Each product is read again
-    from Channel3 and saved on its item at today's price (decision 50), then one PayPal order is opened for all of them.
-    If the fresh total isn't the one the person saw, the new prices are saved but no order is made (409 PRICE_CHANGED),
-    so they see the new total first. Nothing is ordered from the stores."""
+    from Channel3 and one PayPal order is opened for all of them at today's prices. Nothing is saved on the items here:
+    the order keeps the products, and the capture saves them on the items once PayPal confirms the payment, so leaving
+    PayPal without paying leaves the list as it was. If the fresh total isn't the one the person saw, no order is made
+    and the new prices come back (409 PRICE_CHANGED, with prices: {item ID: cents each}), so the cart shows the new
+    total first. Nothing is ordered from the stores."""
     if not find("lists", list_id):
         return error("LIST_NOT_FOUND", 404)
     try:
@@ -794,18 +802,12 @@ def shop_checkout(list_id: str, request: Request, body=Depends(json_body)):
     if not all(fresh.values()):
         return error("PRODUCT_NOT_FOUND", 404)
 
-    saved = []
-    for item in items:
-        product = fresh[item["id"]]
-        values = {"product": product | {"fetchedAt": now()}, "est_price_cents": product["priceCents"]}
-        # checked_at=None: an item checked off meanwhile keeps the price it was bought at.
-        rows = db.update("items", values, id=item["id"], checked_at=None)
-        if not rows:
-            return error("ITEM_CHECKED", 409)
-        saved.append(rows[0])
-    if sum(item["est_price_cents"] * item["quantity"] for item in saved) != seen_total:
-        return error("PRICE_CHANGED", 409)
-    return open_order(list_id, saved, member_id, venmo)
+    # The order is priced from the stores, not from what is saved on the items, which stay as they are until it is paid.
+    priced = [item | {"est_price_cents": fresh[item["id"]]["priceCents"]} for item in items]
+    if sum(item["est_price_cents"] * item["quantity"] for item in priced) != seen_total:
+        return JSONResponse({"error": "PRICE_CHANGED", "prices": {item_id: product["priceCents"] for item_id, product in fresh.items()}}, status_code=409)
+    fetched_at = now()
+    return open_order(list_id, priced, member_id, venmo, products={item_id: product | {"fetchedAt": fetched_at} for item_id, product in fresh.items()})
 
 
 # PayPal webhooks

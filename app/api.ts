@@ -192,8 +192,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     throw Object.assign(new Error("HeyList can't be reached. Check your connection and try again."), { code: "NETWORK" });
   });
   if (!res.ok) {
-    const code = (await res.json().catch(() => null))?.error ?? res.statusText;
-    throw Object.assign(new Error(MESSAGES[code] ?? "That didn't work. Try again in a moment."), { code });
+    // data is the whole error body, for errors that carry more than a code (PRICE_CHANGED's new prices).
+    const data = await res.json().catch(() => null);
+    const code = data?.error ?? res.statusText;
+    throw Object.assign(new Error(MESSAGES[code] ?? "That didn't work. Try again in a moment."), { code, data });
   }
   // 204: nothing to read, as after deleting an item.
   return res.status === 204 ? (undefined as T) : res.json();

@@ -13,8 +13,8 @@ The five improvement areas suggested for HeyList, each weighed against the code 
 | 5 | 4. Less effort (narrow) | Done 2026-10-27 (see below) |
 | 6 | Real prices and real products (AI examples, price memory, Channel3) | Built 2026-10-27; eval run (examples didn't help, see below); live Channel3 test and schema run not done yet |
 | 7 | Closing the loop: realtime, settle up with PayPal, agent shopping, sponsor tools | 7A–7C built 2026-10-28; 7D built and removed (decision 63); 7E optional; 7F dropped |
-| 8 | Effortless core loop, ready for judges | 8B–8D built 2026-10-28; 8A code part (README) done, owner tasks left; 8F, 8G built 2026-10-28; 8E later |
-| 9 | Camera: paper lists, check off with a photo, packing from a bag photo | 9A, 9B built 2026-10-31, not tried live; 9C brainstorm only |
+| 8 | Effortless core loop, ready for judges | 8B–8D built 2026-10-28 (8B's Home link removed 2026-11-02, decision 73); 8A code part (README) done, owner tasks left; 8F, 8G built 2026-10-28; 8E later |
+| 9 | Camera: paper lists, check off with a photo, packing from a bag photo | 9A, 9B built 2026-10-31; 9A tried on one real photo, 9B not tried live; 9B also scans receipts since 2026-11-02 (decision 72); 9C brainstorm only |
 
 ### Phase 9 — camera (owner's request, 2026-10-31)
 
@@ -23,7 +23,7 @@ Phase 8 keeps new features out unless they make the loop easier, and earlier not
 | Part | Built | Decisions |
 |---|---|---|
 | 9A | **Take a photo of a paper list** on Home → Textract `DetectDocumentText` (Ollama vision as the fallback) → `llm.starting_list()` → the usual review screen | 70 |
-| 9B | **Check off with a photo** on Progress → Ollama vision proposes the item → the person confirms it and types the price → the usual tick, counted in the budget | 71 |
+| 9B | **Check off with a photo** on Progress (now **Take a photo**) → Ollama vision proposes the item → the person confirms it and types the price → the usual tick, counted in the budget. A receipt photo is scanned and reviewed on Progress instead | 71, 72 |
 
 - **Tests:** 176 backend tests pass (17 new, in `backend/test_photos.py`, all mocked). `tsc` and `eslint` clean. Both flows were driven in Chrome at phone size against a fake backend, which found one bug (an invisible disabled button, fixed).
 - **Not done yet:**
@@ -402,7 +402,7 @@ About 4–5 days in all, which leaves room for fixes found in the live checks. 7
 
 #### 8A — ready for judges (by 5 November)
 
-**Code part done 2026-10-28:** the README has a "Try it in 2 minutes" section (hosted URL, the steps through the sample trip, what PayPal and the AI do) and an up-to-date status line. The judge's login is a placeholder, `JUDGE_SANDBOX_EMAIL` / `JUDGE_SANDBOX_PASSWORD`, for the owner to fill in once that sandbox account exists. **Left, all owner tasks:** the live checks below, the judge's account, the repo made public, and the Devpost draft.
+**Code part done 2026-10-28:** the README has a "Try it in 2 minutes" section (hosted URL, the steps through the sample trip, rewritten 2026-11-03 to start from a typed sentence since the sample link is gone, what PayPal and the AI do) and an up-to-date status line. The judge's login is a placeholder, `JUDGE_SANDBOX_EMAIL` / `JUDGE_SANDBOX_PASSWORD`, for the owner to fill in once that sandbox account exists. **Left, all owner tasks:** the live checks below, the judge's account, the repo made public, and the Devpost draft.
 
 The only part that can fail Stage One, so it comes first.
 
@@ -423,7 +423,7 @@ The only part that can fail Stage One, so it comes first.
 
 #### 8B — "Try a sample list" on Home
 
-**Built 2026-10-28** (decision 64): `POST /api/lists/sample` and **New here? See how it works with a sample trip** under the idea chips. `rememberMember()` in `app/api.ts` is now shared with the list page. 3 new tests.
+**Removed from Home 2026-11-02** (decision 73), with the idea chips; the route is still in the backend, unused. **Built 2026-10-28** (decision 64): `POST /api/lists/sample` and **New here? See how it works with a sample trip** under the idea chips. `rememberMember()` in `app/api.ts` is now shared with the list page. 3 new tests.
 
 - **Problem:** HeyList shines with several people, but a new user (or a judge) is alone. Today they must invent a list, then pretend to be friends in other browsers before Settle up shows anything.
 - **Plan:** a quiet link under the starter, **See how it works with a sample trip**. It creates a real, normal list:

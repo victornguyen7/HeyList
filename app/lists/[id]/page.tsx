@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, captureMessage, proofLabel, refundNote, usd, type Capture, type Item, type List, type Receipt } from "../../api";
 import { PayPalButtons } from "../../paypal-buttons";
 import { PhotoTick } from "../../photo-tick";
+import { usePayPalRedirect } from "../../paypal-redirect";
 import { ReceiptScan } from "../../receipt-scan";
 import { ShopAgent } from "../../shop-agent";
 import { StoreSearch } from "../../store-search";
@@ -128,6 +129,12 @@ export default function ProgressPage() {
     setSelected(next);
   }
 
+  // Back from PayPal's page without paying: the button says "Pay with PayPal" again, and the page says why.
+  const toPayPal = usePayPalRedirect((message) => {
+    setBusy(false);
+    setStatus(message);
+  });
+
   async function pay(itemIds: string[]) {
     setBusy(true);
     setStatus(null);
@@ -136,7 +143,7 @@ export default function ProgressPage() {
         method: "POST",
         body: JSON.stringify({ itemIds, memberId: me }),
       });
-      window.location.assign(approveUrl);
+      toPayPal(approveUrl);
     } catch (e) {
       const err = e as Error & { code?: string };
       // The backend saved the store's new price (issue 42): show the new total before they pay again.

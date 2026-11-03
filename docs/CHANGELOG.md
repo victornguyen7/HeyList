@@ -1,5 +1,28 @@
 # HeyList — Changelog
 
+## 2026-11-03
+
+### Added
+
+- **Already have** (decision 72): each item on the AI review screen has **Need to buy / Already have**. What someone already has goes on the list checked off, shown as "Already had", with no price, buyer or share, and it stays out of the total and the budget. **Schema:** `items.owned`, so run `supabase/schema.sql` again.
+- **Receipts from Take a photo** (decision 72): the photo button on Progress (now **Take a photo**) also recognises a receipt, scans it at full size and opens the receipt review right there on Progress. **Not now, finish it later in Receipts** keeps the scan unconfirmed. While a photo is read, a box shows the photo and each step as it happens, with the seconds the current step has taken, and says which step failed.
+- **Find in stores on Progress**: an item's expanded row has the same store search as the Items tab. A chosen store price shows without the `~` on Progress too.
+- **New logo**: a slate-blue speech bubble with a tick (Figma "Logo — soft glass options", A), also used as the browser tab icon (`app/icon.svg`, `public/ui/logo.svg`).
+
+### Changed
+
+- **Unsure receipt prices confirmed by the subtotal** (decision 72): a price Textract read under 90% confidence is filled in when, with it, every line adds up exactly to a subtotal Textract read surely. The line stays flagged "Hard to read". On the 189 English receipts, prices left blank went from 19 to 18 and perfect receipts from 75.7% to 76.2%; ReceiptQA is unchanged ([RECEIPT_EVAL.md](RECEIPT_EVAL.md)).
+- **Home is simpler** (decision 73): the idea chips (Trip, Party, Groceries, Move-in) and **New here? See how it works with a sample trip** are gone. `POST /api/lists/sample` is still in the backend, but nothing calls it.
+- **Progress has no separate scan action**: **Scan a receipt** is out of the main button and the More sheet, since **Take a photo** handles receipts. The Receipts tab still scans.
+- **Paper lists:** the reading prompt now fixes handwritten digits read as letters ("Zapples" is 2 apples) without renaming what the person wrote.
+
+### Fixed
+
+- **Overflow at phone width** (Figma "Overflow fixes"): long names, product titles and five-figure amounts no longer run out of their cards on the AI review (names wrap in full, the budget pill moves under the total), Progress stats ("spent so far" takes a row of its own), History cards, Money and Settle up. Words longer than their box break instead of scrolling the page sideways.
+- **Pointer cursor**: buttons, links and toggles show the hand cursor, and disabled ones show "not allowed" (Tailwind v4 no longer gives buttons a pointer).
+- **Back from PayPal's page**: coming back with the browser's Back button, instead of approving or cancelling, restored the page still saying "Opening PayPal…". The pay button now comes back with "The payment wasn't finished… nothing was paid" (`app/paypal-redirect.ts`), on Progress, Shop this list for me and Settle up.
+- **No empty list on a failed save**: if the items can't be saved, the new list is deleted too, instead of leaving an empty list behind.
+
 ## 2026-10-31
 
 ### Added

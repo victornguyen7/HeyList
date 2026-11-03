@@ -129,6 +129,21 @@ By category (after): food finds 92.9% of items with 1.1% wrong prices; **grocery
 
 The model reads fees well but almost never admits it can't read a price (0.6% blank), so it still guesses: twice as many wrong prices as Textract. Textract stays first (decision 38). The add-up check catches 14 of Ollama's 15 receipts with a wrong price (26 false alarms of 174), so the review screen still warns in the fallback.
 
+## Confirming unsure prices by the subtotal (2026-11-03, decision 72)
+
+A price Textract read under 90% confidence is now filled in when, with it, every line adds up exactly to a SUBTOTAL Textract read at 90% or more (`_confirm_by_subtotal()` in `backend/receipts.py`). Rescored on the saved replies, so free.
+
+| English receipts, Textract | Before | After |
+|---|---|---|
+| Prices right | 97.4% | 97.5% |
+| Prices left blank to type | 2.1% (19) | 2.0% (18) |
+| Prices shown that are wrong | 2.5% | 2.5% |
+| Adds up to the total | 78.3% | 78.8% |
+| Perfect receipts | 75.7% | 76.2% |
+| Grocery: perfect receipts | 50.0% | 57.1% |
+
+ReceiptQA is unchanged (76.5% found, 8.8% wrong, 9.2% blank, 93.9% totals). Confirming by total minus fees was tried as well and dropped: it let a wrong price through.
+
 ## Re-running
 
 From `backend/`:

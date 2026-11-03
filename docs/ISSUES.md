@@ -17,6 +17,7 @@
 | 39 | Receipt matching has no "not sure" answer | `match_lines()` returns an item or none per line; it can't say "maybe". The person reviews every line before confirming, so a wrong match isn't applied silently. Left out of phase 3 to keep it narrow |
 | 41 | Parts of the design not built | "leaving in 6 days" (lists have no date), item categories ("Gear · ×1"). Item rows show who buys it and the quantity instead. ("How it works" and the "Hey Vic" greeting are no longer in the app) |
 | 35 | Receipt photos load at full size | The Receipts tab shows each photo from `GET /api/receipts/{id}/image` (up to 2000 px). Lazy-loaded, but heavy on a phone with many receipts; add thumbnails if it gets slow |
+| 48 | `POST /api/lists/sample` has no caller | Home's sample-trip link was removed (decision 73), but the route, its template and its tests are still in `backend/main.py`. Harmless (capped at 60 an hour); remove it, or bring the link back, after the deadline |
 
 ## Closed
 

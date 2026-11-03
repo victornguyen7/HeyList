@@ -24,7 +24,7 @@ COLUMNS = {
 DEFAULTS = {
     "lists": {"kind": "other"},
     "items": {"position": 0, "quantity": 1, "price_typed": False, "owned": False},
-    "orders": {"status": "CREATED", "prices": {}, "refunds": {}},
+    "orders": {"status": "CREATED", "prices": {}, "refunds": {}, "products": {}},
     "settlements": {"status": "CREATED"},
     "receipts": {"lines": [], "fees": [], "extras": []},
 }
@@ -824,16 +824,40 @@ class ShopTest(RoutesTest):
         self.assertEqual(create.call_args.args[0], [{"name": "Tent", "priceCents": 7000, "quantity": 1}, {"name": "Lamp", "priceCents": 1200, "quantity": 2}])
         order = self.db.tables["orders"][0]
         self.assertEqual((order["member_id"], order["total_cents"]), (self.ann, 9400))
-        self.assertEqual(self.client.get(f"/api/lists/{self.list['id']}").json()["items"][0]["product"]["productId"], "T2")
+        self.assertEqual(sorted(p["productId"] for p in order["products"].values()), ["L1", "T2"])
+        # Nothing is saved on the items until the payment goes through.
+        items = self.client.get(f"/api/lists/{self.list['id']}").json()["items"]
+        self.assertEqual([(i["product"], i["estPriceCents"]) for i in items[:2]], [(None, self.tent["estPriceCents"]), (None, self.lamp["estPriceCents"])])
 
-    def test_a_price_that_changed_since_the_plan_is_saved_and_no_order_is_made(self):
+    def test_the_store_product_is_saved_on_its_item_when_the_payment_completes(self):
+        fresh = {"T2": ProductRoutesTest.PRODUCT | {"productId": "T2", "priceCents": 7000}}
+        mock.patch.object(market, "get", side_effect=fresh.get).start()
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.checkout([(self.tent, "T2")], 7000, memberId=self.ann)
+        self.mock_paypal("capture_order", return_value={"status": "COMPLETED", "captureId": "CAP1"})
+
+        self.client.post("/api/orders/ORDER1/capture")
+
+        tent = self.client.get(f"/api/lists/{self.list['id']}").json()["items"][0]
+        self.assertEqual((tent["product"]["productId"], tent["estPriceCents"], tent["priceCents"], tent["orderId"]), ("T2", 7000, 7000, "ORDER1"))
+
+    def test_leaving_paypal_without_paying_leaves_the_items_as_they_were(self):
+        mock.patch.object(market, "get", return_value=ProductRoutesTest.PRODUCT | {"productId": "T2", "priceCents": 7000}).start()
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        before = self.client.get(f"/api/lists/{self.list['id']}").json()["items"]
+
+        self.checkout([(self.tent, "T2")], 7000, memberId=self.ann)
+
+        self.assertEqual(self.client.get(f"/api/lists/{self.list['id']}").json()["items"], before)
+
+    def test_a_price_that_changed_since_the_plan_comes_back_and_no_order_is_made(self):
         mock.patch.object(market, "get", return_value=ProductRoutesTest.PRODUCT | {"productId": "T2", "priceCents": 7500}).start()
         create = self.mock_paypal("create_order")
 
-        self.assertEqual(self.checkout([(self.tent, "T2")], 7000).json(), {"error": "PRICE_CHANGED"})
+        self.assertEqual(self.checkout([(self.tent, "T2")], 7000).json(), {"error": "PRICE_CHANGED", "prices": {self.tent["id"]: 7500}})
 
         create.assert_not_called()
-        self.assertEqual(self.db.tables["items"][0]["est_price_cents"], 7500)
+        self.assertEqual(self.db.tables["items"][0]["est_price_cents"], self.tent["estPriceCents"])
 
     def test_checkout_refuses_bought_items_and_gone_products(self):
         mock.patch.object(market, "get", return_value=None).start()

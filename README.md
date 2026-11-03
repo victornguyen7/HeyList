@@ -18,10 +18,11 @@ Sandbox buyer account for judges (log in on PayPal's page when paying):
 |---|---|
 | `JUDGE_SANDBOX_EMAIL` | `JUDGE_SANDBOX_PASSWORD` |
 
-1. On the home page, tap **New here? See how it works with a sample trip**. You join a camping trip with Ann and Ben, who have already bought the tent and the snacks.
-2. Tap **Pay for your items with PayPal**, approve with the account above, and come back: your items are checked off, with the PayPal payment as proof.
-3. Open **Settle up** to see who owes whom. Pay Ann with PayPal (the money goes straight to her), or tap **Remind Ben** for a friendly AI-written message with a payment link.
-4. Or start your own: type or say one sentence, keep what you need, and share the link. Changes appear on everyone's phone as they happen.
+1. On the home page, type or say one sentence, for example *"Weekend camping trip for 3 friends, $150 budget"*, and tap **Make my list**. Untick what you don't need, mark what you **Already have**, and tap **Create list**.
+2. Open the list's link in a second browser (or a private window) and join under another name, so there are two people. Changes appear on both as they happen.
+3. As the first person, claim a few items and tap **Pay for your items with PayPal**. Approve with the account above: your items are checked off, with the PayPal payment as proof. Or try **More → Shop this list for me**, which proposes real store products within the budget.
+4. As the second person, tap **Take a photo** and photograph a receipt (or tick an item off by hand and type its price).
+5. Open **Settle up** to see who owes whom. Pay with PayPal (the money goes straight to the person owed), or tap **Remind** for a friendly AI-written message with a payment link.
 
 ## How it works
 
@@ -30,7 +31,7 @@ Sandbox buyer account for judges (log in on PayPal's page when paying):
 | **Need** | What do we need? | Type or speak one sentence. The AI drafts a list with quantities and estimated prices that fit the budget, and you edit it before anything is saved. |
 | **Coordinate** | Who handles it? | Share a link, join by name, and claim items, or share out the rest evenly by cost. |
 | **Shop** | Where do I buy it? | **Find in stores** pulls real products from Channel3, and the AI keeps only the true matches. **Shop this list for me** proposes products within budget for the items you tick, and you approve one PayPal payment. |
-| **Verify** | What got done? | Pay with PayPal (a `COMPLETED` capture is the proof), scan a receipt (the AI matches each line to an item and you confirm), or tick it off by hand. Every item shows what its status rests on: *Paid with PayPal*, *On a receipt*, *Marked bought by hand*, or *Payment pending*. |
+| **Verify** | What got done? | Pay with PayPal (a `COMPLETED` capture is the proof), scan a receipt (the AI matches each line to an item and you confirm), or tick it off by hand. **Take a photo** on Progress tells a receipt from a single item. Every item shows what its status rests on: *Paid with PayPal*, *On a receipt*, *Marked bought by hand*, *Already had*, or *Payment pending*. |
 | **Settle** | Who owes whom? | Deterministic code (not AI) computes each share and the fewest payments needed. You pay a friend directly with PayPal, or send an AI-written reminder. |
 
 Labels claim only what the evidence shows: a capture proves payment, not delivery. If an item is bought twice (a receipt and a PayPal payment at once), the PayPal charge is refunded automatically.
@@ -47,8 +48,8 @@ Labels claim only what the evidence shows: a capture proves payment, not deliver
 
 | Tool | How HeyList uses it |
 |---|---|
-| **AWS Textract** `AnalyzeExpense` | Reads receipt line items and totals (primary reader) |
-| **Ollama** (`gemma4:31b`, vision) | Drafts starting lists as validated JSON, matches receipt lines to items, filters store results to real matches, writes payment reminders, and reads receipts when Textract is unavailable |
+| **AWS Textract** `AnalyzeExpense`, `DetectDocumentText` | Reads receipt line items and totals (primary reader); reads photos of paper lists, handwriting included |
+| **Ollama** (`gemma4:31b`, vision) | Drafts starting lists as validated JSON, matches receipt lines to items, filters store results to real matches, writes payment reminders, tells what a photo shows (an item or a receipt), and reads receipts and paper lists when Textract is unavailable |
 | **Channel3** product search | Real products and prices for "Find in stores" and "Shop this list for me". The chosen price is re-read on the server and is what PayPal charges. |
 | **Web Speech API** | Voice input in supported browsers |
 | **APIMatic** Context Plugin, **Postman** | PayPal SDK guidance and API testing during development |

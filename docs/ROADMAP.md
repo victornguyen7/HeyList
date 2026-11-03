@@ -4,7 +4,7 @@ The project notes do not set dates or phases beyond "first", "stretch", and "lat
 
 ## Status
 
-Early build. Lists live in Supabase. The home page makes an AI starting list from one sentence; a list page lets people join by name, claim items, share out the rest, pay through the PayPal sandbox, scan receipts (once AWS and Anthropic keys are set), and see who owes whom.
+Hackathon build complete and hosted on Render (2026-11-03). Home makes an AI starting list from one sentence, by voice or from a photo of a paper list, and marks what you already have. A list page lets people join by name, claim items, share out the rest, find real products and let the shopping agent propose a cart, pay through the PayPal sandbox (with Venmo), scan receipts, and settle up with PayPal. Left before the deadline: the demo video and the Devpost form ([SUBMISSION.md](SUBMISSION.md)).
 
 ## First: hackathon build
 
@@ -12,35 +12,37 @@ Target: [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/). First use
 
 Flow, end to end:
 
-- [ ] Create a list by voice or typing; AI builds a smart starting list within the budget; user confirms or edits
+- [x] Create a list by voice or typing; AI builds a smart starting list within the budget; user confirms or edits
+  - [x] Mark what someone already has, so it's checked off and costs nothing (decision 72)
   - [x] Typing: one sentence and an optional budget, AI suggestion reviewed before saving, over-budget shown
   - [x] Voice: the mic dictates the prompt with the browser's speech recognition (decision 47)
-- [ ] Share by link; people claim items they'll buy
+- [x] Share by link; people claim items they'll buy
   - [x] Join by name, claim items, share out unclaimed items evenly by estimated cost
   - [x] Realtime updates when someone else changes the list (decision 59)
 - [ ] Check off by receipt scan: AI matches lines to items, with prices attached
   - [x] Camera capture, Textract line items with confidence, Ollama matching, confirm step, prices and buyer recorded
   - [x] Ollama vision reads the photo while Textract is unavailable (decision 38)
-  - [ ] Live test with real receipts and Textract (needs the IAM permission)
+  - [x] Live test with real receipts and Textract (issue 15: 289 receipts, [RECEIPT_EVAL.md](RECEIPT_EVAL.md))
   - [ ] Claude Haiku matching (later, owner's call)
-  - [ ] Discounts and voided lines (currently dropped)
-- [ ] Check off by PayPal Checkout: the order is the proof
+  - [x] Discounts, tax, tip and fees (decision 57); voided lines still dropped
+  - [x] Scan a receipt from **Take a photo** on Progress (decision 72)
+- [x] Check off by PayPal Checkout: the order is the proof
   - [x] Backend: create order from item IDs, capture, report capture status and items bought
   - [x] Return page: capture after PayPal approval and show the result
   - [x] Create-order route and checkout button (test UI for the sample list)
   - [x] Store the order as proof and check the items off
 - [x] Flag receipt lines that match nothing as extras; keep unchecked items open
-- [ ] Settle up on shared lists with PayPal
+- [x] Settle up on shared lists with PayPal
   - [x] Split math: each person's paid amount, equal share, and the fewest payments to settle
   - [x] Pay the person owed with PayPal, straight to their account (decision 60); not yet tried on the sandbox
 - [ ] Finished list joins history
 
 Core features:
 
-- [ ] Type
+- [x] Type
 - [x] Voice (browser speech recognition, decision 47)
 - [ ] Photo as proof
-- [x] Photo of a paper list (decision 70); check off one item with a photo and ask its price (decision 71). Not tried live yet
+- [x] Photo of a paper list (decision 70); check off one item with a photo and ask its price (decision 71), or scan a receipt from the same button (decision 72). The paper list was tried on one real photo (2026-10-31, [IMPROVEMENTS.md](IMPROVEMENTS.md) 9A); the item photo hasn't been tried live
 - [ ] Packing list from a photo of an empty bag (brainstorm in [IMPROVEMENTS.md](IMPROVEMENTS.md), phase 9)
 - [ ] Photo recognition of several items at once (spec in [SPEC.md](SPEC.md#photo-recognition-of-several-items-planned-spec-and-learning-plan-only))
   - [ ] Learn: send a photo plus item names to a vision model (the Ollama model, which already reads receipts; or Claude Haiku 5.5 later) and read back structured matches; try 20 real photos and note hits and misses
@@ -52,7 +54,7 @@ Core features:
   - [ ] Check the acceptance criteria in the spec
 - [x] Smart starting lists
 - [ ] Reuse (reset a repeating list with one tap)
-- [ ] Easy sharing (no account)
+- [x] Easy sharing (no account)
 - [ ] Simple interface
 
 Pages (simple first versions built, at `/lists/<id>` and `/history`):
@@ -69,7 +71,7 @@ Infrastructure:
 - [x] Supabase (lists, receipts storage, realtime)
 - [x] FastAPI backend, proxied under `/api` by Next.js
 - [x] PayPal sandbox: Orders API via the PayPal Server SDK, JS SDK v6 buttons with Venmo, webhooks (Invoicing dropped, decision 60)
-- [ ] LLM with vision via the Ollama API: starting lists and receipt matching done; receipt photos are read by Ollama vision when Textract is unavailable (decision 38)
+- [x] LLM with vision via the Ollama API: starting lists, receipt matching, store-match checks, reminders, photo checks; Ollama vision reads receipts and paper lists when Textract is unavailable (decision 38)
 - [x] Deploy on Render (`render.yaml` Blueprint: heylist-api and heylist-web)
 - [ ] Sponsor tools: APIMatic Context Plugin, Postman — APIMatic in use (PayPal Server SDK and its Context Plugin skills)
 
@@ -79,7 +81,8 @@ Validation:
 
 ## Stretch
 
-- [x] Channel3: "Find in stores" per item, results checked by the AI, the chosen price charged with PayPal (decisions 50, 51). No store order yet: Channel3's checkout isn't open
+- [x] Channel3: "Find in stores" per item (on Items and Progress), results checked by the AI, the chosen price charged with PayPal (decisions 50, 51). No store order yet: Channel3's checkout isn't open
+- [x] Shopping agent: "Shop this list for me" proposes a cart within the budget, paid in one PayPal order (decision 61)
 
 ## Redesign ([Figma](https://www.figma.com/design/Wv3JGTqJewtLNMax2PWmSk))
 

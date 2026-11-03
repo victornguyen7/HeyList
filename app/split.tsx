@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, captureMessage, proofLabel, usd, type Capture, type List } from "./api";
 import { useList } from "./lists/[id]/list-context";
 import { PayPalButtons } from "./paypal-buttons";
+import { usePayPalRedirect } from "./paypal-redirect";
 import { Avatar, button, card, chip, field, mini, payPayPal } from "./ui";
 
 export type Split = {
@@ -103,6 +104,10 @@ function PayBack({ transfer }: { transfer: Transfer }) {
   const [busy, setBusy] = useState(false);
   const to = nameOf(list, transfer.to);
   const needsEmail = !list.members.find((m) => m.id === transfer.to)?.hasEmail;
+  const toPayPal = usePayPalRedirect((message) => {
+    setBusy(false);
+    setStatus(message);
+  });
 
   // The order for this payment. Redirect checkout uses its approveUrl; the PayPal and Venmo buttons (decision 67) only
   // its ID. Throws after saying why when it can't be made.
@@ -130,7 +135,7 @@ function PayBack({ transfer }: { transfer: Transfer }) {
     e.preventDefault();
     setBusy(true);
     try {
-      window.location.assign((await order("paypal")).approveUrl);
+      toPayPal((await order("paypal")).approveUrl);
     } catch {
       setBusy(false);
     }

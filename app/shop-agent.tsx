@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api, usd, type List, type Product } from "./api";
 import { useList } from "./lists/[id]/list-context";
+import { usePayPalRedirect } from "./paypal-redirect";
 import { buttonAi, buttonGlass, card, mini, payPayPal } from "./ui";
 
 type Line = { itemId: string; quantity: number; product: Product; options: Product[] };
@@ -18,6 +19,12 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
   // The product chosen for each item in the cart; an item taken out of the cart has none.
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<"plan" | "pay" | null>(null);
+  // Why the last trip to PayPal ended without a payment, shown in the cart above the pay button.
+  const [unpaid, setUnpaid] = useState<string | null>(null);
+  const toPayPal = usePayPalRedirect((message) => {
+    setBusy(null);
+    setUnpaid(message);
+  });
   const itemName = (id: string) => list.items.find((item) => item.id === id)?.name ?? "An item";
 
   function show(next: Plan | null) {
@@ -45,20 +52,29 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
 
   async function pay() {
     setBusy("pay");
+    setUnpaid(null);
     setStatus(null);
     try {
       const { approveUrl } = await api<{ approveUrl: string }>(`/api/lists/${list.id}/shop/checkout`, {
         method: "POST",
         body: JSON.stringify({ memberId: me, totalCents: total, picks: chosen.map(({ line, product }) => ({ itemId: line.itemId, productId: product.productId })) }),
       });
-      window.location.assign(approveUrl);
+      toPayPal(approveUrl);
     } catch (err) {
-      const { code, message } = err as Error & { code?: string };
-      setStatus(message);
-      // The new prices are saved on the items: show them, and pay from the list with the usual button.
-      if (code === "PRICE_CHANGED" || code === "ITEM_CHECKED") {
-        onClose();
-        setList(await api<List>(`/api/lists/${list.id}`).catch(() => list));
+      const { code, message, data } = err as Error & { code?: string; data?: { prices?: Record<string, number> } };
+      if (code === "PRICE_CHANGED" && data?.prices && plan) {
+        // A store changed a price since the cart was made. Nothing was saved on the list: the cart shows today's
+        // prices, and the person pays the new total or changes the cart.
+        const prices = data.prices;
+        const reprice = (line: Line, product: Product) => (product.productId === picked[line.itemId] && prices[line.itemId] !== undefined ? { ...product, priceCents: prices[line.itemId] } : product);
+        setPlan({ ...plan, cart: plan.cart.map((line) => ({ ...line, product: reprice(line, line.product), options: line.options.map((option) => reprice(line, option)) })) });
+        setUnpaid("A store changed its price since this cart was made, so nothing was paid. The cart shows today's prices: check the new total, then pay again.");
+      } else {
+        setStatus(message);
+        if (code === "ITEM_CHECKED") {
+          onClose();
+          setList(await api<List>(`/api/lists/${list.id}`).catch(() => list));
+        }
       }
       setBusy(null);
     }
@@ -154,6 +170,11 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
       )}
       {over && <p className="text-[13px] text-money">This is {usd(total - plan.budgetLeftCents!)} over what&apos;s left in the budget.</p>}
 
+      {unpaid && (
+        <p role="alert" className="rounded-2xl bg-money/12 px-3.5 py-2.5 text-[13px] font-medium text-money">
+          {unpaid} The items aren&apos;t checked off.
+        </p>
+      )}
       <button type="button" onClick={pay} disabled={chosen.length === 0 || busy !== null || !me} className={payPayPal}>
         {busy === "pay" ? "Opening PayPal…" : !me ? "Join the list to pay" : chosen.length === 0 ? "Nothing in the cart" : `Pay ${usd(total)} with PayPal`}
       </button>
