@@ -29,6 +29,12 @@ services:
         sync: false
       - key: CHANNEL3_API_KEY
         sync: false
+      - key: KROGER_CLIENT_ID # grocery prices (decision 74); without the Kroger keys, groceries keep the AI's guess
+        sync: false
+      - key: KROGER_CLIENT_SECRET
+        sync: false
+      - key: KROGER_ZIP # prices come from the nearest Kroger store to this ZIP (Kroger On the Rhine, Cincinnati)
+        value: "45202"
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_SECRET_ACCESS_KEY
