@@ -508,7 +508,7 @@ export default function ProgressPage() {
           </span>
         </div>
         {me && !mode && !scannedReceipt && open.some((item) => !held(item)) && (
-          <PhotoTick listId={list.id} memberId={me} items={open.filter((item) => !held(item))} onTick={tickFromPhoto} onReceipt={setScannedReceipt} onError={setStatus} />
+          <PhotoTick listId={list.id} memberId={me} items={open.filter((item) => !held(item))} onTick={tickFromPhoto} onReceipt={setScannedReceipt} />
         )}
         {/* A photo of a receipt is reviewed right here, as on the Receipts tab. */}
         {scannedReceipt && (
