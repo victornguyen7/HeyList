@@ -30,7 +30,8 @@ export function useSeenLists() {
 }
 
 // Figma "List card": progress ring, title, how far along, what was spent. children are actions, in a footer row under
-// it (Figma v2 "History card") so they never squeeze the title.
+// it (Figma v2 "History card") so they never squeeze the title. The title gets two lines and what was spent sits on the
+// line under it, not in a column beside it (Figma "Overflow fixes", D).
 export function ListCard({ list, children }: { list: List; children?: React.ReactNode }) {
   const done = list.items.filter((item) => item.checkedAt).length;
   return (
@@ -38,14 +39,15 @@ export function ListCard({ list, children }: { list: List; children?: React.Reac
       <Link href={`/lists/${list.id}`} className="flex min-w-0 items-center gap-4">
         <Ring done={done} total={list.items.length} size={56} />
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="truncate text-lg font-medium">{list.title}</span>
-          <span className="text-sm text-muted">
-            {list.finishedAt ? "Finished" : `${done} of ${list.items.length} done`} · {list.members.length} {list.members.length === 1 ? "person" : "people"}
+          <span className="line-clamp-2 text-lg leading-snug font-medium [overflow-wrap:anywhere]">{list.title}</span>
+          <span className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-muted">
+            <span>
+              {list.finishedAt ? "Finished" : `${done} of ${list.items.length} done`} · {list.members.length} {list.members.length === 1 ? "person" : "people"}
+            </span>
+            <span className="font-medium whitespace-nowrap">
+              <span className="text-base text-money tabular-nums">{usd(spent(list))}</span> spent
+            </span>
           </span>
-        </span>
-        <span className="flex flex-col items-end gap-0.5 font-medium">
-          <span className="text-lg text-money tabular-nums">{usd(spent(list))}</span>
-          <span className="text-xs text-muted">spent</span>
         </span>
       </Link>
       {children && <div className="flex items-center justify-between gap-4">{children}</div>}

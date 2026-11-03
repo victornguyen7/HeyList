@@ -273,7 +273,7 @@ export default function ProgressPage() {
                   </button>
                 </span>
                 {members.length > 0 && (
-                  <select aria-label={`Who buys ${item.name}`} className="h-8 rounded-full bg-surface-2 px-2" value={item.claimedBy ?? ""} onChange={(e) => patchItem(item, { claimedBy: e.target.value || null })}>
+                  <select aria-label={`Who buys ${item.name}`} className="h-8 max-w-full min-w-0 flex-1 basis-48 truncate rounded-full bg-surface-2 px-2" value={item.claimedBy ?? ""} onChange={(e) => patchItem(item, { claimedBy: e.target.value || null })}>
                     <option value="">Nobody yet</option>
                     {members.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -326,11 +326,16 @@ export default function ProgressPage() {
     );
   }
 
-  const stat = (value: string, label: string, color: string) => (
-    <div className={`${card} flex flex-1 flex-col gap-0.5 p-3.5 font-medium`}>
+  // "Spent" takes the whole top row, value and label side by side, and the two counts share the row below, so a
+  // five-figure amount or a label never runs out of its tile, on a phone or in the website's side panel
+  // (Figma "Overflow fixes", B).
+  const stat = (value: string, label: string, color: string, wide = false) => (
+    <div
+      className={`${card} flex min-w-0 flex-col gap-0.5 p-3.5 font-medium ${wide ? "col-span-2 flex-row flex-wrap items-baseline gap-x-2" : ""}`}
+    >
       {/* Scales with the screen, so "$1,234.56" fits three across at 320 px. */}
       <span className={`text-[clamp(1.0625rem,5.6vw,1.5rem)] tracking-[-0.015em] tabular-nums ${color}`}>{value}</span>
-      <span className="text-xs text-muted">{label}</span>
+      <span className="text-xs whitespace-nowrap text-muted">{label}</span>
     </div>
   );
 
@@ -396,8 +401,8 @@ export default function ProgressPage() {
               <span className="text-[13px] font-medium text-list">done</span>
             </span>
           </div>
-          <div className="flex w-full gap-3">
-            {stat(usd(spent), "spent so far", "text-money")}
+          <div className="grid w-full grid-cols-2 gap-3">
+            {stat(usd(spent), "spent so far", "text-money", true)}
             {stat(String(open.length), "still to get", "text-list")}
             {stat(String(list.receipts.filter((r) => r.confirmedAt).length), "receipts", "text-ai")}
           </div>

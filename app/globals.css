@@ -56,6 +56,11 @@
       background-color 150ms ease,
       box-shadow 150ms ease;
   }
+  /* A word longer than its box (a pasted product code, a run-together name) breaks onto the next line instead of
+     running past the card and making the page scroll sideways. Only breaks inside a word when nothing else fits. */
+  body {
+    overflow-wrap: break-word;
+  }
   /* The hand cursor. Browsers give it to links but, since Tailwind v4, not to buttons; anything that can't be
      pressed right now says so instead. */
   :where(button:not(:disabled), a[href], summary, select:not(:disabled), [role="button"], [role="radio"], label:has(> input:not(:disabled))) {

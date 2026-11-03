@@ -22,8 +22,8 @@ function Totals({ heading, rows }: { heading: string; rows: [string, number][] }
       <ul className="flex flex-col gap-1 text-base">
         {rows.map(([label, cents]) => (
           <li key={label} className="flex justify-between gap-2 tabular-nums">
-            <span className="capitalize">{label}</span>
-            <span>{usd(cents)}</span>
+            <span className="min-w-0 truncate capitalize">{label}</span>
+            <span className="shrink-0">{usd(cents)}</span>
           </li>
         ))}
       </ul>
@@ -90,7 +90,8 @@ export default function HistoryPage() {
         <p className="text-base text-muted-on-bg">No lists yet. Lists you make or open on this device show up here.</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:gap-5">
+          {/* Stacked on phones: two columns of ~140 px pushed "$12,354.66" out of its card (Figma "Overflow fixes", D). */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:gap-5">
             <Totals heading="By type" rows={totalsBy(lists, (list) => list.kind)} />
             <Totals heading="By month" rows={totalsBy(lists, (list) => month(list.createdAt))} />
           </div>

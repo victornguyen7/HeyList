@@ -258,13 +258,17 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
 
       {/* The AI is asked to stay within the budget but doesn't always; the check is done here, in code (decision 10). */}
       <div className={`${card} flex flex-col gap-2.5`}>
-        <div className="flex items-end justify-between">
-          <span className="flex items-baseline gap-1.5 whitespace-nowrap">
-            <span className="text-[30px] tracking-[-0.015em] text-money tabular-nums">{dollars(total)}</span>
-            <span className="text-[15px] font-medium text-muted">{budgetCents !== undefined ? `of ${dollars(budgetCents)} budget` : "estimated"}</span>
+        {/* The amount and "of $X budget" wrap as a pair; left/over is a pill of its own, so on a narrow phone it moves
+            under them instead of being pushed off the card (Figma "Overflow fixes", A). */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <span className="flex flex-wrap items-baseline gap-x-1.5">
+            <span className="text-[30px] tracking-[-0.015em] whitespace-nowrap text-money tabular-nums">{dollars(total)}</span>
+            <span className="text-[15px] font-medium whitespace-nowrap text-muted">{budgetCents !== undefined ? `of ${dollars(budgetCents)} budget` : "estimated"}</span>
           </span>
           {budgetCents !== undefined && (
-            <span className="text-sm font-medium whitespace-nowrap">{total <= budgetCents ? `${dollars(budgetCents - total)} left` : `${dollars(total - budgetCents)} over`}</span>
+            <span className={`rounded-full px-2.5 py-1 text-[13px] font-medium whitespace-nowrap tabular-nums ${total <= budgetCents ? "bg-list/10 text-list" : "bg-money/12 text-money"}`}>
+              {total <= budgetCents ? `${dollars(budgetCents - total)} left` : `${dollars(total - budgetCents)} over budget`}
+            </span>
           )}
         </div>
         {budgetCents !== undefined && (
@@ -291,8 +295,12 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
         {suggestion.items.map((item, index) => {
           const off = dropped.has(index);
           return (
+            // Three lines (Figma "Overflow fixes", A): name and price, then amount, then have-it-or-buy-it across the
+            // whole card, so on a narrow phone the toggle isn't squeezed and the full name shows.
             <li key={index} className={`${row} ${off ? "opacity-50" : ""}`}>
-              <label className="flex shrink-0 cursor-pointer">
+              <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+              <div className="flex items-start gap-3.5">
+              <label className="mt-0.5 flex shrink-0 cursor-pointer">
                 <input
                   type="checkbox"
                   className="peer sr-only"
@@ -307,14 +315,31 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                 <span className={`size-7 rounded-full border-2 border-muted peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-text ${off ? "bg-muted" : ""}`} />
               </label>
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <input
-                  className={`w-full rounded-md bg-transparent text-[17px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text ${off ? "line-through" : ""}`}
+                {/* Grows to fit the whole name (field-sizing, with the height set from the content where that isn't
+                    supported) instead of hiding the end in a one-line box. Names are one line of text: Enter does nothing. */}
+                <textarea
+                  rows={1}
+                  ref={(el) => {
+                    if (el) {
+                      el.style.height = "auto";
+                      el.style.height = `${el.scrollHeight}px`;
+                    }
+                  }}
+                  className={`w-full resize-none overflow-hidden rounded-md bg-transparent text-[17px] leading-snug font-medium [field-sizing:content] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text ${off ? "line-through" : ""}`}
                   aria-label="Item name"
                   value={item.name}
                   maxLength={120}
-                  onChange={(e) => change(index, { name: e.target.value })}
+                  onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+                  onChange={(e) => change(index, { name: e.target.value.replace(/\s*\n\s*/g, " ") })}
                 />
-                <span className="flex items-center gap-2 text-[13px] text-muted">
+                {item.note && <span className="text-[13px] text-money">{item.note}</span>}
+              </span>
+              <span className={`flex shrink-0 flex-col items-end text-base font-medium whitespace-nowrap tabular-nums ${item.owned ? "text-muted line-through" : ""}`}>
+                {item.estPriceCents ? `${item.priceSource === "estimate" ? "~" : ""}${usd(item.estPriceCents * item.quantity)}` : "—"}
+                {item.estPriceCents && item.priceSource ? <span className="text-[13px] font-normal text-muted">{sourceLabel[item.priceSource]}</span> : null}
+              </span>
+              </div>
+                <span className="flex items-center gap-2 pl-[42px] text-[13px] text-muted">
                   <button type="button" aria-label={`One fewer ${item.name}`} disabled={item.quantity <= 1} onClick={() => change(index, { quantity: item.quantity - 1 })} className="size-8 rounded-full bg-surface-2 text-sm disabled:opacity-30">
                     −
                   </button>
@@ -325,9 +350,8 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                     +
                   </button>
                 </span>
-                {item.note && <span className="text-[13px] text-money">{item.note}</span>}
                 {/* Have it or buy it: what's already owned goes on the list checked off, at no cost. */}
-                <span role="radiogroup" aria-label={`Do you have ${item.name}?`} className="mt-1.5 flex self-start rounded-full bg-surface-2 p-0.5 text-[13px] font-medium">
+                <span role="radiogroup" aria-label={`Do you have ${item.name}?`} className="grid grid-cols-2 rounded-full bg-surface-2 p-0.5 text-[13px] font-medium">
                   {([
                     [false, "Need to buy"],
                     [true, "Already have"],
@@ -339,17 +363,13 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                       aria-checked={Boolean(item.owned) === owned}
                       disabled={off}
                       onClick={() => change(index, { owned })}
-                      className={`h-8 rounded-full px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text ${Boolean(item.owned) === owned ? "bg-list text-on-accent" : "text-muted"}`}
+                      className={`h-8 rounded-full px-3 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text ${Boolean(item.owned) === owned ? "bg-list text-on-accent" : "text-muted"}`}
                     >
                       {label}
                     </button>
                   ))}
                 </span>
-              </span>
-              <span className={`flex shrink-0 flex-col items-end text-base font-medium tabular-nums ${item.owned ? "text-muted line-through" : ""}`}>
-                {item.estPriceCents ? `${item.priceSource === "estimate" ? "~" : ""}${usd(item.estPriceCents * item.quantity)}` : "—"}
-                {item.estPriceCents && item.priceSource ? <span className="text-[13px] font-normal text-muted">{sourceLabel[item.priceSource]}</span> : null}
-              </span>
+              </div>
             </li>
           );
         })}

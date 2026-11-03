@@ -67,10 +67,11 @@ export function WhoPaid({ list, split }: { list: List; split: Split }) {
         return (
           <div key={m.memberId} className="flex items-center gap-3">
             <Avatar name={nameOf(list, m.memberId)} />
-            <div className="flex flex-1 flex-col gap-1.5">
-              <span className="flex justify-between text-base font-medium">
-                <span>{nameOf(list, m.memberId)}</span>
-                <span className={`tabular-nums ${ahead ? "text-list" : "text-money"}`}>{usd(m.paidCents)}</span>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              {/* A long name ends in … and the amount stays whole (Figma "Overflow fixes", C). */}
+              <span className="flex justify-between gap-2 text-base font-medium">
+                <span className="min-w-0 truncate">{nameOf(list, m.memberId)}</span>
+                <span className={`shrink-0 tabular-nums ${ahead ? "text-list" : "text-money"}`}>{usd(m.paidCents)}</span>
               </span>
               <span className="relative h-2 rounded-[4px] bg-surface-2">
                 <span className={`absolute inset-y-0 left-0 rounded-[4px] ${ahead ? "bg-list" : "bg-money"}`} style={{ width: `${(m.paidCents / max) * 100}%` }} />
@@ -291,20 +292,22 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
 
       {split.transfers.map((t, index) => (
         <div key={index} className={`${card} flex flex-col gap-3.5 ${t.from === me ? "border-money" : ""} ${t.from === payFor ? "ring-2 ring-ai" : ""}`}>
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex w-20 flex-col items-center gap-1.5 text-center text-sm font-medium">
-              <Avatar name={nameOf(list, t.from)} size={48} />
-              {name(t.from)}
-            </span>
-            <span className="flex flex-col items-center gap-1">
-              <span className="text-[28px] tracking-[-0.015em] text-money tabular-nums">{usd(t.amountCents)}</span>
+          {/* The amount on its own line, then the two people in equal columns with the arrow between, names up to two
+              lines: fixed 80 px columns let a long name run out of the card (Figma "Overflow fixes", C). */}
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-[28px] tracking-[-0.015em] whitespace-nowrap text-money tabular-nums">{usd(t.amountCents)}</span>
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
+              <span className="flex min-w-0 flex-col items-center gap-1.5 text-center text-sm font-medium">
+                <Avatar name={nameOf(list, t.from)} size={48} />
+                <span className="line-clamp-2 w-full [overflow-wrap:anywhere]">{name(t.from)}</span>
+              </span>
               {/* eslint-disable-next-line @next/next/no-img-element -- 120x16 design asset */}
-              <img src="/ui/arrow.svg" alt="pays" width={120} height={16} />
-            </span>
-            <span className="flex w-20 flex-col items-center gap-1.5 text-center text-sm font-medium">
-              <Avatar name={nameOf(list, t.to)} size={48} />
-              {name(t.to)}
-            </span>
+              <img src="/ui/arrow.svg" alt="pays" width={120} height={16} className="mt-4 w-16 sm:w-[120px]" />
+              <span className="flex min-w-0 flex-col items-center gap-1.5 text-center text-sm font-medium">
+                <Avatar name={nameOf(list, t.to)} size={48} />
+                <span className="line-clamp-2 w-full [overflow-wrap:anywhere]">{name(t.to)}</span>
+              </span>
+            </div>
           </div>
           {t.from === me && <PayBack transfer={t} />}
           {t.from === payFor && !me && <ClaimPayer memberId={t.from} />}
@@ -327,24 +330,31 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
           </p>
           {split.members.map((m) => (
             <details key={m.memberId} className={`${card} group text-base`}>
-              <summary className="flex cursor-pointer justify-between gap-2 tabular-nums [&::-webkit-details-marker]:hidden">
-                <span className="font-medium">{name(m.memberId)}</span>
-                <span className="min-w-0 flex-1 text-right">
-                  {usd(m.paidCents)} <span className="text-muted">(paid)</span> − {usd(m.shareCents)} <span className="text-muted">(share)</span>
+              {/* Name, then the sum under it, then the result as a pill: the sum used to be squeezed into a narrow
+                  column beside a long name (Figma "Overflow fixes", C). */}
+              <summary className="flex cursor-pointer flex-col gap-1.5 tabular-nums [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate font-medium">{name(m.memberId)}</span>
+                  <span aria-hidden className="shrink-0 text-muted group-open:rotate-90">
+                    ›
+                  </span>
+                </span>
+                <span className="text-[15px]">
+                  {usd(m.paidCents)} <span className="text-muted">paid</span> − {usd(m.shareCents)} <span className="text-muted">share</span>
                   {m.settledCents > 0 ? (
                     <>
-                      {" "}+ {usd(m.settledCents)} <span className="text-muted">(sent)</span>
+                      {" "}+ {usd(m.settledCents)} <span className="text-muted">sent</span>
                     </>
                   ) : m.settledCents < 0 ? (
                     <>
-                      {" "}− {usd(-m.settledCents)} <span className="text-muted">(received)</span>
+                      {" "}− {usd(-m.settledCents)} <span className="text-muted">received</span>
                     </>
-                  ) : null}{" "}
-                  ={" "}
-                  {m.balanceCents > 0 ? `gets back ${usd(m.balanceCents)}` : m.balanceCents < 0 ? `owes ${usd(-m.balanceCents)}` : "even"}
+                  ) : null}
                 </span>
-                <span aria-hidden className="shrink-0 text-muted group-open:rotate-90">
-                  ›
+                <span
+                  className={`self-start rounded-full px-2.5 py-1 text-[13px] font-medium whitespace-nowrap ${m.balanceCents > 0 ? "bg-ai/12 text-ai" : m.balanceCents < 0 ? "bg-money/12 text-money" : "bg-list/10 text-list"}`}
+                >
+                  {m.balanceCents > 0 ? `Gets back ${usd(m.balanceCents)}` : m.balanceCents < 0 ? `Owes ${usd(-m.balanceCents)}` : "Even"}
                 </span>
               </summary>
               {m.purchases.length === 0 ? (
@@ -356,33 +366,33 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
                     if (line.refundOf) {
                       return (
                         <li key={index} className="flex justify-between gap-2 tabular-nums">
-                          <span>
+                          <span className="min-w-0">
                             Refunded<span className="text-muted"> · given back in PayPal</span>
                           </span>
-                          <span>{usd(line.cents)}</span>
+                          <span className="shrink-0">{usd(line.cents)}</span>
                         </li>
                       );
                     }
                     if (line.feesOf) {
                       return (
                         <li key={index} className="flex justify-between gap-2 tabular-nums">
-                          <span>
+                          <span className="min-w-0">
                             Tax, tip and fees<span className="text-muted"> · list items&apos; share, on a receipt</span>
                           </span>
-                          <span>{usd(line.cents)}</span>
+                          <span className="shrink-0">{usd(line.cents)}</span>
                         </li>
                       );
                     }
                     return (
                       <li key={index} className="flex justify-between gap-2 tabular-nums">
-                        <span>
+                        <span className="min-w-0">
                           {bought?.name ?? "A deleted item"}
                           <span className="text-muted">
                             {" · "}
                             {line.boughtTwice ? "bought again with PayPal" : bought ? proofLabel(bought, list.orders) : ""}
                           </span>
                         </span>
-                        <span>{usd(line.cents)}</span>
+                        <span className="shrink-0">{usd(line.cents)}</span>
                       </li>
                     );
                   })}

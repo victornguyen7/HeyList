@@ -1,41 +1,80 @@
 # HeyList — Submission and demo script
 
-What goes on the Devpost form, and the script for the demo video (under 3 minutes). Rules are in [HACKATHON.md](HACKATHON.md); deadline **12 November 2026**. Written 2026-10-27 against what is built. Re-check every "Built" claim before submitting.
+What goes on the Devpost form, and the script for the demo video (under 3 minutes). Rules are in [HACKATHON.md](HACKATHON.md); deadline **12 November 2026**. Written 2026-10-27 against what is built; video script rewritten 2026-11-03. Re-check every "Built" claim before submitting.
 
 ## Pitch (one line)
 
 HeyList turns everyday needs into shared lists, and makes it clear what really got done, from the first item captured to the last purchase paid.
 
-## Demo video script (target 2:45)
+## Demo video script (target 2:50, hard limit 3:00)
 
-One scenario from start to finish: **three friends planning a weekend camping trip** (decision 41). Record on a phone, or in a desktop browser at phone width, since HeyList is mobile-first. No music, and no third-party logos except PayPal's own sandbox pages.
+Rewritten 2026-11-03 against what is built up to decision 72. One story from start to finish: **Ann, Ben and Cam plan a weekend camping trip**. Ann films on her phone (HeyList is mobile-first); Ben's screens are a second phone or a desktop browser at phone width. Narration is about 410 words, which fits 2:50 at a calm pace. No music, and no third-party logos except PayPal's and Venmo's own buttons and pages.
 
-| Time | Scene | On screen | Say (roughly) | Judging criterion |
-|---|---|---|---|---|
-| 0:00–0:15 | Problem | Home page | "Planning a trip with friends means a group chat, a list nobody updates, and arguing later about who paid. HeyList turns what you need into a shared list, and keeps track of what really got done." | Impact, Presentation |
-| 0:15–0:40 | **Need** | Tap the mic and say "Weekend camping trip for 3 friends, $150 budget" (or type it), then tap **Make my list**. Show quantities, the `~` estimates and the estimated total; untick one item, fix one amount, add one missing thing; **Create list** | "One sentence. The AI suggests what we need, with quantities and estimated prices, within our budget. Nothing is saved until I've checked it." | Technical (AI), Design |
-| 0:40–0:55 | **Coordinate** | Join as Ann. In a second browser, open the link and join as Ben. Claim the tent; tap **Share out the rest evenly** | "I share the link. Ben joins by name, no account needed. We claim what we're buying, and HeyList shares out the rest so the cost is even." | Design, Impact |
-| 0:55–1:15 | **Find in stores** | As Ann, **Items** tab: on the headlamp, tap **Find in stores**. Show the product cards (photo, store, price); **Choose** one. The item now shows "$X at {store}" with no `~`, and "View at {store} ↗" | "The AI guessed the price. Now Ann finds a real headlamp: HeyList searches real stores through Channel3, and the AI keeps only results that really are a headlamp. She picks one, and the server reads its price from the store again. That's the price she'll pay." | Technical (AI), Best Use of Channel3 |
-| 1:15–1:50 | **Verify: PayPal** | As Ann, tap **Pay for items with PayPal**, choose three items including the headlamp, **Pay $X with PayPal**; approve on the PayPal sandbox page; back on the list, "Paid. Those items are checked off." Each one shows "Paid with PayPal · Ann" | "Ann pays for her share with PayPal. The server sets the price from the list, not the browser. Only when PayPal confirms the payment is captured do the items get checked off, with Ann as the payer and the price she paid." | Technical (PayPal), Best Use of PayPal + AI |
-| 1:50–2:15 | **Verify: receipt** | As Ben, **Receipts** tab: photograph a real receipt. Show the proposed matches; fix one; confirm. Items now show "On a receipt · Ben" | "Ben bought his things in a shop. He snaps the receipt; the AI reads it and matches each line to our list. He checks the matches, and his items are done, at the prices on the receipt." | Technical (AI), Innovation |
-| 2:15–2:35 | **Settle** | **Items** tab (every item shows its proof), then **Settle up**: "Ben → Ann $X" | "Every item says how we know it's done. And because the prices are real, HeyList works out who owes whom, in code, not by guessing." | Impact, Design |
-| 2:35–2:45 | Close | Progress page, list finished | "Need, coordinate, verify. HeyList." | Presentation |
+The arc the judges should remember: **AI plans it, an agent shops it, PayPal proves it, PayPal settles it.**
 
-Cut first if it runs long: the second browser joining (say it instead), then the receipt correction, then "View at {store}".
+### Scene by scene
 
-Don't show: photo recognition (not built), PayPal invoices (not built), or store search on food: Channel3 sells no groceries, so milk or eggs find nothing. Don't say the store order is placed: the sandbox payment goes to HeyList's merchant account, and Channel3's own checkout isn't open yet. If asked: "When Channel3 checkout opens, HeyList places the order; today it gives the real price and the link." Voice works where the browser has speech recognition (Chrome, Safari); test it on the recording phone first. If any of these are built before recording, add them to the scene where they fit.
+| Time | Scene | On screen | Judging criterion |
+|---|---|---|---|
+| 0:00–0:15 | Hook | Home page, then a quick cut of a messy group chat (mocked by you, no real names) | Impact, Presentation |
+| 0:15–0:40 | **AI plans it** | Tap the mic, say "Weekend camping trip for three friends, 150 dollar budget", tap **Make my list**. Review screen: quantities, `~` estimates, total under budget. Untick one item, add one. **Create list** | Technical (AI), Design |
+| 0:40–0:55 | **Share it** | Share the link. On Ben's phone: open it, join as Ben. Cut back to Ann's phone: Ben appears without a reload. Ben claims the food; Ann claims the gear. Cam joins too but buys nothing | Design, Impact |
+| 0:55–1:30 | **An agent shops it** | As Ann on Progress: **More → Shop this list for me**. Tick headlamp, sleeping bag, sunscreen, marshmallows. The agent's cart: product cards with photo, store, price; the total fits what's left of the budget; marshmallows skipped with "No online store we search sells this". Swap one product. **Pay with PayPal**, approve on the sandbox page. Back on the list: "Paid with PayPal · Ann" on each | Agentic Commerce, Channel3, PayPal + AI |
+| 1:30–1:55 | **A receipt proves it** | As Ben, **Receipts**: photograph a real grocery receipt. Review screen: each line matched to an item, tax shown, lines add up to the total. Fix one match, **Confirm**. Items show "On a receipt · Ben" | Technical (AI), Innovation |
+| 1:55–2:30 | **PayPal settles it** | **Settle up**: "Cam → Ann $X", "Cam → Ben $Y". Tap **Remind Cam**: the AI-written message with the exact amount and link; share sheet. On Cam's phone: open the link, "I'm Cam, let me pay", PayPal (or Venmo) button pops up on the page, approve. Back on Ann's phone: the balance goes to $0 | PayPal + AI, Technical (PayPal), Impact |
+| 2:30–2:45 | **Every item has proof** | **Items** tab, scroll: "Paid with PayPal", "On a receipt", "Marked bought by hand". Optional 2-second overlay: "Capture COMPLETED · webhooks · auto refund on double buys" | Technical, Design |
+| 2:45–2:50 | Close | Progress page at 100%, HeyList name | Presentation |
+
+### Narration (read this)
+
+**0:00 — Hook**
+"Every group trip runs on a chat thread, a list nobody updates, and an awkward 'who paid for what?' at the end. HeyList fixes that. It's a shared list that knows what really got done, and settles up with PayPal."
+
+**0:15 — AI plans it**
+"I just say what we need. The AI turns one sentence into a list, with quantities and estimated prices that fit our budget. Nothing's saved until I've checked it. I drop the stove, we've got one, add firewood, and create the list."
+
+**0:40 — Share it**
+"I send the link. Ben joins by name. No app to install, no account needed, and I see him appear live. He claims the food, I take the gear, and Cam, who's busy this week, just pays a share at the end."
+
+**0:55 — An agent shops it**
+"Now the part I'd normally put off. I tick what I'm buying and ask HeyList to shop it for me. The agent searches real stores through Channel3, and the AI throws out anything that isn't actually a headlamp or a sleeping bag. Code, not the AI, fits the cart to what's left of our budget, and it tells me what it couldn't buy online and why. I swap one product, and pay with PayPal. The agent proposes; I approve. Prices are read again from the store and set on the server, never in the browser. And only when PayPal confirms the capture are my items checked off, with my name and the price I paid."
+
+**1:30 — A receipt proves it**
+"Ben bought the food at the supermarket. He snaps the receipt. The AI reads every line, matches it to our list, and checks that it all adds up, tax included. If a price is hard to read, it asks instead of guessing. Ben fixes one match, confirms, and his items are done."
+
+**1:55 — PayPal settles it**
+"Because every price is real, HeyList knows exactly who owes whom. Cam owes us both, and the split is worked out in code, not by the AI. One tap and the AI drafts a friendly reminder with the exact amount. Cam opens the link, taps PayPal, or Venmo, and the money goes straight to my PayPal account. Not to HeyList. To me. The balance drops to zero."
+
+**2:30 — Every item has proof**
+"Every item says how we know it's done: paid with PayPal, on a receipt, or ticked by hand. If two people buy the same thing, the second payment is refunded automatically."
+
+**2:45 — Close**
+"AI plans it. An agent shops it. PayPal proves it, and settles it. That's HeyList."
+
+### If it runs long
+
+Cut in this order: the product swap in the cart, the receipt match fix, Cam's phone (show the reminder, then cut straight to the balance at $0 and say "Cam paid with PayPal"), the live join (say "Ben joins" over a single cut).
+
+### Don't say or show
+
+- Don't say the store order is placed. The sandbox payment goes to HeyList's merchant account, and Channel3's checkout isn't open yet. If asked: "When Channel3 checkout opens, the agent places the order; today it finds the real product and price."
+- Don't run store search on food: Channel3 sells no groceries. Marshmallows in the cart is on purpose, to show the skip reason; check it still says that on the day.
+- Don't call **Check off with a photo** proof: it stays "Marked bought by hand" (decision 71).
+- Venmo shows only when PayPal says the buyer is eligible (US, USD). If it doesn't appear on the recording phone, cut "or Venmo" from the line.
+- Shop this list for me uses the redirect to PayPal's page, not the pop-up (decision 67). That's fine on camera; don't describe it as a pop-up.
 
 ### Before recording
 
-- [ ] Deployed on Render, with the hosted URL working (`render.yaml`).
-- [ ] Run `supabase/schema.sql` again on the live database (`orders.capture_id`, `orders.refunds`, `items.note`, `items.name_key`, `items.product`, `members.user_id`).
-- [ ] Rehearse **Find in stores** on the live site with the item you'll film (a headlamp, or swap in a sleeping bag or sunscreen). Results change over time, so pick one that returns good cards that day. `CHANNEL3_API_KEY` must be set on heylist-api.
-- [ ] Record on a phone for the mobile layout; a laptop browser shows the website layout (decision 46).
-- [ ] A sandbox **personal** buyer account is logged in once, so the PayPal approval page is fast ([Sandbox accounts](https://developer.paypal.com/dashboard/accounts)).
-- [ ] One full sandbox payment has already been tested end to end (issue 25).
-- [ ] A clear, real receipt that matches two or three items on the generated list. Practise the suggestion first: the AI's list changes between runs, so record the list you practised with, or add the receipt's items by hand.
-- [ ] **Paid calls:** the starting list and receipt scan call Ollama (and Textract, if enabled). Each recording take spends a little; the owner approves before recording ([RULES.md](RULES.md)).
-- [ ] Upload to YouTube as **public**, under 3:00.
+- [ ] Hosted site up on Render, schema up to date (`supabase/schema.sql` run again on the live database).
+- [ ] Three people on the list. Ann logged in on the filming phone; Ben and Cam on a second phone or browser.
+- [ ] **Ann's PayPal email saved** for settle-up, and it's a **sandbox** account different from the merchant, so the money visibly goes to her (decision 60). Cam's sandbox **personal** buyer account logged in once, so approval is fast.
+- [ ] Webhook registered and `PAYPAL_WEBHOOK_ID` set, so a pending capture still finishes on camera.
+- [ ] Rehearse **Shop this list for me** with the exact items you'll film on the live site that day. Results change; pick items that return clean product cards. `CHANNEL3_API_KEY` set on heylist-api.
+- [ ] A clear, real receipt that matches two or three items on the list. The AI's starting list changes between runs, so record the list you practised with, or add the receipt's items by hand.
+- [ ] Voice works in Chrome and Safari; test the mic on the recording phone. Typing the sentence is the fallback.
+- [ ] **Paid calls:** the starting list, the shopping agent, the receipt scan and the reminder call Ollama, Channel3 and Textract. Each take spends a little; the owner approves before recording ([RULES.md](RULES.md)).
+- [ ] Mock group chat for the hook uses made-up names only.
+- [ ] Upload to YouTube as **public**, under 3:00. Add captions (auto, then fix product names).
 
 ## Devpost text description (draft)
 

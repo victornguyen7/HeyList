@@ -37,12 +37,14 @@ export function PayCard({ title, amount, note, children }: { title: string; amou
   );
 }
 
+// The logo (Figma "Logo — soft glass options", A): a slate-blue speech bubble with a tick, "hey, this is done".
+// The same mark is the browser tab icon (app/icon.svg).
 export function Brand() {
   return (
     <span className="flex items-center gap-2">
-      {/* eslint-disable-next-line @next/next/no-img-element -- 12px design asset */}
-      <img src="/ui/dot.svg" alt="" width={12} height={12} />
-      <span className="text-[22px] font-semibold">HeyList</span>
+      {/* eslint-disable-next-line @next/next/no-img-element -- 26px design asset */}
+      <img src="/ui/logo.svg" alt="" width={26} height={26} />
+      <span className="text-[22px] font-semibold tracking-[-0.02em]">HeyList</span>
     </span>
   );
 }

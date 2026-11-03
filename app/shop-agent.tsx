@@ -120,7 +120,7 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
                       ))}
                     </select>
                   ) : (
-                    <span className="line-clamp-2 text-muted">{product.title}</span>
+                    <span className="line-clamp-2 text-muted [overflow-wrap:anywhere]">{product.title}</span>
                   )}
                   <span className="text-muted">
                     {usd(product.priceCents * line.quantity)} at {product.store} ·{" "}

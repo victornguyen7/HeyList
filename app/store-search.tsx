@@ -66,7 +66,7 @@ export function StoreSearch({ item, onChosen }: { item: Item; onChosen: (item: I
                 <span className="size-14 shrink-0 rounded-xl bg-bg" />
               )}
               <span className="flex min-w-0 flex-1 flex-col text-sm">
-                <span className="line-clamp-2 font-medium">{product.title}</span>
+                <span className="line-clamp-2 font-medium [overflow-wrap:anywhere]">{product.title}</span>
                 <span className="text-muted">
                   {usd(product.priceCents)} at {product.store}
                 </span>
