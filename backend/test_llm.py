@@ -25,7 +25,9 @@ class StartingListTest(unittest.TestCase):
                 {"name": "", "quantity": 1, "estPriceCents": 100},
             ],
         }
-        chat = self.reply("```json\n" + json.dumps(body) + "\n```")
+        chat = self.reply("")
+        # The list, then the follow-up call that prices what the list left unpriced.
+        chat.side_effect = ["```json\n" + json.dumps(body) + "\n```", '{"prices": [14999, 899]}']
 
         result = llm.starting_list("Lake trip for 3", 15000)
 
@@ -37,14 +39,30 @@ class StartingListTest(unittest.TestCase):
                 "items": [
                     {"name": "Sunscreen", "quantity": 2, "estPriceCents": 899, "note": None},
                     {"name": "Flashlight", "quantity": 1, "estPriceCents": 1200, "note": "only if nobody has one"},
-                    {"name": "Tent", "quantity": 1, "estPriceCents": None, "note": None},
-                    {"name": "Firewood", "quantity": 99, "estPriceCents": None, "note": None},
+                    {"name": "Tent", "quantity": 1, "estPriceCents": 14999, "note": None},
+                    {"name": "Firewood", "quantity": 99, "estPriceCents": 899, "note": None},
                 ],
             },
         )
-        messages, schema = chat.call_args.args
+        (messages, schema), (price_messages, price_schema) = (call.args for call in chat.call_args_list)
         self.assertIn("Budget: 15000 cents", messages[-1]["content"])
         self.assertIs(schema, llm.STARTER_SCHEMA)
+        # Only the unpriced items are asked about, with the list's name for context.
+        self.assertEqual(price_messages[-1]["content"], "List: Lake trip\nItems:\n1. Tent\n2. Firewood")
+        self.assertIs(price_schema, llm.PRICE_SCHEMA)
+
+    def test_a_fully_priced_list_makes_one_call_and_a_failed_price_call_keeps_the_list(self):
+        chat = self.reply(json.dumps({"title": "T", "kind": "trip", "items": [{"name": "Tent", "quantity": 1, "estPriceCents": 9000}]}))
+        self.assertEqual(llm.starting_list("Trip")["items"][0]["estPriceCents"], 9000)
+        self.assertEqual(chat.call_count, 1)
+
+        chat.side_effect = [json.dumps({"title": "T", "kind": "trip", "items": [{"name": "Tent", "quantity": 1, "estPriceCents": 0}]}), RuntimeError("down")]
+        self.assertEqual(llm.starting_list("Trip")["items"], [{"name": "Tent", "quantity": 1, "estPriceCents": None, "note": None}])
+
+    def test_estimate_prices_keeps_the_order_and_drops_odd_values(self):
+        self.reply('{"prices": [450, 0, "x"]}')
+        self.assertEqual(llm.estimate_prices(["Milk", "Bread", "Eggs", "Jam"]), [450, None, None, None])
+        self.assertEqual(llm.estimate_prices([]), [])
 
     def test_the_same_item_with_different_amounts_is_kept_twice_and_flagged(self):
         self.reply(json.dumps({"title": "Party", "kind": "party", "items": [

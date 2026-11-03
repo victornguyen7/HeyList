@@ -365,9 +365,26 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
         className="flex items-center gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!extra.trim()) return;
-          setSuggestion({ ...suggestion, items: [...suggestion.items, { name: extra.trim(), quantity: 1, estPriceCents: null, note: null }] });
+          const name = extra.trim();
+          if (!name) return;
+          const index = suggestion.items.length;
+          setSuggestion({ ...suggestion, items: [...suggestion.items, { name, quantity: 1, estPriceCents: null, note: null }] });
           setExtra("");
+          // Priced like the rest: what people paid before, a store price, or the AI's guess. It shows "—" until then,
+          // and stays that way if no price comes back.
+          api<{ items: { estPriceCents: number | null; priceSource: Suggestion["items"][number]["priceSource"] }[] }>("/api/prices", {
+            method: "POST",
+            body: JSON.stringify({ names: [name], context: suggestion.title }),
+          })
+            .then(({ items: [priced] }) => {
+              if (!priced?.estPriceCents) return;
+              setSuggestion((current) =>
+                current && current.items[index]?.name === name
+                  ? { ...current, items: current.items.map((item, i) => (i === index ? { ...item, estPriceCents: priced.estPriceCents, priceSource: priced.priceSource } : item)) }
+                  : current,
+              );
+            })
+            .catch(() => {});
         }}
       >
         <input

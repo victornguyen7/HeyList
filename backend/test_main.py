@@ -104,6 +104,10 @@ class RoutesTest(unittest.TestCase):
             patch.start()
             self.addCleanup(patch.stop)
         main._calls.clear()
+        # No AI price guesses in tests unless a test asks for them.
+        estimate = mock.patch.object(llm, "estimate_prices", side_effect=lambda names, context=None: [None] * len(names))
+        self.estimate = estimate.start()
+        self.addCleanup(estimate.stop)
         self.client = TestClient(main.app)
 
     def new_list(self, items):
@@ -139,6 +143,38 @@ class OwnedItemsTest(RoutesTest):
         saved = self.client.patch(f"/api/items/{tent['id']}", json={"checked": False}).json()
         self.assertFalse(saved["owned"])
         self.assertIsNone(saved["checkedAt"])
+
+
+class PricesTest(RoutesTest):
+    def test_an_item_added_without_a_price_gets_one(self):
+        the_list = self.new_list([{"name": "Tent", "estPriceCents": 9000}])
+        self.estimate.side_effect = lambda names, context=None: [450] * len(names)
+
+        added = self.client.post(f"/api/lists/{the_list['id']}/items", json={"items": [{"name": "Milk"}, {"name": "Rope", "estPriceCents": 700}]}).json()
+
+        self.assertEqual([(i["name"], i["estPriceCents"]) for i in added], [("Milk", 450), ("Rope", 700)])
+        # Only the unpriced one was asked about, with the list's name.
+        self.estimate.assert_called_once_with(["Milk"], "Trip")
+
+    def test_price_memory_comes_before_the_ai(self):
+        the_list = self.new_list([{"name": "Milk", "estPriceCents": 400}])
+        milk = the_list["items"][0]
+        self.db.update("items", {"checked_at": "earlier", "price_cents": 459, "order_id": None, "receipt_id": None}, id=milk["id"])
+        self.db.update("items", {"product": {"priceCents": 389}}, id=milk["id"])
+        self.estimate.side_effect = lambda names, context=None: [999] * len(names)
+
+        reply = self.client.post("/api/prices", json={"names": ["milk", "Bread"], "context": "Groceries"}).json()
+
+        self.assertEqual(reply["items"], [{"name": "milk", "estPriceCents": 389, "priceSource": "store"}, {"name": "Bread", "estPriceCents": 999, "priceSource": "estimate"}])
+        self.estimate.assert_called_once_with(["Bread"], "Groceries")
+
+    def test_a_failed_guess_still_adds_the_item(self):
+        the_list = self.new_list([{"name": "Tent", "estPriceCents": 9000}])
+        self.estimate.side_effect = RuntimeError("down")
+        with self.assertLogs(main.log):
+            added = self.client.post(f"/api/lists/{the_list['id']}/items", json={"items": [{"name": "Milk"}]})
+        self.assertEqual((added.status_code, added.json()[0]["estPriceCents"]), (200, None))
+        self.assertEqual(self.client.post("/api/prices", json={"names": []}).status_code, 400)
 
 
 class SampleListTest(RoutesTest):

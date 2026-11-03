@@ -373,13 +373,55 @@ def join_list(list_id: str, request: Request, body=Depends(json_body)):
 
 @app.post("/api/lists/{list_id}/items")
 def add_items(list_id: str, body=Depends(json_body)):
-    if not find("lists", list_id):
+    """Items added to a list. One added without a price gets one: what people paid for it before, its store price,
+    or the AI's guess (price_unpriced), so every item on a list has a price."""
+    the_list = find("lists", list_id)
+    if not the_list:
         return error("LIST_NOT_FOUND", 404)
     try:
         rows = new_items(list_id, body["items"], start=len(db.select("items", list_id=list_id)))
     except BAD_INPUT:
         return error("INVALID_BODY", 400)
+    unpriced = [row for row in rows if row["est_price_cents"] is None]
+    for row, priced in zip(unpriced, price_unpriced([row["name"] for row in unpriced], the_list["title"])):
+        row["est_price_cents"] = priced["estPriceCents"]
     return [camel(row) for row in db.insert("items", rows)]
+
+
+def price_unpriced(names: list[str], context: str | None) -> list[dict]:
+    """{name, estPriceCents, priceSource} for each name, in order: price memory first (remember_prices), then one AI
+    call for what it doesn't know. Never fails: no price is better than refusing to add an item."""
+    items = [{"name": name, "estPriceCents": None} for name in names]
+    if not items:
+        return items
+    try:
+        remember_prices(items)
+    except Exception:
+        log.exception("Price memory failed")
+    guess = [item for item in items if item["estPriceCents"] is None]
+    # One cap for everyone, as for suggestions; each call prices many names at once.
+    if guess and allow("prices", 200, 3600):
+        try:
+            for item, cents in zip(guess, llm.estimate_prices([item["name"] for item in guess], context)):
+                item["estPriceCents"], item["priceSource"] = cents, "estimate" if cents else None
+        except Exception:
+            log.exception("Price estimate failed")
+    return items
+
+
+@app.post("/api/prices")
+def estimate_prices(body=Depends(json_body)):
+    """{names, context?} -> {items: [{name, estPriceCents, priceSource}]}: prices for items typed on the review screen
+    before the list exists. Nothing is saved."""
+    try:
+        names = body["names"]
+        if not isinstance(names, list) or not 0 < len(names) <= 20:
+            raise ValueError("bad names")
+        names = [text(name) for name in names]
+        context = text(body["context"]) if body.get("context") else None
+    except BAD_INPUT:
+        return error("INVALID_BODY", 400)
+    return {"items": price_unpriced(names, context)}
 
 
 @app.patch("/api/items/{item_id}")
