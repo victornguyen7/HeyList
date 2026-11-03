@@ -142,7 +142,7 @@ export function PhotoTick({ listId, memberId, items, onTick, onReceipt }: { list
       <label className={`${buttonGlass} gap-2 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- 24px design asset */}
         <img src="/ui/camera.svg" alt="" width={24} height={24} />
-        <span>Check off with a photo of an item or receipt</span>
+        <span>Take a photo</span>
         <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={read} disabled={busy} />
       </label>
     );

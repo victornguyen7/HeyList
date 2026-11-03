@@ -31,7 +31,7 @@ export default function ProgressPage() {
   const [busy, setBusy] = useState(false);
   // The item being ticked by hand, and the price typed for it (asked in the row, not in a pop-up).
   const [ticking, setTicking] = useState<string | null>(null);
-  // A receipt photographed with "Check off with a photo", under review on this page.
+  // A receipt photographed with "Take a photo", under review on this page.
   const [scannedReceipt, setScannedReceipt] = useState<Receipt | null>(null);
   const [priceText, setPriceText] = useState("");
   // The name typed into "+ Add an item".
@@ -193,9 +193,10 @@ export default function ProgressPage() {
     setMode("pay");
   }
 
-  // One main action, chosen by where the list is (phase 8C); everything else sits under More.
+  // One main action, chosen by where the list is (phase 8C); everything else sits under More. Receipts are scanned
+  // with "Take a photo" above the items, so there is no separate scan action here.
   const mineCost = mine.reduce((sum, item) => sum + cost(item), 0);
-  const main: "pay" | "share" | "settle" | "scan" | null = !me
+  const main: "pay" | "share" | "settle" | null = !me
     ? null
     : mine.length > 0
       ? "pay"
@@ -203,7 +204,7 @@ export default function ProgressPage() {
         ? "share"
         : open.length === 0 && done.length > 0
           ? "settle"
-          : "scan";
+          : null;
 
   // Starts with nothing ticked: the person chooses every item the agent searches for.
   function startShopping() {
@@ -335,7 +336,6 @@ export default function ProgressPage() {
 
   // More actions (Figma "Action row"): a bottom sheet on the phone, a menu card on the website. Each row closes the sheet.
   const actions: { label: string; href?: string; onClick?: () => void; disabled?: boolean }[] = [
-    ...(main !== "scan" ? [{ label: "Scan a receipt", href: `/lists/${list.id}/receipts` }] : []),
     ...(items.some(payable) ? [{ label: main === "pay" ? "Choose other items to pay for" : "Pay for items with PayPal", onClick: startPaying, disabled: !me }] : []),
     ...(items.some(shoppable) ? [{ label: "Shop this list for me", onClick: startShopping }] : []),
     ...(main !== "share" && members.length > 0 && open.some((item) => !item.claimedBy) ? [{ label: "Share out the rest evenly", onClick: assign }] : []),
@@ -455,11 +455,6 @@ export default function ProgressPage() {
             {main === "settle" && (
               <Link href={`/lists/${list.id}/settle`} className={buttonAi}>
                 Everything&apos;s bought. Settle up
-              </Link>
-            )}
-            {main === "scan" && (
-              <Link href={`/lists/${list.id}/receipts`} className={buttonAi}>
-                Scan a receipt
               </Link>
             )}
 
