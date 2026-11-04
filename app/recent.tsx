@@ -46,7 +46,7 @@ function PriceCell({ amount, label }: { amount: string; label: string | null }) 
   return (
     <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
       <span className="font-medium">{amount}</span>
-      {label && <span className="w-[5.5rem] text-right text-[12px] text-muted">{label}</span>}
+      {label && <span className="w-[5.5rem] text-right text-[0.75rem] text-muted">{label}</span>}
       {!label && <span className="w-[5.5rem]" />}
     </span>
   );

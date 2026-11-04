@@ -17,8 +17,8 @@ function ThisMonth({ lists }: { lists: List[] }) {
   for (const list of thisMonth) byKind.set(list.kind, (byKind.get(list.kind) ?? 0) + spent(list));
   return (
     <div className={`${card} hidden flex-col gap-3.5 p-6 lg:flex`}>
-      <span className="text-[15px] text-muted">Spent in {now.toLocaleDateString(undefined, { month: "long" })}</span>
-      <span className="text-[40px] font-light tabular-nums">{usd(thisMonth.reduce((sum, list) => sum + spent(list), 0))}</span>
+      <span className="text-[0.9375rem] text-muted">Spent in {now.toLocaleDateString(undefined, { month: "long" })}</span>
+      <span className="text-[2.5rem] font-light tabular-nums">{usd(thisMonth.reduce((sum, list) => sum + spent(list), 0))}</span>
       {[...byKind].map(([kind, cents]) => (
         <span key={kind} className="flex justify-between text-base">
           <span className="capitalize">{kind}</span>
@@ -37,7 +37,7 @@ export default function Home() {
     <>
       <div className="flex items-center justify-between font-medium">
         <h2 className="text-xl">Your lists</h2>
-        <Link href="/history" className="text-[15px] text-muted-on-bg">
+        <Link href="/history" className="text-[0.9375rem] text-muted-on-bg">
           See all
         </Link>
       </div>

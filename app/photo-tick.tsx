@@ -105,9 +105,9 @@ export function PhotoTick({ listId, memberId, items, onTick, onReceipt }: { list
                   {step.state === "active" ? (
                     <span className="size-4 rounded-full border-2 border-muted border-t-transparent motion-safe:animate-spin" />
                   ) : step.state === "done" ? (
-                    <span className="flex size-5 items-center justify-center rounded-full bg-list text-[11px] text-on-accent">✓</span>
+                    <span className="flex size-5 items-center justify-center rounded-full bg-list text-[0.6875rem] text-on-accent">✓</span>
                   ) : (
-                    <span className="flex size-5 items-center justify-center rounded-full bg-money text-[11px] text-on-accent">!</span>
+                    <span className="flex size-5 items-center justify-center rounded-full bg-money text-[0.6875rem] text-on-accent">!</span>
                   )}
                 </span>
                 <span className="flex min-w-0 flex-col">
@@ -116,13 +116,13 @@ export function PhotoTick({ listId, memberId, items, onTick, onReceipt }: { list
                     {step.state === "active" && <span className="font-normal text-muted tabular-nums"> · {seconds}s</span>}
                     {step.state === "failed" && <span className="sr-only"> failed</span>}
                   </span>
-                  {step.detail && <span className={`text-[13px] ${step.state === "failed" ? "text-money" : "text-muted"}`}>{step.detail}</span>}
+                  {step.detail && <span className={`text-[0.8125rem] ${step.state === "failed" ? "text-money" : "text-muted"}`}>{step.detail}</span>}
                 </span>
               </li>
             ))}
           </ol>
           {failed && !busy && (
-            <span className="flex items-center gap-4 text-[15px] font-medium">
+            <span className="flex items-center gap-4 text-[0.9375rem] font-medium">
               <label className="cursor-pointer text-ai has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text">
                 Try another photo
                 <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={read} />
@@ -141,7 +141,7 @@ export function PhotoTick({ listId, memberId, items, onTick, onReceipt }: { list
     return (
       <label className={`${buttonGlass} gap-2 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- 24px design asset */}
-        <img src="/ui/camera.svg" alt="" width={24} height={24} />
+        <img src="/ui/camera.svg" alt="" width={24} height={24} className="size-6" />
         <span>Take a photo</span>
         <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={read} disabled={busy} />
       </label>
@@ -155,7 +155,7 @@ export function PhotoTick({ listId, memberId, items, onTick, onReceipt }: { list
       </p>
       <select
         aria-label="Which item this is"
-        className="h-11 rounded-[20px] bg-surface-2 px-3"
+        className="h-11 rounded-[1.25rem] bg-surface-2 px-3"
         value={found.itemId}
         onChange={(e) => setFound({ ...found, itemId: e.target.value })}
       >
@@ -173,24 +173,24 @@ export function PhotoTick({ listId, memberId, items, onTick, onReceipt }: { list
         <label className="flex flex-col gap-1.5">
           <span>
             What did you pay{chosen.quantity > 1 ? ` for all ${chosen.quantity}` : ""}?
-            {chosen.estPriceCents !== null && <span className="text-[13px] text-muted"> Estimated {usd(chosen.estPriceCents * chosen.quantity)}</span>}
+            {chosen.estPriceCents !== null && <span className="text-[0.8125rem] text-muted"> Estimated {usd(chosen.estPriceCents * chosen.quantity)}</span>}
           </span>
           <input
             autoFocus
             inputMode="decimal"
             placeholder="Don't know"
-            className={`h-11 rounded-[20px] bg-surface-2 px-3 tabular-nums ${Number.isNaN(price) ? "outline outline-money" : ""}`}
+            className={`h-11 rounded-[1.25rem] bg-surface-2 px-3 tabular-nums ${Number.isNaN(price) ? "outline outline-money" : ""}`}
             value={priceText}
             onChange={(e) => setPriceText(e.target.value)}
           />
         </label>
       )}
-      {Number.isNaN(price) && <p className="text-[13px] text-money">Type the price like 4.50.</p>}
+      {Number.isNaN(price) && <p className="text-[0.8125rem] text-money">Type the price like 4.50.</p>}
       <span className="flex items-center gap-3">
-        <button type="submit" disabled={busy || !chosen || Number.isNaN(price)} className="h-10 rounded-full bg-list px-5 text-[15px] font-medium text-on-accent disabled:opacity-40">
+        <button type="submit" disabled={busy || !chosen || Number.isNaN(price)} className="h-10 rounded-full bg-list px-5 text-[0.9375rem] font-medium text-on-accent disabled:opacity-40">
           Check it off
         </button>
-        <button type="button" disabled={busy} onClick={() => setFound(null)} className="text-[15px] font-medium text-muted">
+        <button type="button" disabled={busy} onClick={() => setFound(null)} className="text-[0.9375rem] font-medium text-muted">
           Cancel
         </button>
       </span>

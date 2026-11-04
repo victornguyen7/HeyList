@@ -25,7 +25,7 @@ export default function ReceiptsPage() {
         {receipts.map((receipt) => (
           <article key={receipt.id} id={receipt.id} className={`${card} flex flex-col gap-2 text-base lg:flex-row lg:items-start lg:gap-5`}>
             {/* eslint-disable-next-line @next/next/no-img-element -- private photo served by the backend */}
-            <img src={`/api/receipts/${receipt.id}/image`} alt="Receipt photo" loading="lazy" className="max-h-80 w-full rounded-[18px] object-contain lg:max-h-[190px] lg:w-[140px] lg:shrink-0 lg:object-cover" />
+            <img src={`/api/receipts/${receipt.id}/image`} alt="Receipt photo" loading="lazy" className="max-h-80 w-full rounded-[1.125rem] object-contain lg:max-h-[11.875rem] lg:w-[8.75rem] lg:shrink-0 lg:object-cover" />
             <div className="flex min-w-0 flex-1 flex-col gap-2">
             <p className="text-muted">
               {day(receipt.createdAt)}
@@ -58,7 +58,7 @@ export default function ReceiptsPage() {
       </section>
       </div>
 
-      <section className="flex flex-col gap-3 lg:w-[460px] lg:shrink-0">
+      <section className="flex flex-col gap-3 lg:w-[28.75rem] lg:shrink-0">
         <h2 className="text-lg font-medium lg:text-xl">PayPal orders</h2>
         {list.orders.length === 0 && <p className="text-base text-muted-on-bg">None yet.</p>}
         {list.orders.map((order) => (
@@ -69,8 +69,8 @@ export default function ReceiptsPage() {
               </span>
               <span>{usd(order.totalCents)}</span>
             </span>
-            <span className="text-[13px] text-muted">{order.itemIds.map(itemName).filter(Boolean).join(", ")}</span>
-            <span className="text-[13px] text-muted">
+            <span className="text-[0.8125rem] text-muted">{order.itemIds.map(itemName).filter(Boolean).join(", ")}</span>
+            <span className="text-[0.8125rem] text-muted">
               {day(order.createdAt)} · order {order.id}
             </span>
             {Object.entries(order.refunds).map(([itemId, refund]) => (

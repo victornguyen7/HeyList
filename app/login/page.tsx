@@ -148,7 +148,7 @@ export default function Login() {
       required
     />
   );
-  const linkButton = "self-start text-[15px] text-ai disabled:opacity-40";
+  const linkButton = "self-start text-[0.9375rem] text-ai disabled:opacity-40";
 
   // The way back on phones, which have no top bar (Figma "12 · Log in").
   const backLink = (
@@ -161,8 +161,8 @@ export default function Login() {
     return (
       <>
       {backLink}
-      <main className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:max-w-[440px] lg:p-8`}>
-        <h1 className="text-[28px] tracking-[-0.015em]">Your account</h1>
+      <main className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:max-w-[27.5rem] lg:p-8`}>
+        <h1 className="text-[1.75rem] tracking-[-0.015em]">Your account</h1>
         <p className="text-base">You are logged in as {session.user.email}.</p>
         <form onSubmit={saveName} className="flex gap-2">
           <input
@@ -202,11 +202,11 @@ export default function Login() {
   return (
     <>
     {backLink}
-    <main className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:max-w-[440px] lg:p-8`}>
-      <h1 className="text-[28px] tracking-[-0.015em]">{title}</h1>
+    <main className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:max-w-[27.5rem] lg:p-8`}>
+      <h1 className="text-[1.75rem] tracking-[-0.015em]">{title}</h1>
 
       {(step === "login" || step === "signup") && (
-        <div className="grid grid-cols-2 gap-1 rounded-[30px] bg-bg p-1" role="tablist">
+        <div className="grid grid-cols-2 gap-1 rounded-[1.875rem] bg-bg p-1" role="tablist">
           {(["login", "signup"] as const).map((tab) => (
             <button
               key={tab}
@@ -214,7 +214,7 @@ export default function Login() {
               role="tab"
               aria-selected={step === tab}
               onClick={() => go(tab)}
-              className={`h-10 rounded-[26px] text-[15px] font-medium ${step === tab ? "bg-surface-2 text-text" : "text-muted"}`}
+              className={`h-10 rounded-[1.625rem] text-[0.9375rem] font-medium ${step === tab ? "bg-surface-2 text-text" : "text-muted"}`}
             >
               {tab === "login" ? "Log in" : "Sign up"}
             </button>

@@ -8,27 +8,27 @@ import { useSession } from "./auth";
 // Shared pieces of the soft glass design (Figma "HeyList — Soft glass" and "HeyList — Web (soft glass)").
 // One codebase for both: below the lg breakpoint (1024px) it is the phone layout, above it the website layout.
 
-export const button = "flex h-12 items-center justify-center rounded-[30px] bg-list px-6 text-base font-medium text-on-accent disabled:opacity-40";
-export const buttonAi = "flex h-12 items-center justify-center rounded-[30px] bg-ai px-6 text-base font-medium text-on-accent disabled:opacity-40";
-export const buttonGlass = "flex h-12 items-center justify-center rounded-[30px] border border-line bg-surface-2 px-6 text-base font-medium text-text disabled:opacity-40";
-export const card = "glass rounded-3xl p-[18px]";
-export const row = "flex items-center gap-3.5 rounded-[18px] bg-surface px-4 py-3.5";
-export const chip = "rounded-[20px] border border-line bg-surface-2 px-3.5 py-[9px] text-sm font-medium";
-export const field = "h-12 rounded-[20px] bg-bg px-4 text-base";
+export const button = "flex h-12 items-center justify-center rounded-[1.875rem] bg-list px-6 text-base font-medium text-on-accent disabled:opacity-40";
+export const buttonAi = "flex h-12 items-center justify-center rounded-[1.875rem] bg-ai px-6 text-base font-medium text-on-accent disabled:opacity-40";
+export const buttonGlass = "flex h-12 items-center justify-center rounded-[1.875rem] border border-line bg-surface-2 px-6 text-base font-medium text-text disabled:opacity-40";
+export const card = "glass rounded-3xl p-[1.125rem]";
+export const row = "flex items-center gap-3.5 rounded-[1.125rem] bg-surface px-4 py-3.5";
+export const chip = "rounded-[1.25rem] border border-line bg-surface-2 px-3.5 py-[0.5625rem] text-sm font-medium";
+export const field = "h-12 rounded-[1.25rem] bg-bg px-4 text-base";
 // Figma "Mini button": a small action inside a row or card (Find in stores, Remind, Buy again). Never full width.
-export const mini = "inline-flex h-8 shrink-0 items-center justify-center self-start rounded-full border border-ai/35 bg-surface-2 px-3.5 text-[13px] font-medium whitespace-nowrap text-ai disabled:opacity-40";
+export const mini = "inline-flex h-8 shrink-0 items-center justify-center self-start rounded-full border border-ai/35 bg-surface-2 px-3.5 text-[0.8125rem] font-medium whitespace-nowrap text-ai disabled:opacity-40";
 // Figma "Pay buttons": PayPal as the black pill, Venmo as the white one, side by side.
-export const payPayPal = "flex h-12 items-center justify-center rounded-full bg-list px-4 text-[15px] font-semibold whitespace-nowrap text-on-accent disabled:opacity-40";
-export const payVenmo = "flex h-12 items-center justify-center rounded-full border border-line bg-surface-2 px-4 text-[15px] font-semibold whitespace-nowrap text-ai disabled:opacity-40";
+export const payPayPal = "flex h-12 items-center justify-center rounded-full bg-list px-4 text-[0.9375rem] font-semibold whitespace-nowrap text-on-accent disabled:opacity-40";
+export const payVenmo = "flex h-12 items-center justify-center rounded-full border border-line bg-surface-2 px-4 text-[0.9375rem] font-semibold whitespace-nowrap text-ai disabled:opacity-40";
 // Figma "Action row": one line of a More actions menu.
-export const menuRow = "flex h-[52px] w-full items-center justify-between gap-3 px-[18px] text-left text-base font-medium disabled:opacity-40";
+export const menuRow = "flex h-[3.25rem] w-full items-center justify-between gap-3 px-[1.125rem] text-left text-base font-medium disabled:opacity-40";
 
 // Figma "Pay card": what is being paid for and how much, above the pay buttons.
 export function PayCard({ title, amount, note, children }: { title: string; amount: string; note?: string; children: React.ReactNode }) {
   return (
     <div className={`${card} flex flex-col gap-3.5`}>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 text-[15px] font-medium text-muted">{title}</span>
+        <span className="min-w-0 text-[0.9375rem] font-medium text-muted">{title}</span>
         <span className="text-2xl text-money tabular-nums">{amount}</span>
       </div>
       {children}
@@ -43,8 +43,8 @@ export function Brand() {
   return (
     <span className="flex items-center gap-2">
       {/* eslint-disable-next-line @next/next/no-img-element -- 26px design asset */}
-      <img src="/ui/logo.svg" alt="" width={26} height={26} />
-      <span className="text-[22px] font-semibold tracking-[-0.02em]">HeyList</span>
+      <img src="/ui/logo.svg" alt="" width={26} height={26} className="size-[1.625rem]" />
+      <span className="text-[1.375rem] font-semibold tracking-[-0.02em]">HeyList</span>
     </span>
   );
 }
@@ -91,8 +91,8 @@ export function WebNav() {
         <CurrentNavLinks />
       </Suspense>
       <div className="flex items-center gap-4">
-        <AccountLink className="text-[15px] text-muted hover:text-text" />
-        <Link href="/" className={`${button} h-10 w-[120px] px-0 text-[15px]`}>
+        <AccountLink className="text-[0.9375rem] text-muted hover:text-text" />
+        <Link href="/" className={`${button} h-10 w-[7.5rem] px-0 text-[0.9375rem]`}>
           New list
         </Link>
       </div>
@@ -106,12 +106,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <>
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         {/* eslint-disable @next/next/no-img-element -- decorative design assets */}
-        <img src="/ui/glow-top.svg" alt="" width={576} height={576} className="absolute top-[-248px] left-[-8px] lg:hidden" />
-        <img src="/ui/glow-low.svg" alt="" width={468} height={468} className="absolute top-[416px] left-[-244px] lg:hidden" />
-        <img src="/ui/glow-web.svg" alt="" width={1080} height={840} className="absolute top-[100px] left-[-380px] hidden lg:block" />
+        <img src="/ui/glow-top.svg" alt="" width={576} height={576} className="w-[36rem] absolute top-[-15.5rem] left-[-0.5rem] lg:hidden" />
+        <img src="/ui/glow-low.svg" alt="" width={468} height={468} className="w-[29.25rem] absolute top-[26rem] left-[-15.25rem] lg:hidden" />
+        <img src="/ui/glow-web.svg" alt="" width={1080} height={840} className="w-[67.5rem] absolute top-[6.25rem] left-[-23.75rem] hidden lg:block" />
         {/* eslint-enable @next/next/no-img-element */}
       </div>
-      <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-7 px-4 pt-[50px] pb-[120px] lg:gap-10 lg:px-6 lg:pt-8 lg:pb-12">
+      <div className="mx-auto flex w-full max-w-[75rem] flex-1 flex-col gap-7 px-4 pt-[3.125rem] pb-[7.5rem] lg:gap-10 lg:px-6 lg:pt-8 lg:pb-12">
         <WebNav />
         {children}
       </div>
@@ -119,15 +119,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Progress ring (Figma "Ring"): a light track with the done share in the list colour. className can resize it per
-// breakpoint (it scales from its viewBox).
+// Progress ring (Figma "Ring"): a light track with the done share in the list colour. Sized in rem so it scales with
+// the page; a className takes over the size instead (it scales from its viewBox).
 export function Ring({ done, total, size, className = "" }: { done: number; total: number; size: number; className?: string }) {
   const stroke = size / 8;
   const r = (size - stroke) / 2;
   const circumference = 2 * Math.PI * r;
   const share = total ? done / total : 0;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden className={`shrink-0 -rotate-90 ${className}`}>
+    <svg width={size} height={size} style={className ? undefined : { width: `${size / 16}rem`, height: `${size / 16}rem` }} viewBox={`0 0 ${size} ${size}`} aria-hidden className={`shrink-0 -rotate-90 ${className}`}>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-2)" strokeWidth={stroke} />
       <circle
         cx={size / 2}
@@ -147,8 +147,8 @@ export function Avatar({ name, size = 36, ring = false }: { name: string; size?:
   return (
     <span
       title={name}
-      style={{ width: size, height: size }}
-      className={`flex shrink-0 items-center justify-center rounded-full bg-ai text-[15px] font-medium text-on-accent ${ring ? "-mr-2.5 border-2 border-bg" : ""}`}
+      style={{ width: `${size / 16}rem`, height: `${size / 16}rem` }}
+      className={`flex shrink-0 items-center justify-center rounded-full bg-ai text-[0.9375rem] font-medium text-on-accent ${ring ? "-mr-2.5 border-2 border-bg" : ""}`}
     >
       {name.slice(0, 1).toUpperCase()}
     </span>
@@ -160,7 +160,7 @@ export function Check({ done }: { done: boolean }) {
   return done ? (
     <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-list">
       {/* eslint-disable-next-line @next/next/no-img-element -- 16px design asset */}
-      <img src="/ui/check.svg" alt="" width={16} height={16} />
+      <img src="/ui/check.svg" alt="" width={16} height={16} className="size-4" />
     </span>
   ) : (
     <span className="block size-7 shrink-0 rounded-full border-2 border-muted" />

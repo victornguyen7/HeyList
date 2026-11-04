@@ -183,13 +183,13 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
               <AccountLink className="text-base font-medium text-muted-on-bg" />
             </span>
           </div>
-          <h1 className="text-[34px] tracking-[-0.015em] lg:text-[60px] lg:font-medium lg:tracking-[-0.02em]">What are we planning?</h1>
+          <h1 className="text-[2.125rem] tracking-[-0.015em] lg:text-[3.75rem] lg:font-medium lg:tracking-[-0.02em]">What are we planning?</h1>
 
           <form onSubmit={suggest} className={`${card} flex flex-col gap-4 lg:gap-5 lg:p-7`}>
             {/* The ring goes on the rounded box, so the whole field shows focus. */}
-            <div className="flex items-center gap-3 rounded-[20px] bg-bg py-2.5 pr-2.5 pl-[18px] has-[textarea:focus-visible]:outline-2 has-[textarea:focus-visible]:outline-offset-2 has-[textarea:focus-visible]:outline-text">
+            <div className="flex items-center gap-3 rounded-[1.25rem] bg-bg py-2.5 pr-2.5 pl-[1.125rem] has-[textarea:focus-visible]:outline-2 has-[textarea:focus-visible]:outline-offset-2 has-[textarea:focus-visible]:outline-text">
               <textarea
-                className="min-h-[52px] min-w-0 flex-1 resize-none bg-transparent text-lg font-medium outline-none placeholder:text-muted lg:text-[22px]"
+                className="min-h-[3.25rem] min-w-0 flex-1 resize-none bg-transparent text-lg font-medium outline-none placeholder:text-muted lg:text-[1.375rem]"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Camping at Big Sur with 4 friends, $200 budget"
@@ -204,10 +204,10 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                   onClick={listen}
                   disabled={listening}
                   aria-label={listening ? "Listening…" : "Say it instead"}
-                  className={`flex size-[52px] shrink-0 items-center justify-center rounded-full bg-ai ${listening ? "motion-safe:animate-pulse" : ""}`}
+                  className={`flex size-[3.25rem] shrink-0 items-center justify-center rounded-full bg-ai ${listening ? "motion-safe:animate-pulse" : ""}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- 24px design asset */}
-                  <img src="/ui/mic.svg" alt="" width={24} height={24} />
+                  <img src="/ui/mic.svg" alt="" width={24} height={24} className="size-6" />
                 </button>
               )}
             </div>
@@ -217,13 +217,13 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
             </span>
             {budgetCents !== undefined && <span className="text-sm text-muted">Budget: {usd(budgetCents)}</span>}
             <div className="flex flex-col gap-2.5 lg:flex-row">
-              <button type="submit" disabled={busy || !description.trim()} className={`${button} w-full lg:w-[168px]`}>
+              <button type="submit" disabled={busy || !description.trim()} className={`${button} w-full lg:w-[10.5rem]`}>
                 {busy && !reading ? "Making your list…" : "Make my list"}
               </button>
               {/* capture="environment" opens the back camera on phones; on a computer it is a file picker. */}
               <label className={`${buttonGlass} gap-2 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-text ${busy ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- 24px design asset */}
-                <img src="/ui/camera.svg" alt="" width={24} height={24} />
+                <img src="/ui/camera.svg" alt="" width={24} height={24} className="size-6" />
                 {reading ? "Reading your list…" : "Take a photo of a paper list"}
                 <input type="file" accept="image/jpeg,image/png" capture="environment" className="sr-only" onChange={readPhoto} disabled={busy} />
               </label>
@@ -231,7 +231,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
           </form>
           {message}
         </div>
-        {side && <aside className="flex flex-col gap-5 lg:w-[440px] lg:shrink-0 lg:pt-10">{side}</aside>}
+        {side && <aside className="flex flex-col gap-5 lg:w-[27.5rem] lg:shrink-0 lg:pt-10">{side}</aside>}
       </div>
     );
   }
@@ -242,14 +242,14 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
 
   return (
     // The bottom padding (with the Shell's) clears the pinned button below, so the last field can always be reached.
-    <div className="flex flex-col gap-5 pb-12 lg:mx-auto lg:w-full lg:max-w-[760px] lg:pb-0">
+    <div className="flex flex-col gap-5 pb-12 lg:mx-auto lg:w-full lg:max-w-[47.5rem] lg:pb-0">
       <button type="button" onClick={() => setSuggestion(null)} className="self-start text-base font-medium text-muted-on-bg">
         ← Back
       </button>
-      <span className={`${chip} flex items-center gap-1.5 self-start px-3 py-[7px] text-[13px] text-ai`}>
+      <span className={`${chip} flex items-center gap-1.5 self-start px-3 py-[0.4375rem] text-[0.8125rem] text-ai`}>
         {fromPhoto ? "AI read" : "AI made"} {suggestion.items.length} {suggestion.items.length === 1 ? "item" : "items"} in {seconds} {seconds === 1 ? "second" : "seconds"}
       </span>
-      <h1 className="text-[32px] tracking-[-0.015em] lg:text-[48px] lg:font-medium">{suggestion.title}</h1>
+      <h1 className="text-[2rem] tracking-[-0.015em] lg:text-[3rem] lg:font-medium">{suggestion.title}</h1>
 
       {/* The AI is asked to stay within the budget but doesn't always; the check is done here, in code (decision 10). */}
       <div className={`${card} flex flex-col gap-2.5`}>
@@ -257,27 +257,27 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
             under them instead of being pushed off the card (Figma "Overflow fixes", A). */}
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <span className="flex flex-wrap items-baseline gap-x-1.5">
-            <span className="text-[30px] tracking-[-0.015em] whitespace-nowrap text-money tabular-nums">{dollars(total)}</span>
-            <span className="text-[15px] font-medium whitespace-nowrap text-muted">{budgetCents !== undefined ? `of ${dollars(budgetCents)} budget` : "estimated"}</span>
+            <span className="text-[1.875rem] tracking-[-0.015em] whitespace-nowrap text-money tabular-nums">{dollars(total)}</span>
+            <span className="text-[0.9375rem] font-medium whitespace-nowrap text-muted">{budgetCents !== undefined ? `of ${dollars(budgetCents)} budget` : "estimated"}</span>
           </span>
           {budgetCents !== undefined && (
-            <span className={`rounded-full px-2.5 py-1 text-[13px] font-medium whitespace-nowrap tabular-nums ${total <= budgetCents ? "bg-list/10 text-list" : "bg-money/12 text-money"}`}>
+            <span className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-medium whitespace-nowrap tabular-nums ${total <= budgetCents ? "bg-list/10 text-list" : "bg-money/12 text-money"}`}>
               {total <= budgetCents ? `${dollars(budgetCents - total)} left` : `${dollars(total - budgetCents)} over budget`}
             </span>
           )}
         </div>
         {budgetCents !== undefined && (
-          <div className="h-2.5 overflow-hidden rounded-[5px] bg-surface-2">
-            <div className="h-full rounded-[5px] bg-money" style={{ width: `${Math.min(100, (total / budgetCents) * 100)}%` }} />
+          <div className="h-2.5 overflow-hidden rounded-[0.3125rem] bg-surface-2">
+            <div className="h-full rounded-[0.3125rem] bg-money" style={{ width: `${Math.min(100, (total / budgetCents) * 100)}%` }} />
           </div>
         )}
       </div>
       {suggestion.leftOut && suggestion.leftOut.length > 0 && (
-        <details className="text-[15px] text-muted-on-bg">
+        <details className="text-[0.9375rem] text-muted-on-bg">
           <summary className="cursor-pointer">
             Left out {suggestion.leftOut.length} printed {suggestion.leftOut.length === 1 ? "line" : "lines"}, which looked like the other side of the paper showing through
           </summary>
-          <p className="mt-1.5 font-mono text-[13px] break-words">{suggestion.leftOut.join(" · ")}</p>
+          <p className="mt-1.5 font-mono text-[0.8125rem] break-words">{suggestion.leftOut.join(" · ")}</p>
           <p className="mt-1.5">If one belongs on your list, add it below.</p>
         </details>
       )}
@@ -315,21 +315,21 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                       el.style.height = `${el.scrollHeight}px`;
                     }
                   }}
-                  className={`w-full resize-none overflow-hidden rounded-md bg-transparent text-[17px] leading-snug font-medium [field-sizing:content] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text ${off ? "line-through" : ""}`}
+                  className={`w-full resize-none overflow-hidden rounded-md bg-transparent text-[1.0625rem] leading-snug font-medium [field-sizing:content] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text ${off ? "line-through" : ""}`}
                   aria-label="Item name"
                   value={item.name}
                   maxLength={120}
                   onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
                   onChange={(e) => change(index, { name: e.target.value.replace(/\s*\n\s*/g, " ") })}
                 />
-                {item.note && <span className="text-[13px] text-money">{item.note}</span>}
+                {item.note && <span className="text-[0.8125rem] text-money">{item.note}</span>}
               </span>
               <span className={`flex shrink-0 flex-col items-end text-base font-medium whitespace-nowrap tabular-nums ${item.owned ? "text-muted line-through" : ""}`}>
                 {item.estPriceCents ? `${item.priceSource === "estimate" ? "~" : ""}${usd(item.estPriceCents * item.quantity)}` : "—"}
-                {item.estPriceCents && item.priceSource ? <span className="text-[13px] font-normal text-muted">{priceLabel(item)}</span> : null}
+                {item.estPriceCents && item.priceSource ? <span className="text-[0.8125rem] font-normal text-muted">{priceLabel(item)}</span> : null}
               </span>
               </div>
-                <span className="flex items-center gap-2 pl-[42px] text-[13px] text-muted">
+                <span className="flex items-center gap-2 pl-[2.625rem] text-[0.8125rem] text-muted">
                   <button type="button" aria-label={`One fewer ${item.name}`} disabled={item.quantity <= 1} onClick={() => change(index, { quantity: item.quantity - 1 })} className="size-8 rounded-full bg-surface-2 text-sm disabled:opacity-30">
                     −
                   </button>
@@ -341,7 +341,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
                   </button>
                 </span>
                 {/* Have it or buy it: what's already owned goes on the list checked off, at no cost. */}
-                <span role="radiogroup" aria-label={`Do you have ${item.name}?`} className="grid grid-cols-2 rounded-full bg-surface-2 p-0.5 text-[13px] font-medium">
+                <span role="radiogroup" aria-label={`Do you have ${item.name}?`} className="grid grid-cols-2 rounded-full bg-surface-2 p-0.5 text-[0.8125rem] font-medium">
                   {([
                     [false, "Need to buy"],
                     [true, "Already have"],
@@ -408,7 +408,7 @@ export function Starter({ onCreated, side }: { onCreated: (list: List) => void; 
 
       {/* Pinned to the bottom of the phone screen over a fade, as in the design; in the page flow on the website. */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 bg-gradient-to-b from-transparent via-bg/90 via-45% to-bg px-8 pt-16 pb-10 lg:static lg:bg-none lg:p-0">
-        <button type="button" onClick={create} disabled={busy || kept.length === 0} className={`${button} pointer-events-auto mx-auto w-full max-w-[760px] lg:w-auto`}>
+        <button type="button" onClick={create} disabled={busy || kept.length === 0} className={`${button} pointer-events-auto mx-auto w-full max-w-[47.5rem] lg:w-auto`}>
           {busy ? "Creating…" : `Looks good, create list (${kept.length})`}
         </button>
       </div>

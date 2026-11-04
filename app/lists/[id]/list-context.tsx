@@ -187,7 +187,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
 
   const tabs = TABS.map(([path, label, color]) => ({ href: base + path, label, color, active: pathname === base + path }));
   const shareButton = (
-    <button type="button" onClick={share} className="glass shrink-0 rounded-[18px] bg-surface-2 px-3.5 py-2 text-sm font-medium whitespace-nowrap lg:px-5 lg:py-[13px]">
+    <button type="button" onClick={share} className="glass shrink-0 rounded-[1.125rem] bg-surface-2 px-3.5 py-2 text-sm font-medium whitespace-nowrap lg:px-5 lg:py-[0.8125rem]">
       Share link
     </button>
   );
@@ -196,7 +196,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
     const missing = failed.code === "LIST_NOT_FOUND";
     return (
       <div className={`${card} mx-auto flex w-full max-w-md flex-col gap-4 lg:mt-16 lg:p-8`}>
-        <h1 className="text-[28px] leading-tight tracking-[-0.015em]">{missing ? "List not found" : "This list couldn't load"}</h1>
+        <h1 className="text-[1.75rem] leading-tight tracking-[-0.015em]">{missing ? "List not found" : "This list couldn't load"}</h1>
         <p className="text-base text-muted">{failed.message}</p>
         <div className="flex flex-wrap gap-2">
           {!missing && (
@@ -224,11 +224,11 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       </div>
 
       <header className="flex flex-col gap-2 lg:gap-3">
-        <Link href="/" className="hidden text-[15px] text-muted-on-bg lg:block">
+        <Link href="/" className="hidden text-[0.9375rem] text-muted-on-bg lg:block">
           ← My lists
         </Link>
         <div className="flex items-end justify-between gap-6">
-          <h1 className="min-w-0 text-[32px] tracking-[-0.015em] break-words lg:text-[48px] lg:leading-tight lg:font-medium">{list?.title ?? "Loading…"}</h1>
+          <h1 className="min-w-0 text-[2rem] tracking-[-0.015em] break-words lg:text-[3rem] lg:leading-tight lg:font-medium">{list?.title ?? "Loading…"}</h1>
           <span className="hidden lg:block">{shareButton}</span>
         </div>
         <div className="flex items-center justify-between gap-6">
@@ -248,13 +248,13 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
             <span />
           )}
           {/* Website tabs (Figma "Web tabs"): the active one is a raised frosted pill. */}
-          <nav className="glass hidden shrink-0 gap-1 rounded-full p-[5px] lg:flex" aria-label="List pages">
+          <nav className="glass hidden shrink-0 gap-1 rounded-full p-[0.3125rem] lg:flex" aria-label="List pages">
             {tabs.map((tab) => (
               <Link
                 key={tab.href}
                 href={tab.href}
                 aria-current={tab.active ? "page" : undefined}
-                className={`rounded-full px-5 py-2.5 text-[15px] whitespace-nowrap ${tab.active ? "bg-surface-2 font-medium shadow-[0_4px_14px_0_rgb(30_40_60/0.1)]" : "text-muted hover:text-text"}`}
+                className={`rounded-full px-5 py-2.5 text-[0.9375rem] whitespace-nowrap ${tab.active ? "bg-surface-2 font-medium shadow-[0_4px_14px_0_rgb(30_40_60/0.1)]" : "text-muted hover:text-text"}`}
               >
                 {tab.label}
               </Link>
@@ -266,7 +266,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       {/* A toast above the tab bar, so it's seen from anywhere on a long page. Always mounted, so screen readers announce
           each message; it stays until dismissed, because it can be an error or a reminder to copy. */}
       <div
-        className={`fixed inset-x-4 bottom-[100px] z-30 lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-[420px] ${message ? `${card} flex items-start gap-3 bg-bg` : "pointer-events-none"}`}
+        className={`fixed inset-x-4 bottom-[6.25rem] z-30 lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-[26.25rem] ${message ? `${card} flex items-start gap-3 bg-bg` : "pointer-events-none"}`}
       >
         <p role="status" className="min-w-0 flex-1 self-center text-base break-words whitespace-pre-line">
           {message}
@@ -290,7 +290,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
       {list && (
         <>
           {!me && !joinHere && (
-            <Link href={base} className="text-[15px] text-ai underline underline-offset-4">
+            <Link href={base} className="text-[0.9375rem] text-ai underline underline-offset-4">
               Join this list to take part
             </Link>
           )}
@@ -308,7 +308,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
               joinAs,
               joinCard: me ? null : (
                 <form onSubmit={join} className={`${card} flex flex-col gap-3 border-ai/35`}>
-                  <span className="text-[17px] font-medium">Join this list</span>
+                  <span className="text-[1.0625rem] font-medium">Join this list</span>
                   {savedName ? (
                     <button type="submit" className={button}>
                       Join as {savedName}
@@ -317,7 +317,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
                     <>
                       <div className="flex gap-2">
                         <input
-                          className="h-12 min-w-0 flex-1 rounded-[20px] bg-bg px-4 text-base"
+                          className="h-12 min-w-0 flex-1 rounded-[1.25rem] bg-bg px-4 text-base"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Your name"
@@ -330,7 +330,7 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
                         </button>
                       </div>
                       {!session && (
-                        <Link href={`/login?next=${encodeURIComponent(base)}`} className="text-[13px] text-ai">
+                        <Link href={`/login?next=${encodeURIComponent(base)}`} className="text-[0.8125rem] text-ai">
                           Or log in
                         </Link>
                       )}
@@ -347,11 +347,11 @@ export function ListProvider({ children }: { children: React.ReactNode }) {
 
       {/* Phone tab bar (Figma "Tab bar"): floating at the bottom, a dot over the active tab. */}
       <nav
-        className="glass fixed inset-x-4 bottom-4 z-10 flex h-[68px] items-center justify-between rounded-[34px] bg-surface-2 px-[18px] shadow-[0_10px_15px_rgb(30_40_60/0.1)] lg:hidden"
+        className="glass fixed inset-x-4 bottom-4 z-10 flex h-[4.25rem] items-center justify-between rounded-[2.125rem] bg-surface-2 px-[1.125rem] shadow-[0_10px_15px_rgb(30_40_60/0.1)] lg:hidden"
         aria-label="List pages"
       >
         {tabs.map((tab) => (
-          <Link key={tab.href} href={tab.href} aria-current={tab.active ? "page" : undefined} className={`flex flex-col items-center gap-[5px] text-[13px] font-medium ${tab.active ? tab.color : "text-muted"}`}>
+          <Link key={tab.href} href={tab.href} aria-current={tab.active ? "page" : undefined} className={`flex flex-col items-center gap-[0.3125rem] text-[0.8125rem] font-medium ${tab.active ? tab.color : "text-muted"}`}>
             <span className={`size-1.5 rounded-full ${tab.active ? "bg-current" : ""}`} />
             {tab.label === "Settle up" ? "Settle" : tab.label}
           </Link>

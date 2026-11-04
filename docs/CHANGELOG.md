@@ -13,6 +13,7 @@
 
 ### Changed
 
+- **Everything 20% smaller**, phone and website: the root font size is 80% and every pixel size in the classes, avatars, rings and icons is now in rem, so the whole design scales from that one value (`app/globals.css`). Text fields stay at 16px on touch screens so iPhone Safari doesn't zoom in when one is tapped.
 - **Unsure receipt prices confirmed by the subtotal** (decision 72): a price Textract read under 90% confidence is filled in when, with it, every line adds up exactly to a subtotal Textract read surely. The line stays flagged "Hard to read". On the 189 English receipts, prices left blank went from 19 to 18 and perfect receipts from 75.7% to 76.2%; ReceiptQA is unchanged ([RECEIPT_EVAL.md](RECEIPT_EVAL.md)).
 - **Home is simpler** (decision 76): the idea chips (Trip, Party, Groceries, Move-in) and **New here? See how it works with a sample trip** are gone. `POST /api/lists/sample` is still in the backend, but nothing calls it.
 - **Progress has no separate scan action**: **Scan a receipt** is out of the main button and the More sheet, since **Take a photo** handles receipts. The Receipts tab still scans.

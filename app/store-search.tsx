@@ -42,7 +42,7 @@ export function StoreSearch({ item, onChosen }: { item: Item; onChosen: (item: I
   return (
     <div className="flex flex-col gap-2">
       {item.product && (
-        <span className="text-[13px] text-muted">
+        <span className="text-[0.8125rem] text-muted">
           {item.product.title} · {usd(item.product.priceCents)} at {item.product.store} ·{" "}
           <a href={item.product.url} target="_blank" rel="noopener noreferrer" className="text-ai">
             View at {item.product.store} ↗
@@ -54,11 +54,11 @@ export function StoreSearch({ item, onChosen }: { item: Item; onChosen: (item: I
           {busy ? "Searching…" : item.product ? "Choose another" : "Find in stores"}
         </button>
       )}
-      {status && <span role="status" className="text-[13px] text-money">{status}</span>}
+      {status && <span role="status" className="text-[0.8125rem] text-money">{status}</span>}
       {products && products.length > 0 && (
         <ul className="flex flex-col gap-2">
           {products.map((product) => (
-            <li key={product.productId} className="flex items-center gap-3 rounded-[18px] bg-surface-2 p-2.5">
+            <li key={product.productId} className="flex items-center gap-3 rounded-[1.125rem] bg-surface-2 p-2.5">
               {product.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- store images from many hosts
                 <img src={product.imageUrl} alt="" loading="lazy" className="size-14 shrink-0 rounded-xl bg-bg object-contain" />
@@ -79,7 +79,7 @@ export function StoreSearch({ item, onChosen }: { item: Item; onChosen: (item: I
         </ul>
       )}
       {products && (
-        <button type="button" onClick={() => setProducts(null)} className="self-start text-[13px] text-muted">
+        <button type="button" onClick={() => setProducts(null)} className="self-start text-[0.8125rem] text-muted">
           Cancel
         </button>
       )}

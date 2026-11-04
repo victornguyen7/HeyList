@@ -10,7 +10,7 @@ export default function SettlePage() {
 
   if (!split) return <p className="text-base text-muted-on-bg">Working it out…</p>;
   return (
-    <div className="pt-[30px] lg:mx-auto lg:w-full lg:max-w-[560px]">
+    <div className="pt-[1.875rem] lg:mx-auto lg:w-full lg:max-w-[35rem]">
       <SettleUp list={list} split={split} me={me} />
     </div>
   );

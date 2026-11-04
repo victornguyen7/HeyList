@@ -61,6 +61,17 @@
   body {
     overflow-wrap: break-word;
   }
+  /* Everything is sized in rem, so this one value scales the whole design: 80% of the browser default (16px to
+     12.8px), the "20% smaller" look. Using a percentage keeps the reader's own browser text size setting. */
+  html {
+    font-size: 80%;
+  }
+  /* iPhone Safari zooms the page in when a text field under 16px is focused, so on touch screens fields keep 16px. */
+  @media (pointer: coarse) {
+    :where(input:not([type="checkbox"], [type="radio"], [type="file"]), textarea, select) {
+      font-size: max(1rem, 16px);
+    }
+  }
   /* The hand cursor. Browsers give it to links but, since Tailwind v4, not to buttons; anything that can't be
      pressed right now says so instead. */
   :where(button:not(:disabled), a[href], summary, select:not(:disabled), [role="button"], [role="radio"], label:has(> input:not(:disabled))) {

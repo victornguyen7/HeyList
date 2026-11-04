@@ -30,18 +30,18 @@ export default function MoneyPage() {
   const extrasCents = extras.reduce((sum, extra) => sum + (extra.priceCents ?? 0), 0);
 
   return (
-    <div className="flex flex-col gap-[18px] lg:flex-row lg:items-start lg:gap-10">
-      <div className="flex min-w-0 flex-1 flex-col gap-[18px] lg:gap-6">
-        <div className="flex flex-col gap-[18px] lg:flex-row lg:gap-5">
+    <div className="flex flex-col gap-[1.125rem] lg:flex-row lg:items-start lg:gap-10">
+      <div className="flex min-w-0 flex-1 flex-col gap-[1.125rem] lg:gap-6">
+        <div className="flex flex-col gap-[1.125rem] lg:flex-row lg:gap-5">
           <div className="flex flex-1 flex-col gap-1 lg:glass lg:rounded-3xl lg:p-6">
-            <span className="text-[15px] font-medium text-muted-on-bg lg:text-money">Spent together</span>
-            <span className="text-[56px] leading-tight font-light tracking-[-0.03em] tabular-nums">{usd(spent)}</span>
+            <span className="text-[0.9375rem] font-medium text-muted-on-bg lg:text-money">Spent together</span>
+            <span className="text-[3.5rem] leading-tight font-light tracking-[-0.03em] tabular-nums">{usd(spent)}</span>
             {split && <EqualShare split={split} />}
           </div>
           <div className={`${card} flex flex-1 flex-col gap-2.5 lg:p-6`}>
-            <span className="text-[15px] text-muted">Budget</span>
-            <span className="text-[40px] font-light tabular-nums">{list.budgetCents !== null ? usd(list.budgetCents) : "—"}</span>
-            <span className={`text-[15px] ${projectedOver > 0 ? "text-money" : "text-muted"}`}>
+            <span className="text-[0.9375rem] text-muted">Budget</span>
+            <span className="text-[2.5rem] font-light tabular-nums">{list.budgetCents !== null ? usd(list.budgetCents) : "—"}</span>
+            <span className={`text-[0.9375rem] ${projectedOver > 0 ? "text-money" : "text-muted"}`}>
               {list.budgetCents !== null
                 ? `${spent <= list.budgetCents ? `${usd(list.budgetCents - spent)} left` : `${usd(spent - list.budgetCents)} over`} · about ${usd(left)} still to buy${
                     projectedOver > 0 && spent <= list.budgetCents ? `, which would put you about ${usd(projectedOver)} over` : ""
@@ -49,7 +49,7 @@ export default function MoneyPage() {
                 : `No budget set · about ${usd(left)} still to buy`}
             </span>
             {sources.length > 0 && (
-              <ul aria-label="Still to buy, by where the price comes from" className="flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted">
+              <ul aria-label="Still to buy, by where the price comes from" className="flex flex-wrap gap-x-3 gap-y-1 text-[0.8125rem] text-muted">
                 {sources.map(([label, { cents, approx }]) => (
                   <li key={label} className="whitespace-nowrap tabular-nums">
                     {label} <span className="font-medium text-text">{approx ? "~" : ""}{usd(cents)}</span>
@@ -66,7 +66,7 @@ export default function MoneyPage() {
           <div className={`${card} flex items-center justify-between gap-4`}>
             <span className="flex min-w-0 flex-col gap-0.5">
               <span className="text-base font-medium">Receipt extras</span>
-              <span className="text-[13px] text-muted">{extras.map((extra) => extra.name).join(", ")} — not on the list</span>
+              <span className="text-[0.8125rem] text-muted">{extras.map((extra) => extra.name).join(", ")} — not on the list</span>
             </span>
             <span className="text-lg font-medium text-ai tabular-nums">{usd(extrasCents)}</span>
           </div>
@@ -74,7 +74,7 @@ export default function MoneyPage() {
       </div>
 
       {split && (
-        <div className="hidden lg:block lg:w-[460px] lg:shrink-0 lg:pt-[30px]">
+        <div className="hidden lg:block lg:w-[28.75rem] lg:shrink-0 lg:pt-[1.875rem]">
           <SettleUp list={list} split={split} me={me} />
         </div>
       )}

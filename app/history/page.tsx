@@ -18,7 +18,7 @@ function totalsBy(lists: List[], key: (list: List) => string) {
 function Totals({ heading, rows }: { heading: string; rows: [string, number][] }) {
   return (
     <section className={`${card} flex flex-col gap-2`}>
-      <h2 className="text-[15px] text-muted">{heading}</h2>
+      <h2 className="text-[0.9375rem] text-muted">{heading}</h2>
       <ul className="flex flex-col gap-1 text-base">
         {rows.map(([label, cents]) => (
           <li key={label} className="flex justify-between gap-2 tabular-nums">
@@ -72,7 +72,7 @@ export default function HistoryPage() {
         </Link>
         <AccountLink className="text-base font-medium text-muted-on-bg" />
       </div>
-      <h1 className="text-[32px] tracking-[-0.015em] lg:text-[48px] lg:font-medium">History</h1>
+      <h1 className="text-[2rem] tracking-[-0.015em] lg:text-[3rem] lg:font-medium">History</h1>
 
       {status && (
         <p role="status" className={`${card} text-base`}>
@@ -103,7 +103,7 @@ export default function HistoryPage() {
                   <button type="button" onClick={() => again(list)} className={mini}>
                     Buy again
                   </button>
-                  <button type="button" onClick={() => remove(list)} aria-label={`Remove ${list.title} from History`} className="text-[13px] font-medium text-muted">
+                  <button type="button" onClick={() => remove(list)} aria-label={`Remove ${list.title} from History`} className="text-[0.8125rem] font-medium text-muted">
                     Remove
                   </button>
                 </ListCard>

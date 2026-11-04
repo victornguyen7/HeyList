@@ -257,11 +257,11 @@ export default function ProgressPage() {
         </label>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           {isDone || held(item) || mode ? (
-            <span className={`text-[17px] font-medium lg:font-semibold ${isDone ? "text-muted line-through" : ""}`}>{item.name}</span>
+            <span className={`text-[1.0625rem] font-medium lg:font-semibold ${isDone ? "text-muted line-through" : ""}`}>{item.name}</span>
           ) : (
             // Tap the name to change how many, or who buys it.
             <details className="group">
-              <summary className="flex cursor-pointer list-none items-baseline gap-1.5 text-[17px] font-medium lg:font-semibold [&::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-baseline gap-1.5 text-[1.0625rem] font-medium lg:font-semibold [&::-webkit-details-marker]:hidden">
                 <span className="min-w-0">{item.name}</span>
                 <span aria-hidden className="shrink-0 font-normal text-muted group-open:rotate-90">
                   ›
@@ -299,10 +299,10 @@ export default function ProgressPage() {
               </div>
             </details>
           )}
-          <span className={`text-[13px] ${held(item) ? "text-money" : "text-muted"}`}>
+          <span className={`text-[0.8125rem] ${held(item) ? "text-money" : "text-muted"}`}>
             {isDone ? `${proof}${memberName(item.boughtBy) ? ` · ${memberName(item.boughtBy)}` : ""}` : (proof ?? `${who} · ×${item.quantity}`)}
           </span>
-          {item.note && !isDone && <span className="text-[13px] text-money">{item.note}</span>}
+          {item.note && !isDone && <span className="text-[0.8125rem] text-money">{item.note}</span>}
           {ticking === item.id && (
             <form onSubmit={(e) => confirmTick(e, item)} className="mt-2 flex flex-wrap items-center gap-2 text-sm">
               <label className="flex items-center gap-1.5">
@@ -328,7 +328,7 @@ export default function ProgressPage() {
         </div>
         <span className={`mt-0.5 flex shrink-0 flex-col items-end text-base font-medium tabular-nums lg:font-semibold ${isDone ? "text-list" : ""}`}>
           {isDone ? (item.priceCents !== null ? usd(item.priceCents) : "—") : item.estPriceCents !== null ? `${priceShown(item).approx ? "~" : ""}${usd(cost(item))}` : "—"}
-          {!isDone && item.estPriceCents !== null && priceShown(item).label && <span className="text-[12px] font-normal text-muted">{priceShown(item).label}</span>}
+          {!isDone && item.estPriceCents !== null && priceShown(item).label && <span className="text-[0.75rem] font-normal text-muted">{priceShown(item).label}</span>}
         </span>
       </li>
     );
@@ -387,7 +387,7 @@ export default function ProgressPage() {
         setSheet(false);
         finish(!list.finishedAt);
       }}
-      className="py-2 text-[15px] font-medium text-muted"
+      className="py-2 text-[0.9375rem] font-medium text-muted"
     >
       {list.finishedAt ? "Reopen this list" : "Mark this list finished"}
     </button>
@@ -396,17 +396,17 @@ export default function ProgressPage() {
 
   return (
     <div className="flex flex-col gap-3.5 lg:flex-row-reverse lg:items-start lg:gap-10">
-      <aside className="flex flex-col gap-3.5 lg:w-[400px] lg:shrink-0 lg:gap-5">
+      <aside className="flex flex-col gap-3.5 lg:w-[25rem] lg:shrink-0 lg:gap-5">
         <div className="flex flex-col items-center gap-5 pt-1.5 lg:glass lg:rounded-3xl lg:p-6">
           {/* Smaller on the phone, so the pay card and the first items fit above the tab bar. */}
           <div className="relative size-32 lg:size-44">
             <Ring done={done.length} total={items.length} size={176} className="size-full" />
             <span className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="flex items-baseline gap-0.5">
-                <span className="text-[36px] font-light tracking-[-0.03em] tabular-nums lg:text-[49px]">{done.length}</span>
-                <span className="text-base font-medium text-muted tabular-nums lg:text-[21px]">/{items.length}</span>
+                <span className="text-[2.25rem] font-light tracking-[-0.03em] tabular-nums lg:text-[3.0625rem]">{done.length}</span>
+                <span className="text-base font-medium text-muted tabular-nums lg:text-[1.3125rem]">/{items.length}</span>
               </span>
-              <span className="text-[13px] font-medium text-list">done</span>
+              <span className="text-[0.8125rem] font-medium text-list">done</span>
             </span>
           </div>
           <div className="grid w-full grid-cols-2 gap-3">
@@ -444,7 +444,7 @@ export default function ProgressPage() {
                 </PayPalButtons>
               )}
             </PayCard>
-            <button type="button" onClick={stopChoosing} disabled={busy} className="py-2 text-[15px] font-medium text-muted-on-bg">
+            <button type="button" onClick={stopChoosing} disabled={busy} className="py-2 text-[0.9375rem] font-medium text-muted-on-bg">
               Cancel
             </button>
           </div>
@@ -473,11 +473,11 @@ export default function ProgressPage() {
 
             {me && (
               <>
-                <button type="button" onClick={() => setSheet(true)} className="py-1 text-[15px] font-medium text-muted-on-bg lg:hidden">
+                <button type="button" onClick={() => setSheet(true)} className="py-1 text-[0.9375rem] font-medium text-muted-on-bg lg:hidden">
                   More actions ›
                 </button>
                 <nav className="glass hidden flex-col rounded-3xl py-2 lg:flex" aria-label="More actions">
-                  <span className="px-[18px] pt-2 pb-1 text-[13px] font-medium text-muted">More actions</span>
+                  <span className="px-[1.125rem] pt-2 pb-1 text-[0.8125rem] font-medium text-muted">More actions</span>
                   {actionRows}
                   <span className="flex justify-center border-t border-muted/15 pt-1">{finishButton}</span>
                 </nav>
@@ -490,17 +490,17 @@ export default function ProgressPage() {
               aria-label="More actions"
               onClose={() => setSheet(false)}
               onClick={(e) => e.target === e.currentTarget && setSheet(false)}
-              className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[85dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[28px] bg-transparent p-0 backdrop:bg-text/30 lg:hidden"
+              className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[85dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[1.75rem] bg-transparent p-0 backdrop:bg-text/30 lg:hidden"
             >
-              <div className="flex flex-col gap-1 rounded-t-[28px] bg-surface-2 px-4 pt-2.5 pb-7 shadow-[0_-10px_30px_rgb(30_40_60/0.12)] backdrop-blur-xl">
-                <span className="mx-auto h-[5px] w-10 rounded-full bg-muted/40" />
-                <span className="flex items-center justify-between pt-2 pb-1.5 pl-[18px]">
+              <div className="flex flex-col gap-1 rounded-t-[1.75rem] bg-surface-2 px-4 pt-2.5 pb-7 shadow-[0_-10px_30px_rgb(30_40_60/0.12)] backdrop-blur-xl">
+                <span className="mx-auto h-[0.3125rem] w-10 rounded-full bg-muted/40" />
+                <span className="flex items-center justify-between pt-2 pb-1.5 pl-[1.125rem]">
                   <span className="text-lg font-medium">More actions</span>
-                  <button type="button" onClick={() => setSheet(false)} className="h-11 px-3 text-[15px] font-medium text-muted">
+                  <button type="button" onClick={() => setSheet(false)} className="h-11 px-3 text-[0.9375rem] font-medium text-muted">
                     Close
                   </button>
                 </span>
-                <div className="rounded-[20px] bg-bg/70">{actionRows}</div>
+                <div className="rounded-[1.25rem] bg-bg/70">{actionRows}</div>
                 <span className="flex justify-center pt-2">{finishButton}</span>
               </div>
             </dialog>
@@ -511,7 +511,7 @@ export default function ProgressPage() {
       <div className="flex min-w-0 flex-1 flex-col gap-3.5 lg:gap-6">
         <div className="flex items-baseline justify-between">
           <h2 className="text-lg font-medium lg:text-xl">Still to get</h2>
-          <span className="text-[15px] text-muted-on-bg tabular-nums">
+          <span className="text-[0.9375rem] text-muted-on-bg tabular-nums">
             {open.length} {open.length === 1 ? "item" : "items"} · ~{usd(open.reduce((sum, item) => sum + cost(item), 0))}
           </span>
         </div>

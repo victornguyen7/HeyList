@@ -80,7 +80,7 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
       aria-label={label}
       inputMode="decimal"
       placeholder="0.00"
-      className={`h-11 w-28 rounded-[20px] bg-surface-2 px-3 text-right tabular-nums ${Number.isNaN(typedCents(value)) ? "outline outline-money" : ""}`}
+      className={`h-11 w-28 rounded-[1.25rem] bg-surface-2 px-3 text-right tabular-nums ${Number.isNaN(typedCents(value)) ? "outline outline-money" : ""}`}
       value={value}
       onChange={(e) => set(e.target.value)}
     />
@@ -134,12 +134,12 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
                   )}
                 </span>
                 {line.priceCents === null && (
-                  <span className="text-[13px] text-money">The price couldn&apos;t be read. Type it from the receipt, or leave it blank if you can&apos;t tell.</span>
+                  <span className="text-[0.8125rem] text-money">The price couldn&apos;t be read. Type it from the receipt, or leave it blank if you can&apos;t tell.</span>
                 )}
-                {line.priceCents !== null && line.lowConfidence && <span className="text-[13px] text-money">Hard to read: check this line</span>}
+                {line.priceCents !== null && line.lowConfidence && <span className="text-[0.8125rem] text-money">Hard to read: check this line</span>}
                 <select
                   aria-label={`List item for ${line.text}`}
-                  className="h-11 rounded-[20px] bg-surface-2 px-3"
+                  className="h-11 rounded-[1.25rem] bg-surface-2 px-3"
                   value={choices[index] ?? ""}
                   onChange={(e) => setChoices(choices.map((c, i) => (i === index ? e.target.value || null : c)))}
                 >
@@ -171,7 +171,7 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
                       )}
                     </span>
                     {fee.amountCents === null && (
-                      <span className="text-[13px] text-money">
+                      <span className="text-[0.8125rem] text-money">
                         The amount couldn&apos;t be read. Type it{fee.kind === "discount" && " (without a minus)"}, or leave it blank if you can&apos;t tell.
                       </span>
                     )}
@@ -200,7 +200,7 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
           </button>
           {onClose && (
             // The scan is kept unconfirmed, so it can still be finished from the Receipts tab.
-            <button type="button" onClick={onClose} disabled={busy} className="self-center text-[15px] font-medium text-muted">
+            <button type="button" onClick={onClose} disabled={busy} className="self-center text-[0.9375rem] font-medium text-muted">
               Not now, finish it later in Receipts
             </button>
           )}

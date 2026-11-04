@@ -104,7 +104,7 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
             const product = line.options.find((p) => p.productId === picked[line.itemId]) ?? line.product;
             const inCart = Boolean(picked[line.itemId]);
             return (
-              <li key={line.itemId} className={`flex items-start gap-3 rounded-[18px] bg-surface-2 p-2.5 ${inCart ? "" : "opacity-50"}`}>
+              <li key={line.itemId} className={`flex items-start gap-3 rounded-[1.125rem] bg-surface-2 p-2.5 ${inCart ? "" : "opacity-50"}`}>
                 {product.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- store images from many hosts
                   <img src={product.imageUrl} alt="" loading="lazy" className="size-14 shrink-0 rounded-xl bg-bg object-contain" />
@@ -119,7 +119,7 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
                   {line.options.length > 1 && inCart ? (
                     <select
                       aria-label={`Product for ${itemName(line.itemId)}`}
-                      className="h-9 min-w-0 rounded-full bg-bg px-2 text-[13px]"
+                      className="h-9 min-w-0 rounded-full bg-bg px-2 text-[0.8125rem]"
                       value={product.productId}
                       onChange={(e) => setPicked({ ...picked, [line.itemId]: e.target.value })}
                     >
@@ -154,7 +154,7 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
       )}
 
       {plan.skipped.length > 0 && (
-        <ul className="flex flex-col gap-1 text-[13px]">
+        <ul className="flex flex-col gap-1 text-[0.8125rem]">
           {plan.skipped.map((skip) => (
             <li key={skip.itemId}>
               <span className="font-medium">{itemName(skip.itemId)}:</span> <span className="text-muted">{skip.reason}</span>
@@ -162,10 +162,10 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
           ))}
         </ul>
       )}
-      {over && <p className="text-[13px] text-money">This is {usd(total - plan.budgetLeftCents!)} over what&apos;s left in the budget.</p>}
+      {over && <p className="text-[0.8125rem] text-money">This is {usd(total - plan.budgetLeftCents!)} over what&apos;s left in the budget.</p>}
 
       {unpaid && (
-        <p role="alert" className="rounded-2xl bg-money/12 px-3.5 py-2.5 text-[13px] font-medium text-money">
+        <p role="alert" className="rounded-2xl bg-money/12 px-3.5 py-2.5 text-[0.8125rem] font-medium text-money">
           {unpaid} The items aren&apos;t checked off.
         </p>
       )}
@@ -173,10 +173,10 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
         {busy === "pay" ? "Opening PayPal…" : !me ? "Join the list to pay" : chosen.length === 0 ? "Nothing in the cart" : `Pay ${usd(total)} with PayPal`}
       </button>
       <div className="flex justify-center gap-5">
-        <button type="button" onClick={() => show(null)} disabled={busy !== null} className="text-[13px] text-muted">
+        <button type="button" onClick={() => show(null)} disabled={busy !== null} className="text-[0.8125rem] text-muted">
           Change the items
         </button>
-        <button type="button" onClick={onClose} disabled={busy !== null} className="text-[13px] text-muted">
+        <button type="button" onClick={onClose} disabled={busy !== null} className="text-[0.8125rem] text-muted">
           Cancel
         </button>
       </div>
