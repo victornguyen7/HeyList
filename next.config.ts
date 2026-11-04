@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
     // PayPal's JS SDK v6 buttons (decision 67). A client ID is public by design; the secret stays in the backend.
     NEXT_PUBLIC_PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID,
   },
+  // Lets a phone on the same Wi-Fi open the dev server by the Mac's address (http://<LAN IP>:3000). Without this,
+  // Next.js 16 blocks the dev scripts for other origins, so the page shows but nothing can be tapped. Dev only.
+  // Add your address with DEV_ORIGIN=<ip> if it isn't one of these.
+  allowedDevOrigins: ["172.31.151.176", "192.168.*.*", "10.*.*.*", ...(process.env.DEV_ORIGIN ? [process.env.DEV_ORIGIN] : [])],
   cacheComponents: true,
   partialPrefetching: true,
   // The FastAPI backend (backend/main.py); proxied so the browser stays same-origin.
