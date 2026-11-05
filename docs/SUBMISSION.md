@@ -1,73 +1,93 @@
 # HeyList — Submission and demo script
 
-What goes on the Devpost form, and the script for the demo video (under 3 minutes). Rules are in [HACKATHON.md](HACKATHON.md); deadline **12 November 2026**. Written 2026-10-27; script, description, tools and checklist brought up to date 2026-11-03 (up to decision 77). Re-check every "Built" claim before submitting.
+What goes on the Devpost form, and the script for the demo video (under 3 minutes). Rules are in [HACKATHON.md](HACKATHON.md); deadline **12 November 2026**. Written 2026-10-27; script, description, tools and checklist brought up to date 2026-11-03 (up to decision 77); demo script rewritten for non-technical viewers 2026-11-05. Re-check every "Built" claim before submitting.
 
 ## Pitch (one line)
 
 HeyList turns everyday needs into shared lists, and makes it clear what really got done, from the first item captured to the last purchase paid.
 
-## Demo video script (target 2:50, hard limit 3:00)
+## Demo video script (target 2:45, hard limit 3:00)
 
-Rewritten 2026-11-03 against what is built up to decision 78 (Pay Later added). One story from start to finish: **Ann, Ben and Cam plan a weekend camping trip**. Ann films on her phone (HeyList is mobile-first); Ben's screens are a second phone or a desktop browser at phone width. Narration is about 430 words, which fits 2:50 at a steady pace (about 150 words a minute). No music, and no third-party logos except PayPal's and Venmo's own buttons and pages.
+Rewritten 2026-11-05 for viewers who don't work in tech: one friendly story with no jargon, with the technical details shown as captions for the judges instead of spoken. **Ann, Ben and Cam plan a weekend camping trip.** Ann films on her phone (HeyList is mobile-first); Ben's and Cam's screens are a second phone or a desktop browser at phone width. Narration is about 400 words, about 2:45 at a relaxed pace. No music, and no third-party logos except PayPal's and Venmo's own buttons and pages.
 
-The arc the judges should remember: **AI plans it, an agent shops it, PayPal proves it, PayPal settles it.**
+The line viewers should remember: **AI handles the planning and the busywork. PayPal makes the money simple and certain.**
 
 ### Scene by scene
 
-| Time | Scene | On screen | Judging criterion |
-|---|---|---|---|
-| 0:00–0:15 | Hook | Home page, then a quick cut of a messy group chat (mocked by you, no real names) | Impact, Presentation |
-| 0:15–0:40 | **AI plans it** | Tap the mic, say "Weekend camping trip for three friends, 150 dollar budget", tap **Make my list**. Review screen: quantities, `~` estimates, total under budget. Mark the stove **Already have** (it drops out of the total), add firewood. **Create list** | Technical (AI), Design |
-| 0:40–0:55 | **Share it** | Share the link. On Ben's phone: open it, join as Ben. Cut back to Ann's phone: Ben appears without a reload. Ben claims the food; Ann claims the gear. Cam joins too but buys nothing | Design, Impact |
-| 0:55–1:22 | **An agent shops it** | As Ann on Progress: **More → Shop this list for me**. Tick headlamp, sleeping bag, sunscreen, marshmallows (leave the tent). The agent's cart: product cards with photo, store, price; the total fits what's left of the budget; marshmallows skipped with "No online store we search sells this". Swap one product. **Pay with PayPal**, approve on the sandbox page. Back on the list: "Paid with PayPal · Ann" on each | Agentic Commerce, Channel3, PayPal + AI |
-| 1:22–1:35 | **Pay Later** | Still Ann, on Progress: the main card now says **Pay for your items** with only the tent left. Hold on the three buttons, **Pay with PayPal**, **Venmo** and **Pay Later**, with PayPal's "Pay in 4…" message under them. Tap **Pay Later**, approve in PayPal's pop-up. The tent shows "Paid with PayPal · Ann" | Technical (PayPal), Best Use of PayPal + AI |
-| 1:35–1:58 | **A receipt proves it** | As Ben on Progress, tap **Take a photo** and photograph a real grocery receipt. The steps box shows "It's a receipt", then the review opens on the same page: each line matched to an item, tax shown, lines add up to the total. Fix one match, **Confirm**. Items show "On a receipt · Ben" | Technical (AI), Innovation |
-| 1:58–2:30 | **PayPal settles it** | **Settle up**: "Cam → Ann $X", "Cam → Ben $Y". Tap **Remind Cam**: the AI-written message with the exact amount and link; share sheet. On Cam's phone: open the link, "I'm Cam, let me pay", PayPal (or Venmo) button pops up on the page, approve. Back on Ann's phone: the balance goes to $0 | PayPal + AI, Technical (PayPal), Impact |
-| 2:30–2:45 | **Every item has proof** | **Items** tab, scroll: "Paid with PayPal", "On a receipt", "Already had". Optional 2-second overlay: "Capture COMPLETED · webhooks + Render cron backup · auto refund on double buys" | Technical, Design |
-| 2:45–2:50 | Close | Progress page at 100%, HeyList name | Presentation |
+**0:00 · The problem** (15s, about 38 words)
+*On screen: big text "82%" over a made-up group chat (made-up names only). Then the three questions pop up one at a time as chat bubbles: "Who's buying what?", "Who already paid?", "Who owes whom?". End on the HeyList logo. Source in a corner the whole time: "Harris Poll for CIT Bank, May 2026 · 2,067 US adults" ([RESEARCH.md](RESEARCH.md)).*
 
-### Narration (read this)
+> "Eighty-two percent of people on group trips would rather overpay than argue about money. Who's buying what? Who already paid? Who owes whom? HeyList answers all three: AI plans the list, and PayPal settles it, down to the cent."
 
-**0:00 — Hook**
-"Every group trip runs on a chat thread, a list nobody updates, and an awkward 'who paid for what?' at the end. HeyList is a shared list that knows what really got done, and settles up with PayPal."
+Shorter fallback (10s), if the video runs long: "Almost half of group travelers have had money trouble on a trip. HeyList fixes that: AI plans the list, and PayPal settles it." (45%, same Harris Poll.) Say "group trips", not "everyone": the poll asked US adults who took a group trip in the past 5 years.
 
-**0:15 — AI plans it**
-"I just say what we need. The AI turns one sentence into a list, with quantities and estimated prices that fit our budget. Nothing's saved until I've checked it. We've already got a stove, so I mark it, and it drops out of the total. I add firewood, and create the list."
+**0:15 · Say what you need** (25s)
+*Tap the mic and say: "Weekend camping trip for three friends, 150 dollar budget." Then tap **Make my list**. On the review screen, mark the stove **Already have**, then tap **Create list**.*
 
-**0:40 — Share it**
-"I send the link. Ben joins by name. No app, no account, and he appears live. He claims the food, I take the gear, and Cam, who's busy this week, just pays a share at the end."
+> "I just say what we need. In seconds, HeyList's AI writes the whole list: how many of each thing, and what it costs at real stores today, so we can see it fits our budget. We already own a stove, so I mark it, and it drops off the total."
 
-**0:55 — An agent shops it**
-"Now the part I'd normally put off. I tick what I'm buying and ask HeyList to shop it for me. The agent searches real stores through Channel3, and the AI throws out anything that isn't actually a headlamp or a sleeping bag. Code, not the AI, fits the cart to what's left of our budget, and tells me what it couldn't buy online. I swap one product. The agent proposes; I approve, and pay with PayPal. Prices are set on the server, never in the browser, and my items are checked off only when PayPal confirms the capture."
+**0:40 · Share it** (15s)
+*Share the link. Ben's phone opens it and he joins by name. On Ann's phone, Ben appears without a reload. Ben claims the food; Ann claims the gear.*
 
-**1:22 — Pay Later**
-"The tent is the big one. PayPal offers Pay Later right here, and shows me what the payments would be. It's still one PayPal order, so the tent is checked off just the same."
+> "I send the link. No app to download, no sign-up. Ben types his name and he's in, and the list updates on all our phones at once. Ben takes the food. I take the gear."
 
-**1:35 — A receipt proves it**
-"Ben bought the food at the supermarket. He takes a photo, and HeyList sees it's a receipt. The AI reads every line, matches it to our list, and checks that it all adds up, tax included. If a price is hard to read, it asks instead of guessing. Ben fixes one match, and his items are done."
+**0:55 · Let it shop for you** (30s)
+*As Ann on Progress: **More → Shop this list for me**, tick the gear (leave the tent), show the product cards and the total within budget, then **Pay with PayPal** and approve on the sandbox page. Back on the list: "Paid with PayPal · Ann" on each item.*
 
-**1:58 — PayPal settles it**
-"Because every price is real, HeyList knows exactly who owes whom. Cam owes us both, and the split is worked out in code, not by the AI. One tap and the AI drafts a friendly reminder with the exact amount. Cam opens the link, taps PayPal, or Venmo, and the money goes straight to my PayPal account. Not to HeyList. To me. The balance drops to zero."
+> "Shopping is the part I always put off, so I let HeyList do it. Its AI shopping assistant finds real products from real stores, keeps within what's left of our budget, and tells me what it couldn't find. But I stay in charge: I check it, and pay once with PayPal. Done. Every item shows 'Paid with PayPal', with my name."
 
-**2:30 — Every item has proof**
-"Every item says how we know it's done: paid with PayPal, on a receipt, or already had. If two people buy the same thing, the second payment is refunded automatically."
+**1:25 · Pay Later** (10s, only if the button appears)
+*Progress with only the tent left on Ann's items: hold on the **Pay with PayPal**, **Venmo** and **Pay Later** buttons with PayPal's message under them. Tap **Pay Later** and approve in PayPal's pop-up.*
 
-**2:45 — Close**
-"AI plans it. An agent shops it. PayPal proves it, and settles it. That's HeyList."
+> "The tent's the big one, so PayPal lets me spread the cost with Pay Later, right here."
+
+**1:35 · Snap the receipt** (20s)
+*As Ben on Progress: **Take a photo** of a real grocery receipt. The review opens on the same page with each line matched to an item; tap **Confirm**. Items show "On a receipt · Ben".*
+
+> "Ben shopped at the supermarket. He just snaps his receipt. HeyList reads every line, matches it to our list, and checks it all adds up. One tap, and his items are done too."
+
+**1:55 · Settle up** (30s)
+*Tap **Settle up**: "Cam → Ann $X", "Cam → Ben $Y". Tap **Remind Cam** and show the message. On Cam's phone: open the link, pay with PayPal, approve. Back on Ann's phone: the balance goes to $0.*
+
+> "Here's my favorite part. HeyList knows what everyone really paid, so it works out who owes whom, to the cent. Cam couldn't come shopping, so he owes us. One tap, and it writes a friendly reminder for me. Cam pays with PayPal, and the money comes straight to me. No maths, no awkward chasing."
+
+**2:25 · Every item has proof** (12s)
+*Scroll the **Items** tab: "Paid with PayPal", "On a receipt", "Already had".*
+
+> "Every item shows how we know it's done: paid with PayPal, on a receipt, or already had. And if two of us buy the same thing, PayPal refunds the second one automatically."
+
+**2:37 · Close** (10s)
+*Progress at 100%, then the HeyList logo with `heylist-web.onrender.com` and "Built with PayPal + AI".*
+
+> "From one sentence to everyone settled up. AI handles the planning and the busywork. PayPal makes the money simple and certain. That's HeyList."
+
+### Captions for the judges (on screen, not spoken)
+
+Show each for 2–3 seconds in a corner, so non-technical viewers can ignore them and judges see PayPal and AI named and working:
+
+| Scene | Caption |
+|---|---|
+| Say what you need | "AI: Ollama (`gemma4:31b`) · prices from Kroger, Walmart and Target" |
+| Share it | "Live updates: Supabase Realtime" |
+| Let it shop for you | "Agent: Channel3 product search + AI check · PayPal Orders API · prices set on the server" |
+| Pay Later | "PayPal JS SDK v6: PayPal, Venmo, Pay Later" |
+| Snap the receipt | "AWS Textract + AI matching · every price checked against the total" |
+| Settle up | "Split worked out in code, not AI · PayPal pays the person owed directly" |
+| Every item has proof | "Checked off only on a COMPLETED capture · webhooks + Render cron · auto refunds" |
 
 ### If it runs long
 
-Cut in this order: the product swap in the cart, the Pay Later approval (keep the shot of the three buttons and PayPal's message, then cut to the tent checked off), the receipt match fix, Cam's phone (show the reminder, then cut straight to the balance at $0 and say "Cam paid with PayPal"), the live join (say "Ben joins" over a single cut).
+Cut in this order: the Pay Later scene, the live join (say "Ben joins" over a single cut), then Cam's phone (show the reminder, then jump straight to the balance at $0 and say "Cam paid with PayPal"). Cut loading waits in editing, and keep each shot under about 8 seconds.
 
 ### Don't say or show
 
-- Don't say the store order is placed. The sandbox payment goes to HeyList's merchant account, and Channel3's checkout isn't open yet. If asked: "When Channel3 checkout opens, the agent places the order; today it finds the real product and price."
-- Don't run store search on food: Channel3 sells no groceries. Marshmallows in the cart is on purpose, to show the skip reason; check it still says that on the day.
+- Don't say the store order is placed. HeyList finds the real product and price, and the sandbox payment goes to HeyList's merchant account; Channel3's checkout isn't open yet. If asked: "When Channel3 checkout opens, the agent places the order; today it finds the real product and price."
+- Don't run Shop this list for me on food: Channel3 sells no groceries (groceries are priced from Kroger, decision 74). Pick gear items that return clean product cards on the day.
 - Don't call a photo of an item proof: **Take a photo** on an item stays "Marked bought by hand" (decision 71). Only the receipt path is proof.
 - Don't look for the sample trip or the idea chips on Home: both were removed (decision 76).
-- Venmo shows only when PayPal says the buyer is eligible (US, USD). If it doesn't appear on the recording phone, cut "or Venmo" from the line.
-- Pay Later shows only where PayPal says the buyer and amount qualify (decision 78): US sandbox merchant and buyer, and an amount in PayPal's Pay Later range. If it doesn't appear on the day, drop the Pay Later scene and give its 13 seconds to the receipt. Don't state Pay Later's terms yourself ("four payments of $X"); point at PayPal's own message, which says them. It isn't on Settle up or in Shop this list for me.
-- Shop this list for me uses the redirect to PayPal's page, not the pop-up (decision 67). That's fine on camera; don't describe it as a pop-up.
+- Venmo shows only when PayPal says the buyer is eligible (US, USD). If it doesn't appear on the recording phone, don't mention it.
+- Pay Later shows only where PayPal says the buyer and amount qualify (decision 78). If it doesn't appear, drop that scene. Don't state Pay Later's terms yourself; PayPal's own message says them. It isn't on Settle up or in Shop this list for me.
+- Shop this list for me uses the redirect to PayPal's page, not the pop-up (decision 67). Don't describe it as a pop-up.
 
 ### Before recording
 
