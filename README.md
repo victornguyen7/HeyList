@@ -16,7 +16,7 @@ Sandbox buyer account for judges (log in on PayPal's page when paying):
 
 | Email | Password |
 |---|---|
-| `JUDGE_SANDBOX_EMAIL` | `JUDGE_SANDBOX_PASSWORD` |
+| `sb-jl0nu53301040@personal.example.com` | `Y_362mfv` |
 
 1. On the home page, type or say one sentence, for example *"Weekend camping trip for 3 friends, $150 budget"*, and tap **Make my list**. Untick what you don't need, mark what you **Already have**, and tap **Create list**.
 2. Open the list's link in a second browser (or a private window) and join under another name, so there are two people. Changes appear on both as they happen.
@@ -51,6 +51,7 @@ Labels claim only what the evidence shows: a capture proves payment, not deliver
 | **AWS Textract** `AnalyzeExpense`, `DetectDocumentText` | Reads receipt line items and totals (primary reader); reads photos of paper lists, handwriting included |
 | **Ollama** (`gemma4:31b`, vision) | Drafts starting lists as validated JSON, matches receipt lines to items, filters store results to real matches, writes payment reminders, tells what a photo shows (an item or a receipt), and reads receipts and paper lists when Textract is unavailable |
 | **Channel3** product search | Real products and prices for "Find in stores" and "Shop this list for me". The chosen price is re-read on the server and is what PayPal charges. |
+| **Kroger** Products API | Today's grocery prices from a real Kroger store, so food items on a new list are priced at what the store charges now instead of an AI guess. The AI checks that each Kroger product is the item before its price is used. Non-food items are priced at Walmart or Target through Channel3 |
 | **Web Speech API** | Voice input in supported browsers |
 | **APIMatic** Context Plugin, **Postman** | PayPal SDK guidance and API testing during development |
 | **Render** | Blueprint (`render.yaml`): web services `heylist-api` and `heylist-web` with health checks, a shared environment group, and the `heylist-sweep` cron job that finishes pending PayPal payments every 15 minutes |
@@ -64,7 +65,7 @@ Labels claim only what the evidence shows: a capture proves payment, not deliver
 ## Architecture
 
 ```
-Next.js 16 (React 19, mobile-first)  ──/api──▶  FastAPI (Python 3.14)  ──▶  PayPal · Ollama · Textract · Channel3
+Next.js 16 (React 19, mobile-first)  ──/api──▶  FastAPI (Python 3.14)  ──▶  PayPal · Ollama · Textract · Channel3 · Kroger
             ▲                                          │
             └──── Supabase Realtime ◀──── Supabase (Postgres, Storage, Auth)
 
@@ -75,7 +76,7 @@ Accounts are optional: guests join by name, and signed-in users (Supabase email 
 
 ## Run locally
 
-Requires Node.js 24 and Python 3.14. Copy the env template and fill in the keys: PayPal sandbox, Ollama and Supabase are required, while Textract and Channel3 are optional.
+Requires Node.js 24 and Python 3.14. Copy the env template and fill in the keys: PayPal sandbox, Ollama and Supabase are required, while Textract, Channel3 and Kroger (grocery prices) are optional.
 
 ```bash
 cp .env.example .env.local

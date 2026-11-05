@@ -100,6 +100,7 @@ Every item shows what its status rests on: "Paid with PayPal", "On a receipt", "
 
 **How we built it**
 
+- **Real prices, not guesses:** food on a new list is priced from Kroger's Products API at a real store, and everything else from Walmart and Target through Channel3, with the AI checking that each product is the item. The AI's own estimate is the last fallback.
 - Next.js 16 (mobile-first website) → FastAPI backend → Supabase (lists, receipts, Auth, Realtime), deployed on Render from one Blueprint: two web services with health checks, a shared environment group, and a cron job that re-checks pending PayPal payments every 15 minutes.
 - **PayPal** (sandbox), through PayPal's official Python Server SDK: Orders API v2 (create, capture, show order details, payee set to the person owed for settle-up) and Payments API v2 (refunds), plus JS SDK v6 buttons with Venmo and Pay Later (with PayPal's Pay Later messages) and signature-verified webhooks. Idempotency keys on every call, capture status checked rather than order status, prices in integer cents and never taken from the browser.
 - **AI:** an Ollama-hosted vision model (`gemma4:31b`) for starting lists (structured JSON, every field validated in code), receipt matching, checking store results, what a photo shows, and reminders. AWS Textract reads receipts (`AnalyzeExpense`) and paper lists (`DetectDocumentText`), with the Ollama vision model as the fallback.
@@ -114,6 +115,7 @@ Every item shows what its status rests on: "Paid with PayPal", "On a receipt", "
 |---|---|
 | Ollama (cloud model, `OLLAMA_MODEL`) | Starting lists from one sentence or a paper list; matching receipt lines to list items; keeping only store products that are the item; telling an item photo from a receipt; drafting settle-up reminders; reading photos when Textract is unavailable |
 | Channel3 product search | "Find in stores" and "Shop this list for me": real products and prices; the chosen price is read again on the server and charged with PayPal |
+| Kroger Products API | Today's grocery prices at one real Kroger store, for food items on a new list; the AI checks each product is the item first (decisions 74, 75) |
 | AWS Textract `AnalyzeExpense`, `DetectDocumentText` | Receipt line items, tax and totals with a confidence per line; photos of paper lists |
 | PayPal Orders API v2, Payments API v2, webhooks (sandbox) | Checkout, capture, settle-up payments to the person owed, pending-payment follow-up, refunds for double purchases |
 | PayPal JS SDK v6 (PayPal, Venmo and Pay Later buttons, Pay Later messages) | Paying on the list page, with the redirect checkout as the fallback |
@@ -133,7 +135,7 @@ From [HACKATHON.md](HACKATHON.md#what-to-submit) and [PayPal.md §9](PayPal.md):
 
 - [x] `LICENSE` file (MIT, added 2026-10-27).
 - [ ] Repo made public, with "MIT license" shown in the About section (GitHub reads it from `LICENSE`).
-- [ ] README with setup and run steps (present), plus the hosted URL. Replace the `JUDGE_SANDBOX_EMAIL` / `JUDGE_SANDBOX_PASSWORD` placeholders with a real sandbox buyer login.
+- [ ] README with setup and run steps (present), plus the hosted URL. Sandbox buyer login for judges added 2026-11-05.
 - [ ] Text description (draft above).
 - [ ] Tools section (draft above).
 - [ ] Demo video on YouTube, public, under 3 minutes.

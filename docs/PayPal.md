@@ -25,7 +25,7 @@ How HeyList meets them:
 | Working demo | Deployed on Render (`render.yaml`: two web services with health checks, and the `heylist-sweep` cron job, decision 77); local run steps in the README | Built; a live sandbox payment and refund were tested 2026-10-28 (issues 25, 37) |
 | Open source license file | MIT, in `LICENSE` at the repo root (added 2026-10-27) | Added; the repo still has to be made public |
 | Demo video under 3 minutes | — | Not made |
-| Sponsor tools | APIMatic: the PayPal Server SDK is APIMatic-generated, and its Context Plugin skills were used (decision 23). Render hosts the app and runs the payment sweep (decision 77). Channel3 powers Find in stores and the shopping agent (decisions 50, 61). Postman not used | Built |
+| Sponsor tools | APIMatic: the PayPal Server SDK is APIMatic-generated, and its Context Plugin skills were used (decision 23). Render hosts the app and runs the payment sweep (decision 77). Channel3 powers Find in stores and the shopping agent (decisions 50, 61). Postman not used. Not a sponsor: Kroger's Products API prices groceries (decisions 74, 75) | Built |
 
 ## 2. What is built
 

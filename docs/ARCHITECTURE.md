@@ -43,6 +43,7 @@ Everything the project uses, as of 2026-10-28. Versions are the pinned ones in `
 | Ollama API (cloud) | One LLM with vision (`OLLAMA_MODEL`, measured on `gemma4:31b`) | Built |
 | AWS Textract | Reading receipts, with a confidence per line | Built and tested on 289 real receipts (issue 15); Ollama reads receipts only when Textract is unavailable |
 | Channel3 | Real store products and prices (`backend/market.py`), results checked by the LLM (decision 51); the shopping agent's cart (decision 61) | Built |
+| Kroger Products API | Today's grocery prices at one store (`backend/kroger.py`, `KROGER_LOCATION_ID` or the nearest to `KROGER_ZIP`), results checked by the LLM, which also says which items are food (decisions 74, 75) | Built; off without the keys |
 | Render | Blueprint `render.yaml`: web services `heylist-api` (Python, health check `/api/health`) and `heylist-web` (Node, health check `/`), the `heylist-shared` environment group (`APP_URL`, `BACKEND_URL`), and the `heylist-sweep` cron job (every 15 minutes, `backend/cron_sweep.py` → `POST /api/cron/sweep`, decision 77) | Built |
 | Anthropic (Claude Haiku) | Not used for now (decision 38); the key stays in `.env.local` for when it comes back | Off |
 

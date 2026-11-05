@@ -1,5 +1,11 @@
 # HeyList — Changelog
 
+## 2026-11-05
+
+### Changed
+
+- **Ready for submission:** the README has a sandbox buyer login for judges, and Kroger's Products API (grocery prices, decisions 74 and 75) is now named in the README, ARCHITECTURE, PayPal.md and the Devpost tools list.
+
 ## 2026-11-03
 
 ### Added
