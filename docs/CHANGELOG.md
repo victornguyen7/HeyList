@@ -7,7 +7,19 @@
 - **Sales tax** (decision 80): every list has a sales tax rate, worked out from its confirmed receipts (what the stores really charged), or typed on Money before any receipt. PayPal and Venmo payments now charge it, shown in PayPal as Items + Tax = Total, and the pay card says how much of the amount is tax. The buyer is credited the tax in the split, so everyone's share and what they owe include it; an item refunded at capture gets its tax back.
 - **How it adds up** on Money: Items + Sales tax + Tip and fees − Refunds = Spent together, like the bottom of a receipt. "Still to buy" and the budget projection include the tax, and so does the shopping agent's budget and its cart total.
 - **Receipt review** says what sales tax rate the receipt shows. In each person's "How this was worked out", a receipt's tax and its tip and fees are now separate lines, and a PayPal payment's tax has its own line.
-- **Schema:** `lists.tax_rate_bp` and `orders.taxes`, so run `supabase/schema.sql` again before deploying the backend. 11 new tests (221 pass).
+- **Schema:** `lists.tax_rate_bp`, `orders.taxes` and `receipts.thumb_path`, so run `supabase/schema.sql` again before deploying the backend. 226 tests pass.
+- **History on every device** (issue 26): logged in, Home and History also show the lists your account joined elsewhere. **Remove** hides one in this browser until you open its link again.
+- **Receipt thumbnails** (issue 35): the Receipts tab loads a small copy of each new receipt photo; tap it for the full photo.
+- **Discounts come off their item** (issue 17): an instant saving or coupon printed under an item is taken off that item's price, shown as "$23.99 less $5.00 off". A discount for the whole bill stays shared over the receipt.
+
+### Changed
+
+- **History totals** count tax and fees, the same as Money.
+- **Buy again** keeps the list's typed sales tax rate.
+
+### Removed
+
+- `POST /api/lists/sample` and its template (issue 48): nothing called it since decision 76.
 
 ## 2026-11-05
 

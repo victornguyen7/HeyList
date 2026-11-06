@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, usd, type Item, type Receipt } from "./api";
-import { shrink, typedCents } from "./photo";
+import { sendThumbnail, shrink, typedCents } from "./photo";
 import { buttonGlass, card } from "./ui";
 
 // Take a photo of one thing you got: the AI proposes which open item it is, you confirm it and say what you paid, and
@@ -67,6 +67,7 @@ export function PhotoTick({ listId, memberId, items, onTick, onReceipt }: { list
         current = "Reading the receipt and matching it to your list";
         begin(current);
         const receipt = await api<Receipt>(`/api/lists/${listId}/receipts?memberId=${memberId}`, { method: "POST", body: await shrink(file) });
+        sendThumbnail(receipt.id, file);
         finish(current, `${receipt.lines.length} ${receipt.lines.length === 1 ? "line" : "lines"} read`);
         setSteps([]);
         onReceipt(receipt);

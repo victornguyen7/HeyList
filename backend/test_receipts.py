@@ -77,6 +77,42 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(result["lines"], [])
         self.assertEqual(result["fees"], [{"kind": "discount", "name": "COUPON", "amountCents": -100}])
 
+    def test_a_discount_under_an_item_comes_off_that_item(self):
+        result = receipts.parse_expense(
+            expense(
+                [field("ITEM", "QUANTUM ULT"), field("PRICE", "23.99")],
+                [field("ITEM", "TPD/4254844"), field("PRICE", "5.00-")],
+                [field("ITEM", "SWEET POTATO"), field("PRICE", "16.99")],
+                total="$35.98",
+            )
+        )
+
+        self.assertEqual([(l["text"], l["priceCents"], l.get("discountCents")) for l in result["lines"]], [("QUANTUM ULT", 1899, 500), ("SWEET POTATO", 1699, None)])
+        self.assertEqual(result["lines"][0]["discountName"], "TPD/4254844")
+        self.assertEqual(result["fees"], [])
+
+    def test_a_discount_that_isnt_for_the_item_above_stays_a_fee(self):
+        result = receipts.parse_expense(
+            expense(
+                # Bigger than the line above: a comp for the bill.
+                [field("ITEM", "Corona"), field("PRICE", "6.00")],
+                [field("ITEM", "Comp Item"), field("PRICE", "12.00-")],
+                # Two discounts in a row: the second has no item right above it.
+                [field("ITEM", "MILK"), field("PRICE", "4.29")],
+                [field("ITEM", "COUPON"), field("PRICE", "1.00-")],
+                [field("ITEM", "COUPON 2"), field("PRICE", "0.50-")],
+                # Under an item whose price wasn't read surely.
+                [field("ITEM", "EGGS"), field("PRICE", "3.00", confidence=50)],
+                [field("ITEM", "SAVE"), field("PRICE", "0.40-")],
+                # Read unsurely itself.
+                [field("ITEM", "GUM"), field("PRICE", "1.99")],
+                [field("ITEM", "SAVE"), field("PRICE", "0.20-", confidence=50)],
+            )
+        )
+
+        self.assertEqual([l["priceCents"] for l in result["lines"]], [600, 329, None, 199])
+        self.assertEqual([f["name"] for f in result["fees"]], ["Comp Item", "COUPON 2", "SAVE", "SAVE"])
+
     def test_a_name_mixed_with_neighbouring_lines_is_taken_from_its_printed_row(self):
         result = receipts.parse_expense(
             expense(
@@ -190,11 +226,11 @@ class ReadTest(unittest.TestCase):
             receipts.read_receipt(b"jpg"),
             {
                 "lines": [
-                    {"text": "2% MILK 1GAL", "priceCents": 429, "confidence": None, "lowConfidence": False},
+                    # The coupon printed under the milk comes off the milk (issue 17).
+                    {"text": "2% MILK 1GAL", "priceCents": 329, "confidence": None, "lowConfidence": False, "discountCents": 100, "discountName": "COUPON"},
                     {"text": "GUM", "priceCents": None, "confidence": None, "lowConfidence": False},
                 ],
                 "fees": [
-                    {"kind": "discount", "name": "COUPON", "amountCents": -100},
                     {"kind": "tax", "name": "TAX", "amountCents": 30},
                     {"kind": "discount", "name": "MEMBER SAVINGS", "amountCents": -50},
                     {"kind": "other", "name": "Other", "amountCents": None},

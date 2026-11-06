@@ -221,34 +221,6 @@ class PriceStoreTest(RoutesTest):
         self.assertEqual((added[0]["estPriceCents"], added[0]["priceSource"], added[0]["priceStore"]), (300, "market", "target.com"))
 
 
-class SampleListTest(RoutesTest):
-    def test_the_sample_has_three_people_its_items_and_two_purchases(self):
-        response = self.client.post("/api/lists/sample").json()
-        state, you = response["list"], response["memberId"]
-        names = {m["id"]: m["name"] for m in state["members"]}
-
-        self.assertEqual(sorted(names.values()), ["Ann", "Ben", "You"])
-        self.assertEqual(names[you], "You")
-        self.assertEqual((state["title"], state["kind"], state["budgetCents"]), ("Weekend camping trip (sample)", "trip", 25000))
-        self.assertEqual(len(state["items"]), 6)
-        bought = {i["name"]: (names[i["boughtBy"]], i["priceCents"]) for i in state["items"] if i["checkedAt"]}
-        self.assertEqual(bought, {"Tent": ("Ann", 9000), "Snacks for the road": ("Ben", 2400)})
-        self.assertEqual([names[i["claimedBy"]] for i in state["items"] if i["claimedBy"] and not i["checkedAt"]], ["You", "You"])
-
-    def test_its_split_already_has_payments_to_settle(self):
-        state = self.client.post("/api/lists/sample").json()["list"]
-        names = {m["id"]: m["name"] for m in state["members"]}
-
-        transfers = [(names[t["from"]], names[t["to"]], t["amountCents"]) for t in state["split"]["transfers"]]
-        # 11400 spent, 3800 each: Ann paid 9000, Ben 2400, You nothing yet.
-        self.assertEqual(transfers, [("You", "Ann", 3800), ("Ben", "Ann", 1400)])
-
-    def test_samples_are_capped(self):
-        for _ in range(60):
-            main.allow("sample", 60, 3600)
-        self.assertEqual(self.client.post("/api/lists/sample").status_code, 429)
-
-
 class ListRoutesTest(RoutesTest):
     def test_a_new_list_comes_back_with_its_items_in_order(self):
         state = self.new_list([{"name": "Sunscreen", "estPriceCents": 899, "quantity": 2}, {"name": "Adapter"}])
@@ -310,6 +282,31 @@ class AccountTest(RoutesTest):
     def join(self, token=None, **body):
         headers = {"Authorization": f"Bearer {token}"} if token else {}
         return self.client.post(f"/api/lists/{self.list['id']}/members", json=body, headers=headers)
+
+
+class MyListsTest(AccountTest):
+    def test_every_list_the_account_joined_comes_back_newest_join_first(self):
+        first = self.list
+        self.join("ann-token")
+        self.list = second = self.new_list([{"name": "Tent"}])
+        self.join("ann-token")
+        self.list = self.new_list([])
+        self.join(name="Guest Ann")  # joined as a guest: not the account's
+        self.join("new-token", name="Bob")  # someone else's account
+
+        found = self.client.get("/api/me/lists", headers={"Authorization": "Bearer ann-token"}).json()["lists"]
+
+        self.assertEqual([l["id"] for l in found], [second["id"], first["id"]])
+        self.assertEqual(found[0]["items"][0]["name"], "Tent")
+
+    def test_a_guest_or_a_bad_token_is_401(self):
+        self.assertEqual(self.client.get("/api/me/lists").status_code, 401)
+        self.assertEqual(self.client.get("/api/me/lists", headers={"Authorization": "Bearer nope"}).status_code, 401)
+
+    def test_a_deleted_list_is_left_out(self):
+        self.join("ann-token")
+        self.db.delete("lists", id=self.list["id"])
+        self.assertEqual(self.client.get("/api/me/lists", headers={"Authorization": "Bearer ann-token"}).json(), {"lists": []})
 
 
 class JoinTest(AccountTest):
@@ -1402,6 +1399,34 @@ class ReceiptTest(RoutesTest):
         self.assertIsNone(receipt["confirmedAt"])
         self.assertEqual(self.client.get(f"/api/receipts/{receipt['id']}/image").content, b"photo")
         self.assertIsNone(self.state_of("Milk")["checkedAt"])
+
+    def thumb(self, receipt, body=b"small", content_type="image/jpeg"):
+        return self.client.put(f"/api/receipts/{receipt['id']}/thumbnail", content=body, headers={"Content-Type": content_type})
+
+    def test_a_small_copy_is_sent_once_and_served_for_the_receipts_tab(self):
+        receipt = self.scan(matches=[None, None, None]).json()
+        image = lambda size: self.client.get(f"/api/receipts/{receipt['id']}/image?size={size}")
+        # Before it arrives, the small size is the photo.
+        self.assertEqual(image("thumb").content, b"photo")
+
+        self.assertEqual(self.thumb(receipt).status_code, 204)
+        self.assertEqual(self.thumb(receipt, b"other").status_code, 409)
+
+        self.assertEqual((image("thumb").content, image("full").content), (b"small", b"photo"))
+        self.assertEqual(image("thumb").headers["cache-control"], "private, max-age=86400")
+
+    def test_a_small_copy_must_be_small_an_image_and_for_a_real_receipt(self):
+        receipt = self.scan(matches=[None, None, None]).json()
+        self.assertEqual(self.thumb(receipt, b"x" * (main.MAX_THUMB_BYTES + 1)).status_code, 413)
+        self.assertEqual(self.thumb(receipt, content_type="image/gif").status_code, 415)
+        self.assertEqual(self.thumb({"id": str(uuid.uuid4())}).status_code, 404)
+
+    def test_a_failed_upload_leaves_no_small_copy(self):
+        receipt = self.scan(matches=[None, None, None]).json()
+        with mock.patch.object(db, "upload", side_effect=RuntimeError("storage down")), self.assertRaises(RuntimeError):
+            self.thumb(receipt)
+        self.assertIsNone(self.db.select("receipts", id=receipt["id"])[0]["thumb_path"])
+        self.assertEqual(self.thumb(receipt).status_code, 204)
 
     def test_confirming_checks_items_off_with_receipt_prices_and_keeps_extras(self):
         receipt = self.scan(matches=[self.milk, None, None]).json()

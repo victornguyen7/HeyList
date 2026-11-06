@@ -2,14 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api, cachedLists, cacheLists, priceShown, seenLists, usd, type Item, type List } from "./api";
+import { supabase } from "./auth";
+import { api, cachedLists, cacheLists, hiddenLists, priceShown, seenLists, usd, type Item, type List } from "./api";
 import { card, Ring } from "./ui";
 
-export const spent = (list: List) => list.items.reduce((sum, item) => sum + (item.checkedAt ? (item.priceCents ?? 0) : 0), 0);
+// What was spent on the list as Money counts it: items, sales tax and the list's part of receipt fees, less refunds
+// (decision 80). A list saved in this browser before the split carried that falls back to item prices only.
+export const spent = (list: List) =>
+  list.split?.itemsCents !== undefined
+    ? list.split.totalCents + list.split.unattributedCents
+    : list.items.reduce((sum, item) => sum + (item.checkedAt ? (item.priceCents ?? 0) : 0), 0);
 
-// The lists this browser has opened (no accounts, decision 6), loaded in full in one request, most recently
-// opened first. null while loading; "failed" if the backend can't be reached and nothing was cached, so that
-// never looks like no lists.
+// The lists this browser has opened (decision 6), loaded in full in one request, most recently opened first, then,
+// for someone logged in, the other lists their account joined on any device (issue 26), newest join first. Those
+// are not remembered or cached in this browser, so logging out leaves nothing of them behind. null while loading;
+// "failed" if the backend can't be reached and nothing was cached, so that never looks like no lists.
 export function useSeenLists() {
   const [lists, setLists] = useState<List[] | null | "failed">(null);
   useEffect(() => {
@@ -17,11 +24,20 @@ export function useSeenLists() {
     const cached = cachedLists().filter((list) => ids.includes(list.id));
     // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage, readable only after hydration
     if (cached.length) setLists(cached.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)));
-    api<{ lists: List[] }>(`/api/lists?ids=${ids.map(encodeURIComponent).join(",")}`).then(
-      (found) => {
+    const seen = api<{ lists: List[] }>(`/api/lists?ids=${ids.map(encodeURIComponent).join(",")}`);
+    // A guest, or an account the backend can't reach, just has this browser's lists.
+    const mine = supabase.auth
+      .getSession()
+      .then(({ data }) => (data.session ? api<{ lists: List[] }>("/api/me/lists").then((found) => found.lists) : []))
+      .catch(() => [] as List[]);
+    seen.then(
+      async (found) => {
         const fresh = found.lists.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
-        setLists(fresh);
         cacheLists(fresh);
+        setLists(fresh);
+        const hidden = new Set(hiddenLists());
+        const more = (await mine).filter((list) => !ids.includes(list.id) && !hidden.has(list.id));
+        if (more.length) setLists([...fresh, ...more]);
       },
       () => setLists((current) => current ?? "failed"),
     );

@@ -280,50 +280,6 @@ def create_list(body=Depends(json_body)):
     return list_state(list_id)
 
 
-# "See how it works with a sample trip" (phase 8B): a real list a person alone can try every step on. Ann and Ben
-# have already bought something, so Settle up has payments to show; "You" is the person trying it.
-SAMPLE_ITEMS = [
-    # name, estimate per unit (cents), quantity, claimed by, paid in total (cents) if already bought
-    ("Tent", 9000, 1, "Ann", 9000),
-    ("Snacks for the road", 2400, 1, "Ben", 2400),
-    ("Sleeping bags", 2500, 3, "You", None),
-    ("Water, 24-pack", 600, 2, "You", None),
-    ("Firewood", 1200, 1, None, None),
-    ("Headlamp", 1500, 1, None, None),
-]
-
-
-@app.post("/api/lists/sample")
-def create_sample():
-    """A sample camping trip with three people (decision 64). Made from the template above: no AI and no PayPal call.
-    Returns the list and the member ID of "You", which the browser remembers as its own."""
-    # Anyone can make one, so one cap for everyone, as for suggestions.
-    if not allow("sample", 60, 3600):
-        return error("TOO_MANY_REQUESTS", 429)
-    list_id = db.insert("lists", [{"title": "Weekend camping trip (sample)", "kind": "trip", "budget_cents": 25000}])[0]["id"]
-    members = {row["name"]: row["id"] for row in db.insert("members", [{"list_id": list_id, "name": name} for name in ("Ann", "Ben", "You")])}
-    bought_at = now()
-    db.insert(
-        "items",
-        [
-            {
-                "list_id": list_id,
-                "name": name,
-                "est_price_cents": cents_each,
-                "quantity": count,
-                "position": position,
-                "claimed_by": members.get(claimed),
-                # Marked bought by hand, as people do when they bought it before the list existed.
-                "checked_at": bought_at if paid else None,
-                "bought_by": members[claimed] if paid else None,
-                "price_cents": paid,
-            }
-            for position, (name, cents_each, count, claimed, paid) in enumerate(SAMPLE_ITEMS)
-        ],
-    )
-    return {"list": list_state(list_id), "memberId": members["You"]}
-
-
 @app.get("/api/lists")
 def get_lists(ids: str = ""):
     """?ids=a,b,c: the lists this browser has opened, for Home and History, in one request. Unknown or deleted
@@ -335,6 +291,19 @@ def get_lists(ids: str = ""):
         except ValueError:
             pass
     return {"lists": lists_state(list_ids)}
+
+
+@app.get("/api/me/lists")
+def my_lists(request: Request):
+    """Every list the logged-in person joined, most recently joined first (issue 26), so History shows them on any
+    device, not only the lists this browser opened. A guest has no account to look up: 401."""
+    user = account(request)
+    if not user:
+        return error("NOT_LOGGED_IN", 401)
+    joined = db.select("members", user_id=user["id"])
+    list_ids = list(dict.fromkeys(member["list_id"] for member in reversed(joined)))[:50]
+    by_id = {state["id"]: state for state in lists_state(list_ids)} if list_ids else {}
+    return {"lists": [by_id[list_id] for list_id in list_ids if list_id in by_id]}
 
 
 @app.get("/api/lists/{list_id}")
@@ -1269,6 +1238,8 @@ def split_list(list_id: str):
 # Textract takes JPEG and PNG (also PDF and TIFF, not offered here). The app shrinks photos well below this.
 RECEIPT_TYPES = {"image/jpeg": "jpg", "image/png": "png"}
 MAX_RECEIPT_BYTES = 5_000_000
+# A receipt's small copy for the Receipts tab (issue 35): the browser makes it at 800 px, well under this.
+MAX_THUMB_BYTES = 400_000
 
 
 async def photo_body(request: Request) -> tuple[str, bytes] | JSONResponse:
@@ -1477,10 +1448,47 @@ def confirm_receipt(receipt_id: str, request: Request, body=Depends(json_body)):
 
 
 @app.get("/api/receipts/{receipt_id}/image")
-def receipt_image(receipt_id: str):
-    """The photo, served by the backend because the bucket is private."""
+def receipt_image(receipt_id: str, size: str = "full"):
+    """The photo, served by the backend because the bucket is private. ?size=thumb serves its small copy when it
+    has one (issue 35), else the photo. A stored photo never changes, so the browser may keep it for a day."""
     receipt = find("receipts", receipt_id)
     if not receipt:
         return error("RECEIPT_NOT_FOUND", 404)
-    media_type = "image/png" if receipt["image_path"].endswith(".png") else "image/jpeg"
-    return Response(db.download(receipt["image_path"]), media_type=media_type)
+    path = receipt.get("thumb_path") if size == "thumb" and receipt.get("thumb_path") else receipt["image_path"]
+    media_type = "image/png" if path.endswith(".png") else "image/jpeg"
+    return Response(db.download(path), media_type=media_type, headers={"Cache-Control": "private, max-age=86400"})
+
+
+@app.put("/api/receipts/{receipt_id}/thumbnail")
+async def receipt_thumbnail(receipt_id: str, request: Request):
+    """The body is a small copy of the receipt photo, made by the browser right after the scan (issue 35). Set once:
+    a receipt that has one keeps it, so nobody on the link can swap it later. As for the scan, only the person who
+    scanned it may send it when they joined with an account."""
+    content_type = request.headers.get("content-type", "").split(";")[0].strip()
+    if content_type not in RECEIPT_TYPES:
+        return error("UNSUPPORTED_IMAGE", 415)
+    image = await request.body()
+    if not image or len(image) > MAX_THUMB_BYTES:
+        return error("IMAGE_TOO_LARGE" if image else "INVALID_BODY", 413 if image else 400)
+    return await run_in_threadpool(_save_thumbnail, receipt_id, image, content_type, request)
+
+
+def _save_thumbnail(receipt_id: str, image: bytes, content_type: str, request: Request):
+    receipt = find("receipts", receipt_id)
+    if not receipt:
+        return error("RECEIPT_NOT_FOUND", 404)
+    if locked(receipt["member_id"], request):
+        return error("NOT_YOURS", 403)
+    if receipt.get("thumb_path"):
+        return error("THUMBNAIL_EXISTS", 409)
+    path = f"{receipt['image_path'].rsplit('.', 1)[0]}-thumb.{RECEIPT_TYPES[content_type]}"
+    # thumb_path=None: of two sent at the same moment, one is kept.
+    if not db.update("receipts", {"thumb_path": path}, id=receipt["id"], thumb_path=None):
+        return error("THUMBNAIL_EXISTS", 409)
+    try:
+        db.upload(path, image, content_type)
+    except Exception:
+        # No file, so no small copy: the Receipts tab keeps showing the photo.
+        db.update("receipts", {"thumb_path": None}, id=receipt["id"])
+        raise
+    return Response(status_code=204)

@@ -1,5 +1,5 @@
 {
- "ranAt": "2026-11-03T04:10:26+00:00",
+ "ranAt": "2026-11-06T14:09:12+00:00",
  "lowConfidence": 90,
  "textract": {
   "summary": {
@@ -676,9 +676,11 @@
       },
       {
        "text": "TAXABLE",
-       "priceCents": 789,
+       "priceCents": 480,
        "confidence": 100.0,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 309,
+       "discountName": "TAXABLE"
       },
       {
        "text": "TAXABLE",
@@ -710,11 +712,6 @@
        "kind": "tax",
        "name": "TAX1",
        "amountCents": 439
-      },
-      {
-       "kind": "discount",
-       "name": "TAXABLE",
-       "amountCents": -309
       }
      ],
      "totalCents": 5182
@@ -1088,9 +1085,11 @@
       },
       {
        "text": "BRG DELUXE",
-       "priceCents": 1495,
+       "priceCents": 500,
        "confidence": 100.0,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 995,
+       "discountName": "K TIMING"
       }
      ],
      "fees": [
@@ -1098,11 +1097,6 @@
        "kind": "tax",
        "name": "TAX",
        "amountCents": 339
-      },
-      {
-       "kind": "discount",
-       "name": "K TIMING",
-       "amountCents": -995
       }
      ],
      "totalCents": 3729
@@ -3078,9 +3072,11 @@
       },
       {
        "text": "VRTYMIXFRUIT",
-       "priceCents": 799,
+       "priceCents": 599,
        "confidence": 99.9,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 200,
+       "discountName": "195864"
       }
      ],
      "fees": [
@@ -3088,11 +3084,6 @@
        "kind": "tax",
        "name": "TAX",
        "amountCents": 1520
-      },
-      {
-       "kind": "discount",
-       "name": "195864",
-       "amountCents": -200
       },
       {
        "kind": "discount",
@@ -4637,9 +4628,11 @@
       },
       {
        "text": "PUMPKIN FLAX",
-       "priceCents": 899,
+       "priceCents": 599,
        "confidence": 99.3,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 300,
+       "discountName": "/993467"
       },
       {
        "text": "3M SONGE X24",
@@ -4712,11 +4705,6 @@
        "kind": "discount",
        "name": "INSTANT SAVINGS",
        "amountCents": -600
-      },
-      {
-       "kind": "discount",
-       "name": "/993467",
-       "amountCents": -300
       },
       {
        "kind": "discount",
@@ -4801,9 +4789,11 @@
       },
       {
        "text": "MAHI MAHI FILLETS",
-       "priceCents": 899,
+       "priceCents": 699,
        "confidence": 100.0,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 200,
+       "discountName": "$2 off (1) WC Fill"
       },
       {
        "text": "California Harvest",
@@ -4846,11 +4836,6 @@
        "kind": "tax",
        "name": "BAL",
        "amountCents": null
-      },
-      {
-       "kind": "discount",
-       "name": "$2 off (1) WC Fill",
-       "amountCents": -200
       }
      ],
      "totalCents": null
@@ -6287,9 +6272,11 @@
       },
       {
        "text": "QUANTUM ULT",
-       "priceCents": 2399,
+       "priceCents": 1899,
        "confidence": 99.4,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 500,
+       "discountName": "TPD/4254844"
       },
       {
        "text": "SWEET POTATO",
@@ -6323,9 +6310,11 @@
       },
       {
        "text": "KS PARCHMENT",
-       "priceCents": 1799,
+       "priceCents": 1299,
        "confidence": 99.3,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 500,
+       "discountName": "CPN/1323118"
       },
       {
        "text": "BISCOTTI",
@@ -6377,9 +6366,11 @@
       },
       {
        "text": "BIOSTEEL",
-       "priceCents": 2999,
+       "priceCents": 2399,
        "confidence": 99.6,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 600,
+       "discountName": "TPD/1694898"
       },
       {
        "text": "HNYMUSTPRZTL",
@@ -6470,21 +6461,6 @@
        "kind": "discount",
        "name": "TPD/4254844",
        "amountCents": -500
-      },
-      {
-       "kind": "discount",
-       "name": "TPD/4254844",
-       "amountCents": -500
-      },
-      {
-       "kind": "discount",
-       "name": "CPN/1323118",
-       "amountCents": -500
-      },
-      {
-       "kind": "discount",
-       "name": "TPD/1694898",
-       "amountCents": -600
       }
      ],
      "totalCents": 72088
@@ -10150,9 +10126,11 @@
      "lines": [
       {
        "text": "FRI-SUN DINNER $29.88",
-       "priceCents": 14940,
+       "priceCents": 13446,
        "confidence": 100.0,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 1494,
+       "discountName": "29.88 50%OFF BIRTHDAY"
       }
      ],
      "fees": [
@@ -10160,11 +10138,6 @@
        "kind": "tax",
        "name": "Tax(9%):",
        "amountCents": 1211
-      },
-      {
-       "kind": "discount",
-       "name": "29.88 50%OFF BIRTHDAY",
-       "amountCents": -1494
       }
      ],
      "totalCents": 14657
@@ -10439,9 +10412,11 @@
       },
       {
        "text": "VRTYMIXFRUIT",
-       "priceCents": 799,
+       "priceCents": 599,
        "confidence": 99.8,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 200,
+       "discountName": "195864"
       }
      ],
      "fees": [
@@ -10449,11 +10424,6 @@
        "kind": "tax",
        "name": "TAX",
        "amountCents": 1520
-      },
-      {
-       "kind": "discount",
-       "name": "195864",
-       "amountCents": -200
       },
       {
        "kind": "discount",
@@ -22448,9 +22418,11 @@
       },
       {
        "text": "HURRICANE PC",
-       "priceCents": 1549,
+       "priceCents": 1239,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 310,
+       "discountName": "/975605"
       },
       {
        "text": "WILDROOTS",
@@ -22460,9 +22432,11 @@
       },
       {
        "text": "HONEY MACS",
-       "priceCents": 2299,
+       "priceCents": 1859,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 440,
+       "discountName": "/1071656"
       },
       {
        "text": "SHRIMPCHECKS",
@@ -22472,9 +22446,11 @@
       },
       {
        "text": "MUMS SEAWEED",
-       "priceCents": 1079,
+       "priceCents": 869,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 210,
+       "discountName": "/29555"
       },
       {
        "text": "CHEESY SMILE",
@@ -22484,9 +22460,11 @@
       },
       {
        "text": "TONKOTSU RAM",
-       "priceCents": 1249,
+       "priceCents": 999,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 250,
+       "discountName": "/1407434"
       },
       {
        "text": "ORG BROWN RR",
@@ -22496,15 +22474,19 @@
       },
       {
        "text": "LOBSTER RAV",
-       "priceCents": 1489,
+       "priceCents": 1039,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 450,
+       "discountName": "/1378919"
       },
       {
        "text": "KALUA PORK",
-       "priceCents": 2099,
+       "priceCents": 1699,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 400,
+       "discountName": "/262020"
       },
       {
        "text": "KS ORG EGGS",
@@ -22538,15 +22520,19 @@
       },
       {
        "text": "BOBA MOCHI",
-       "priceCents": 899,
+       "priceCents": 679,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 220,
+       "discountName": "/1571731"
       },
       {
        "text": "AQUAPHOR ADV",
-       "priceCents": 1849,
+       "priceCents": 1299,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 550,
+       "discountName": "/1677797"
       },
       {
        "text": "AMORE TOV",
@@ -22580,68 +22566,22 @@
       },
       {
        "text": "KAUAI COFFEE",
-       "priceCents": 2299,
+       "priceCents": 1839,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 460,
+       "discountName": "/ 135800"
       },
       {
        "text": "1,5 MOLOKAI",
-       "priceCents": 3099,
+       "priceCents": 2499,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 600,
+       "discountName": "/1095952"
       }
      ],
      "fees": [
-      {
-       "kind": "discount",
-       "name": "/975605",
-       "amountCents": -310
-      },
-      {
-       "kind": "discount",
-       "name": "/1071656",
-       "amountCents": -440
-      },
-      {
-       "kind": "discount",
-       "name": "/29555",
-       "amountCents": -210
-      },
-      {
-       "kind": "discount",
-       "name": "/1407434",
-       "amountCents": -250
-      },
-      {
-       "kind": "discount",
-       "name": "/1378919",
-       "amountCents": -450
-      },
-      {
-       "kind": "discount",
-       "name": "/262020",
-       "amountCents": -400
-      },
-      {
-       "kind": "discount",
-       "name": "/1571731",
-       "amountCents": -220
-      },
-      {
-       "kind": "discount",
-       "name": "/1677797",
-       "amountCents": -550
-      },
-      {
-       "kind": "discount",
-       "name": "/ 135800",
-       "amountCents": -460
-      },
-      {
-       "kind": "discount",
-       "name": "/1095952",
-       "amountCents": -600
-      },
       {
        "kind": "tax",
        "name": "TAX",
@@ -24834,17 +24774,14 @@
      "lines": [
       {
        "text": "FRI-SUN DINNER $29.88",
-       "priceCents": 14940,
+       "priceCents": 13446,
        "confidence": null,
-       "lowConfidence": false
+       "lowConfidence": false,
+       "discountCents": 1494,
+       "discountName": "50%OFF BIRTHDAY"
       }
      ],
      "fees": [
-      {
-       "kind": "discount",
-       "name": "50%OFF BIRTHDAY",
-       "amountCents": -1494
-      },
       {
        "kind": "tax",
        "name": "Tax(9%)",

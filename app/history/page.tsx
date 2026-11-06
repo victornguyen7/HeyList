@@ -31,7 +31,8 @@ function Totals({ heading, rows }: { heading: string; rows: [string, number][] }
   );
 }
 
-// History: the lists this browser has opened (no accounts, decision 6), spending by type and month, and buy again.
+// History: the lists this browser has opened and, logged in, the account's other lists (issue 26), spending by type
+// and month, and buy again.
 export default function HistoryPage() {
   const router = useRouter();
   const seen = useSeenLists();
@@ -56,7 +57,7 @@ export default function HistoryPage() {
       }));
       const created = await api<List>("/api/lists", {
         method: "POST",
-        body: JSON.stringify({ title: list.title, kind: list.kind, budgetCents: list.budgetCents, items }),
+        body: JSON.stringify({ title: list.title, kind: list.kind, budgetCents: list.budgetCents, taxRateBp: list.taxRateBp ?? null, items }),
       });
       router.push(`/lists/${created.id}`);
     } catch (err) {

@@ -41,6 +41,8 @@ create table if not exists receipts (
   -- Who paid.
   member_id uuid references members (id) on delete set null,
   image_path text not null,
+  -- A small copy of the photo for the Receipts tab, sent by the browser after the scan (issue 35); null for none.
+  thumb_path text,
   total_cents integer check (total_cents >= 0),
   -- Every line Textract read, with the list item the AI proposed for it, until the person confirms:
   -- [{"text": "2% MILK 1GAL", "priceCents": 429, "confidence": 98.1, "lowConfidence": false, "itemId": "<uuid>" | null}, ...]
@@ -200,3 +202,4 @@ alter table items add column if not exists price_store text;
 alter table items add column if not exists price_source text check (price_source in ('paid', 'store', 'market', 'estimate'));
 alter table lists add column if not exists tax_rate_bp integer check (tax_rate_bp between 0 and 2500);
 alter table orders add column if not exists taxes jsonb not null default '{}';
+alter table receipts add column if not exists thumb_path text;

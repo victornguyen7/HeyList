@@ -24,8 +24,12 @@ export default function ReceiptsPage() {
         {receipts.length === 0 && <p className="text-base text-muted-on-bg">None yet.</p>}
         {receipts.map((receipt) => (
           <article key={receipt.id} id={receipt.id} className={`${card} flex flex-col gap-2 text-base lg:flex-row lg:items-start lg:gap-5`}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- private photo served by the backend */}
-            <img src={`/api/receipts/${receipt.id}/image`} alt="Receipt photo" loading="lazy" className="max-h-80 w-full rounded-[1.125rem] object-contain lg:max-h-[11.875rem] lg:w-[8.75rem] lg:shrink-0 lg:object-cover" />
+            {/* The small copy (issue 35), or the photo for a receipt scanned before there were copies; a tap opens the
+                full photo to read it. */}
+            <a href={`/api/receipts/${receipt.id}/image`} target="_blank" rel="noopener" className="lg:shrink-0" aria-label="Open the full receipt photo">
+              {/* eslint-disable-next-line @next/next/no-img-element -- private photo served by the backend */}
+              <img src={`/api/receipts/${receipt.id}/image?size=thumb`} alt="Receipt photo" loading="lazy" className="max-h-80 w-full rounded-[1.125rem] object-contain lg:max-h-[11.875rem] lg:w-[8.75rem] lg:object-cover" />
+            </a>
             <div className="flex min-w-0 flex-1 flex-col gap-2">
             <p className="text-muted">
               {day(receipt.createdAt)}
@@ -39,6 +43,7 @@ export default function ReceiptsPage() {
                   <span>
                     {line.priceCents !== null ? usd(line.priceCents) : "—"}
                     {line.typed && <span className="text-muted"> (typed)</span>}
+                    {line.discountCents ? <span className="text-muted"> ({usd(line.discountCents)} off)</span> : null}
                   </span>
                 </li>
               ))}

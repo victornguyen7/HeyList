@@ -45,7 +45,8 @@ export function priceShown(item: Pick<Item, "product" | "priceStore" | "priceSou
 }
 export type Product = { productId: string; title: string; store: string; url: string; imageUrl: string | null; priceCents: number };
 // priceCents is null where the photo's price couldn't be read surely; typed marks one the person typed in.
-export type ReceiptLine = { text: string; priceCents: number | null; lowConfidence: boolean; itemId: string | null; typed?: boolean };
+// discountCents (positive) is a discount printed under the line and already taken off priceCents (issue 17).
+export type ReceiptLine = { text: string; priceCents: number | null; lowConfidence: boolean; itemId: string | null; typed?: boolean; discountCents?: number; discountName?: string };
 // What a receipt charged besides its items. A discount's amountCents is negative; null means it couldn't be read.
 export type ReceiptFee = { kind: "tax" | "tip" | "service" | "delivery" | "discount" | "other"; name: string; amountCents: number | null; typed?: boolean };
 export type Receipt = {
@@ -112,7 +113,20 @@ export function seenLists(): string[] {
 export function rememberList(id: string) {
   try {
     localStorage.setItem(SEEN, JSON.stringify([id, ...seenLists().filter((seen) => seen !== id)].slice(0, 50)));
+    // Opening a list again brings it back, also one the account joined (issue 26).
+    localStorage.setItem(HIDDEN, JSON.stringify(hiddenLists().filter((hidden) => hidden !== id)));
   } catch {}
+}
+
+// Lists taken off Home and History in this browser. The account's lists (GET /api/me/lists) come back from the
+// server every time, so they are hidden here rather than only forgotten.
+const HIDDEN = "heylist:hidden";
+export function hiddenLists(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(HIDDEN) ?? "[]");
+  } catch {
+    return [];
+  }
 }
 
 // Who "you" are on a list: for a guest, remembered in this browser only (list-context.tsx reads it).
@@ -140,6 +154,7 @@ export function forgetList(id: string) {
   try {
     localStorage.setItem(SEEN, JSON.stringify(seenLists().filter((seen) => seen !== id)));
     localStorage.setItem(CACHE, JSON.stringify(cachedLists().filter((list) => list.id !== id)));
+    localStorage.setItem(HIDDEN, JSON.stringify([id, ...hiddenLists().filter((hidden) => hidden !== id)].slice(0, 200)));
   } catch {}
 }
 export function cacheLists(lists: List[]) {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { api, percent, usd, type Item, type List, type Receipt, type ReceiptFee } from "./api";
-import { shrink, typedCents } from "./photo";
+import { sendThumbnail, shrink, typedCents } from "./photo";
 import { button, buttonAi, buttonGlass, card } from "./ui";
 
 const FEE_KINDS: Record<ReceiptFee["kind"], string> = { tax: "Tax", tip: "Tip", service: "Service charge", delivery: "Delivery", discount: "Discount", other: "Fee" };
@@ -42,6 +42,7 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
     try {
       const query = memberId ? `?memberId=${memberId}` : "";
       const scanned = await api<Receipt>(`/api/lists/${list.id}/receipts${query}`, { method: "POST", body: await shrink(file) });
+      sendThumbnail(scanned.id, file);
       review(scanned);
     } catch (err) {
       setStatus((err as Error).message);
@@ -143,6 +144,12 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
                   <span className="text-[0.8125rem] text-money">The price couldn&apos;t be read. Type it from the receipt, or leave it blank if you can&apos;t tell.</span>
                 )}
                 {line.priceCents !== null && line.lowConfidence && <span className="text-[0.8125rem] text-money">Hard to read: check this line</span>}
+                {line.discountCents ? (
+                  <span className="text-[0.8125rem] text-muted tabular-nums">
+                    {usd(line.priceCents! + line.discountCents)} less {usd(line.discountCents)} off
+                    <span className="font-mono"> · {line.discountName}</span>
+                  </span>
+                ) : null}
                 <select
                   aria-label={`List item for ${line.text}`}
                   className="h-11 rounded-[1.25rem] bg-surface-2 px-3"

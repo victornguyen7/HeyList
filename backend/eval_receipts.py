@@ -136,7 +136,9 @@ def score(case: dict, read: dict) -> dict:
     A labelled line that charges nothing or is negative isn't an item (the app drops free lines and reads
     discounts as fees). A price left blank for the person to type is asked, neither right nor wrong."""
     expected = [item for item in case["items"] if item["priceCents"] is None or item["priceCents"] > 0]
-    left = list(read["lines"])
+    # A discount taken off its item (issue 17) is scored on the printed price, which is what the labels have.
+    printed = lambda line: line["priceCents"] + line.get("discountCents", 0) if line["priceCents"] is not None else None
+    left = [line | {"priceCents": printed(line)} for line in read["lines"]]
     # Lines with the right price pair up first, so a near-same name ("JERSEY BODY" / "JERSEY TROUSERS") on an
     # earlier item can't take a later item's line.
     pairs = {}
