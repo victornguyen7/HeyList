@@ -103,7 +103,7 @@ Every item can have a person responsible for buying it, and the list keeps who p
 
 - **Responsibility:** anyone on the list picks "Ann buys it" on an item (`claimed_by`). "Share out the rest evenly" gives every open, unclaimed item to someone, most expensive first to whoever carries the least estimated cost so far (`POST /api/lists/{id}/assign`).
 - **Paying and price:** when an item is bought (PayPal order, receipt, or checked off with a price), the item records who paid (`bought_by`) and what was paid for all of it (`price_cents`).
-- **Settling up:** the Money panel shows what each person paid, their equal share of what was spent, and the fewest payments that even it out ("Cat pays Ann $20.00"), from `GET /api/lists/{id}/split`. Receipt extras are personal and not split; a receipt's tax, tip and fees are split in proportion to the list items on it, and the part for its extras stays with the buyer (decision 57). An item checked off without a name is reported, not split.
+- **Settling up:** the Money panel shows what each person paid, their equal share of what was spent, and the fewest payments that even it out ("Cat pays Ann $20.00"), from `GET /api/lists/{id}/split`. Receipt extras are personal and not split; a receipt's tax, tip and fees are split in proportion to the list items on it, and the part for its extras stays with the buyer (decision 57). Sales tax counts too (decision 80): the list's rate comes from its confirmed receipts, or is typed on Money before any; PayPal and Venmo payments charge it, and Money shows how the total adds up (items + tax + fees − refunds). An item checked off without a name is reported, not split.
 - Next: send those payments as PayPal invoices (Settle-up page).
 
 ### Receipt scanning (built)

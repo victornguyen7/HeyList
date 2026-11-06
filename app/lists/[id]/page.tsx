@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { api, captureMessage, priceShown, proofLabel, refundNote, usd, type Capture, type Item, type List, type Receipt } from "../../api";
+import { api, captureMessage, itemsTax, percent, priceShown, proofLabel, refundNote, usd, type Capture, type Item, type List, type Receipt } from "../../api";
 import { PayPalButtons } from "../../paypal-buttons";
 import { PhotoTick } from "../../photo-tick";
 import { usePayPalRedirect } from "../../paypal-redirect";
@@ -186,10 +186,17 @@ export default function ProgressPage() {
   const open = items.filter((item) => !item.checkedAt);
   const done = items.filter((item) => item.checkedAt);
   const pending = list.orders.filter((order) => order.status === "PENDING");
-  const total = items.filter((item) => selected.has(item.id) && payable(item)).reduce((sum, item) => sum + cost(item), 0);
+  // What PayPal will charge: the items and the list's sales tax on them (decision 80), as the backend prices the order.
+  const rate = list.tax?.rateBp ?? 0;
+  const withTax = (some: Item[]) => some.reduce((sum, item) => sum + cost(item), 0) + itemsTax(some, rate);
+  const taxNote = (some: Item[]) => (rate && some.length ? `Includes ${usd(itemsTax(some, rate))} sales tax (${percent(rate)}).` : undefined);
+  const chosen = items.filter((item) => selected.has(item.id) && payable(item));
+  const total = withTax(chosen);
   // "Pay $X" starts with what you said you'd buy already chosen.
   const mine = me ? items.filter((item) => item.claimedBy === me && payable(item)) : [];
-  const spent = done.reduce((sum, item) => sum + (item.priceCents ?? 0), 0);
+  // Bought items, with the tax, tips and fees paid on them, as Money counts them.
+  const feesPaid = list.split?.members.flatMap((m) => m.purchases).reduce((sum, line) => sum + (line.feesOf ? line.cents : 0), 0) ?? 0;
+  const spent = done.reduce((sum, item) => sum + (item.priceCents ?? 0), feesPaid);
 
   // Bought items and items held by a pending payment can't be shopped; prices aren't needed, the stores give them.
   const shoppable = (item: Item) => !item.checkedAt && !held(item);
@@ -202,7 +209,7 @@ export default function ProgressPage() {
 
   // One main action, chosen by where the list is (phase 8C); everything else sits under More. Receipts are scanned
   // with "Take a photo" above the items, so there is no separate scan action here.
-  const mineCost = mine.reduce((sum, item) => sum + cost(item), 0);
+  const mineCost = withTax(mine);
   const main: "pay" | "share" | "settle" | null = !me
     ? null
     : mine.length > 0
@@ -431,7 +438,7 @@ export default function ProgressPage() {
           <ShopAgent itemIds={[...selected]} onPlanned={setPlanned} onClose={stopChoosing} />
         ) : mode === "pay" ? (
           <div className="flex flex-col gap-2.5">
-            <PayCard title="Choose what you're paying for" amount={usd(total)}>
+            <PayCard title="Choose what you're paying for" amount={usd(total)} note={taxNote(chosen)}>
               {total === 0 || !me ? (
                 <button type="button" disabled className={payPayPal}>
                   Tick items to pay for
@@ -452,7 +459,7 @@ export default function ProgressPage() {
           <>
             {joinCard}
             {main === "pay" && (
-              <PayCard title={payLabel} amount={usd(mineCost)}>
+              <PayCard title={payLabel} amount={usd(mineCost)} note={taxNote(mine)}>
                 <PayPalButtons createOrder={(method) => orderFor(mine.map((item) => item.id), method)} onApproved={captured} onError={setStatus} amountCents={mineCost}>
                   <button type="button" onClick={() => pay(mine.map((item) => item.id))} disabled={busy} className={payPayPal}>
                     {busy ? "Opening PayPal…" : "Pay with PayPal"}

@@ -10,6 +10,12 @@ import { Avatar, button, card, chip, field, mini, payPayPal } from "./ui";
 
 export type Split = {
   totalCents: number;
+  // How totalCents adds up, as on a receipt: items + tax + other fees (tip, delivery, less discounts) - refunds.
+  // Missing on a split saved in this browser before tax was counted.
+  itemsCents?: number;
+  taxCents?: number;
+  feesCents?: number;
+  refundedCents?: number;
   unattributedCents: number;
   // PayPal charges for items something else had already checked off; they count toward the payer anyway.
   boughtTwice: { orderId: string; itemId: string; cents: number }[];
@@ -21,8 +27,10 @@ export type Split = {
     // Settle-up payments sent minus received (decision 60).
     settledCents: number;
     balanceCents: number;
-    // feesOf is set on a receipt's share of its tax, tip and fees; refundOf on money given back in PayPal (itemId is then null).
-    purchases: { itemId: string | null; cents: number; boughtTwice: boolean; feesOf: string | null; refundOf: string | null }[];
+    // feesOf is the receipt or PayPal order that charged a fee: a receipt's share of its tax, or of its tip and other
+    // fees, or an order's sales tax; fee says which ("tax" or "other"). refundOf is set on money given back in PayPal.
+    // itemId is null on both.
+    purchases: { itemId: string | null; cents: number; boughtTwice: boolean; feesOf: string | null; refundOf: string | null; fee?: "tax" | "other" | null }[];
   }[];
   transfers: { from: string; to: string; amountCents: number }[];
 };
@@ -323,7 +331,7 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-medium">How this was worked out</h2>
           <p className="text-base">
-            {usd(split.totalCents)} was spent on list items, shared equally by {split.members.length} {split.members.length === 1 ? "person" : "people"}:{" "}
+            {usd(split.totalCents)} was spent on list items{split.taxCents || split.feesCents ? ", with tax and fees" : ""}, shared equally by {split.members.length} {split.members.length === 1 ? "person" : "people"}:{" "}
             {usd(Math.floor(split.totalCents / split.members.length))} each.
           </p>
           {split.members.map((m) => (
@@ -372,10 +380,12 @@ export function SettleUp({ list, split, me }: { list: List; split: Split; me: st
                       );
                     }
                     if (line.feesOf) {
+                      const fromOrder = list.orders.some((order) => order.id === line.feesOf);
                       return (
                         <li key={index} className="flex justify-between gap-2 tabular-nums">
                           <span className="min-w-0">
-                            Tax, tip and fees<span className="text-muted"> · list items&apos; share, on a receipt</span>
+                            {line.fee === "tax" ? "Sales tax" : line.fee === "other" ? "Tip and fees" : "Tax, tip and fees"}
+                            <span className="text-muted">{fromOrder ? " · on a PayPal payment" : " · list items' share, on a receipt"}</span>
                           </span>
                           <span className="shrink-0">{usd(line.cents)}</span>
                         </li>

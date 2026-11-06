@@ -71,6 +71,15 @@ def cents(value) -> int | None:
     return value
 
 
+def tax_bp(value) -> int | None:
+    """A sales tax rate in basis points (825 is 8.25%), or None for no rate set."""
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= money.MAX_TAX_BP:
+        raise ValueError("bad tax rate")
+    return value
+
+
 def quantity(value) -> int:
     # bool is an int in Python, and JSON true must not become 1.
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 99:
@@ -189,7 +198,8 @@ def lists_state(list_ids: list[str]) -> list[dict]:
         # Sent with the list, so Money and Settle up don't wait for a second request.
         split = settled(parts["items"], parts["members"], parts["orders"], parts["receipts"], parts["settlements"])
         out = {key: [camel(r) for r in rs] for key, rs in parts.items()} | {"members": [member_out(m) for m in parts["members"]]}
-        return {**camel(row), **out, "split": split}
+        # The rate checkouts charge and estimates use (decision 80); taxRateBp is only the one someone typed.
+        return {**camel(row), **out, "split": split, "tax": money.tax_rate(row.get("tax_rate_bp"), parts["receipts"])}
 
     return [state(row) for row in found.result()]
 
@@ -202,6 +212,8 @@ def settled(items: list[dict], members: list[dict], orders: list[dict], receipts
         order
         | {
             "prices": {k: v for k, v in order["prices"].items() if order["refunds"].get(k, {}).get("status", "FAILED") in REFUND_FAILED},
+            # An item's tax goes back with its refund.
+            "taxes": {k: v for k, v in (order.get("taxes") or {}).items() if order["refunds"].get(k, {}).get("status", "FAILED") in REFUND_FAILED},
             "refunded_cents": sum(r["cents"] for r in order["refunds"].values() if r.get("outside") and r["status"] not in REFUND_FAILED),
         }
         for order in orders
@@ -249,6 +261,7 @@ def create_list(body=Depends(json_body)):
             "title": text(body["title"]),
             "kind": body.get("kind", "other"),
             "budget_cents": cents(body.get("budgetCents")),
+            "tax_rate_bp": tax_bp(body.get("taxRateBp")),
         }
         if row["kind"] not in llm.KINDS:
             raise ValueError("bad kind")
@@ -341,6 +354,8 @@ def update_list(list_id: str, body=Depends(json_body)):
             values["title"] = text(body["title"])
         if "budgetCents" in body:
             values["budget_cents"] = cents(body["budgetCents"])
+        if "taxRateBp" in body:
+            values["tax_rate_bp"] = tax_bp(body["taxRateBp"])
         if "finished" in body:
             values["finished_at"] = now() if body["finished"] is True else None
         if not values:
@@ -648,13 +663,24 @@ def by_venmo(body: dict) -> bool:
     return method == "venmo"
 
 
+def list_tax_bp(list_id: str) -> int:
+    """The sales tax rate this list's checkouts charge now (decision 80)."""
+    return money.tax_rate(db.select("lists", id=list_id)[0].get("tax_rate_bp"), db.select("receipts", list_id=list_id))["rateBp"]
+
+
 def open_order(list_id: str, items: list[dict], member_id: str | None, venmo: bool = False, products: dict | None = None):
-    """Creates the PayPal order for these items at their est_price_cents and stores it, so the capture knows what it
-    paid for. The caller checked the items can be bought. products ({item ID: store product}) are saved on the items
-    by the capture, not before."""
+    """Creates the PayPal order for these items at their est_price_cents, plus the list's sales tax (decision 80), and
+    stores it, so the capture knows what it paid for. The caller checked the items can be bought. products ({item ID:
+    store product}) are saved on the items by the capture, not before."""
+    rate = list_tax_bp(list_id)
+    # Per unit, as PayPal checks it: each item's tax is its unit's tax times its quantity.
+    unit_tax = {item["id"]: money.tax_of(item["est_price_cents"], rate) for item in items}
     try:
         order = paypal.create_order(
-            [{"name": item["name"], "priceCents": item["est_price_cents"], "quantity": item["quantity"]} for item in items],
+            [
+                {"name": item["name"], "priceCents": item["est_price_cents"], "quantity": item["quantity"], "taxCents": unit_tax[item["id"]]}
+                for item in items
+            ],
             # Back to this list's page, which captures the order.
             f"{APP_URL}/lists/{list_id}",
             venmo=venmo,
@@ -674,7 +700,9 @@ def open_order(list_id: str, items: list[dict], member_id: str | None, venmo: bo
                 "member_id": member_id,
                 "item_ids": [item["id"] for item in items],
                 "prices": {item["id"]: item["est_price_cents"] * item["quantity"] for item in items},
-                "total_cents": sum(item["est_price_cents"] * item["quantity"] for item in items),
+                # The sales tax charged on each item, all units; prices stay before tax, as on a receipt.
+                "taxes": {item["id"]: unit_tax[item["id"]] * item["quantity"] for item in items if unit_tax[item["id"]]},
+                "total_cents": sum((item["est_price_cents"] + unit_tax[item["id"]]) * item["quantity"] for item in items),
                 "products": products or {},
             }
         ],
@@ -821,7 +849,8 @@ def record_capture(order: dict, result: dict) -> dict:
             # (items_one_proof), so that stays. A checked-off item has all its units bought, so every unit this
             # order paid for is beyond what the list needs, and the charge is refunded to the buyer (decision 39).
             # ponytail: whole-item refunds; refund only the extra units once buying part of a quantity is possible.
-            cents = order["prices"].get(item["id"], 0)
+            # With its sales tax: all of what PayPal charged for it goes back.
+            cents = order["prices"].get(item["id"], 0) + (order.get("taxes") or {}).get(item["id"], 0)
             if not cents:
                 continue
             try:
@@ -869,12 +898,16 @@ def shop_list(list_id: str, body=Depends(json_body)):
             raise ValueError("an item cannot be shopped")
     except BAD_INPUT:
         return error("INVALID_ITEMS", 400)
-    # The budget left for this run: the budget, less what was spent and what the rest of the list is expected to cost.
-    budget = None
+    # The budget left for this run: the budget, less what was spent (with tax and fees) and what the rest of the list
+    # is expected to cost with tax. The cart is fitted before tax, to the part of that the tax leaves (decision 80).
+    budget = cart_budget = None
+    rate = list_tax_bp(list_id)
     if found["budget_cents"] is not None:
-        spent = sum(item["price_cents"] or 0 for item in items if item["checked_at"])
+        split = list_state(list_id)["split"]
+        spent = split["totalCents"] + split["unattributedCents"]
         rest = sum(money.line_cents(item) for item in items if not item["checked_at"] and item["id"] not in run_ids)
-        budget = max(found["budget_cents"] - spent - rest, 0)
+        budget = max(found["budget_cents"] - spent - rest - money.tax_of(rest, rate), 0)
+        cart_budget = budget * 10000 // (10000 + rate)
 
     # The cap is counted here, one search per item, before the searches run at the same time.
     allowed = [item for item in run if allow("market", 100, 3600)]
@@ -900,13 +933,15 @@ def shop_list(list_id: str, body=Depends(json_body)):
             skipped.append({"itemId": item["id"], "reason": NOT_SOLD})
         else:
             lines.append({"itemId": item["id"], "quantity": item["quantity"], "options": result})
-    cart, over = money.fit_cart(lines, budget)
+    cart, over = money.fit_cart(lines, cart_budget)
     skipped += [{"itemId": item_id, "reason": "Left out to stay within the budget."} for item_id in over]
     return {
         "cart": cart,
         "skipped": skipped,
         "totalCents": sum(line["product"]["priceCents"] * line["quantity"] for line in cart),
+        # The left budget is with tax; the cart's total is before it, and the cart adds the tax at this rate.
         "budgetLeftCents": budget,
+        "taxRateBp": rate,
     }
 
 

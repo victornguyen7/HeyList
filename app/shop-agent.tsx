@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { api, usd, type List, type Product } from "./api";
+import { api, percent, taxOf, usd, type List, type Product } from "./api";
 import { useList } from "./lists/[id]/list-context";
 import { usePayPalRedirect } from "./paypal-redirect";
 import { buttonAi, buttonGlass, card, mini, payPayPal } from "./ui";
 
 type Line = { itemId: string; quantity: number; product: Product; options: Product[] };
-type Plan = { cart: Line[]; skipped: { itemId: string; reason: string }[]; totalCents: number; budgetLeftCents: number | null };
+// budgetLeftCents is with tax; taxRateBp is the list's sales tax rate, which the PayPal order adds (decision 80).
+type Plan = { cart: Line[]; skipped: { itemId: string; reason: string }[]; totalCents: number; budgetLeftCents: number | null; taxRateBp?: number };
 
 // "Shop this list for me" (decision 61): the person ticks items on Progress, and the agent finds a real product for
 // each and proposes a cart that fits what is left of the budget. It never pays: the person removes or swaps products,
@@ -48,7 +49,11 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
   const chosen = (plan?.cart ?? [])
     .filter((line) => picked[line.itemId])
     .map((line) => ({ line, product: line.options.find((p) => p.productId === picked[line.itemId]) ?? line.product }));
+  // Before tax: what the server checks against today's store prices. PayPal charges it with the tax, per unit.
   const total = chosen.reduce((sum, { line, product }) => sum + product.priceCents * line.quantity, 0);
+  const rate = plan?.taxRateBp ?? 0;
+  const tax = chosen.reduce((sum, { line, product }) => sum + taxOf(product.priceCents, rate) * line.quantity, 0);
+  const charged = total + tax;
 
   async function pay() {
     setBusy("pay");
@@ -93,7 +98,7 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
     );
   }
 
-  const over = plan.budgetLeftCents !== null && total > plan.budgetLeftCents;
+  const over = plan.budgetLeftCents !== null && charged > plan.budgetLeftCents;
   return (
     <section className={`${card} flex flex-col gap-3`} aria-label="Proposed cart">
       <h2 className="text-lg font-medium">Your cart</h2>
@@ -162,7 +167,15 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
           ))}
         </ul>
       )}
-      {over && <p className="text-[0.8125rem] text-money">This is {usd(total - plan.budgetLeftCents!)} over what&apos;s left in the budget.</p>}
+      {tax > 0 && (
+        <p className="flex justify-between gap-3 text-[0.8125rem] text-muted tabular-nums">
+          <span>
+            {usd(total)} + {usd(tax)} sales tax ({percent(rate)})
+          </span>
+          <span className="font-medium text-text">{usd(charged)}</span>
+        </p>
+      )}
+      {over && <p className="text-[0.8125rem] text-money">This is {usd(charged - plan.budgetLeftCents!)} over what&apos;s left in the budget.</p>}
 
       {unpaid && (
         <p role="alert" className="rounded-2xl bg-money/12 px-3.5 py-2.5 text-[0.8125rem] font-medium text-money">
@@ -170,7 +183,7 @@ export function ShopAgent({ itemIds, onPlanned, onClose }: { itemIds: string[]; 
         </p>
       )}
       <button type="button" onClick={pay} disabled={chosen.length === 0 || busy !== null || !me} className={payPayPal}>
-        {busy === "pay" ? "Opening PayPal…" : !me ? "Join the list to pay" : chosen.length === 0 ? "Nothing in the cart" : `Pay ${usd(total)} with PayPal`}
+        {busy === "pay" ? "Opening PayPal…" : !me ? "Join the list to pay" : chosen.length === 0 ? "Nothing in the cart" : `Pay ${usd(charged)} with PayPal`}
       </button>
       <div className="flex justify-center gap-5">
         <button type="button" onClick={() => show(null)} disabled={busy !== null} className="text-[0.8125rem] text-muted">

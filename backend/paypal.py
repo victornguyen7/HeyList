@@ -97,11 +97,13 @@ def _usd(cents: int) -> Money:
 
 
 def create_order(items: list[dict], return_url: str, payee_email: str | None = None, venmo: bool = False) -> dict:
-    """Creates an order for [{"name", "priceCents", "quantity"}, ...] and returns its ID and the PayPal page to send
-    the buyer to. The caller looked the prices up; none came from the browser. With payee_email the money goes to
+    """Creates an order for [{"name", "priceCents", "quantity", "taxCents"?}, ...] and returns its ID and the PayPal
+    page to send the buyer to. taxCents is the sales tax on one unit (decision 80); PayPal shows it as the order's tax
+    and checks that items + tax = the amount. The caller looked the prices up; none came from the browser. With payee_email the money goes to
     that PayPal account instead of HeyList's (settle up, decision 60). A Venmo order (JS SDK v6 button, decision 67)
     names no payment source, as PayPal's v6 sample does; it is approved in Venmo's own flow, so it has no return page."""
     total = sum(item["priceCents"] * item["quantity"] for item in items)
+    tax = sum(item.get("taxCents", 0) * item["quantity"] for item in items)
 
     body = OrderRequest(
         intent=CheckoutPaymentIntent.CAPTURE,
@@ -109,12 +111,17 @@ def create_order(items: list[dict], return_url: str, payee_email: str | None = N
             PurchaseUnitRequest(
                 amount=AmountWithBreakdown(
                     currency_code="USD",
-                    value=_usd(total).value,
-                    breakdown=AmountBreakdown(item_total=_usd(total)),
+                    value=_usd(total + tax).value,
+                    breakdown=AmountBreakdown(item_total=_usd(total), **({"tax_total": _usd(tax)} if tax else {})),
                 ),
                 items=[
                     # PayPal allows 127 characters for an item name.
-                    ItemRequest(name=item["name"][:127], quantity=str(item["quantity"]), unit_amount=_usd(item["priceCents"]))
+                    ItemRequest(
+                        name=item["name"][:127],
+                        quantity=str(item["quantity"]),
+                        unit_amount=_usd(item["priceCents"]),
+                        **({"tax": _usd(item.get("taxCents", 0))} if tax else {}),
+                    )
                     for item in items
                 ],
                 **({"payee": PayeeBase(email_address=payee_email)} if payee_email else {}),

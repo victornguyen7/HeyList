@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api, usd, type Item, type List, type Receipt, type ReceiptFee } from "./api";
+import { api, percent, usd, type Item, type List, type Receipt, type ReceiptFee } from "./api";
 import { shrink, typedCents } from "./photo";
 import { button, buttonAi, buttonGlass, card } from "./ui";
 
@@ -74,6 +74,12 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
   const badTyping = amounts.some((cents) => Number.isNaN(cents));
   const blanks = amounts.filter((cents) => cents === null).length;
   const sum = amounts.reduce<number>((total, cents) => total + (cents ?? 0), 0);
+  // The sales tax rate this receipt shows, as money.receipt_tax_rate works it out: tax over lines less discounts.
+  // Once confirmed, it becomes the list's rate for PayPal payments and estimates (decision 80).
+  const taxCents = feeCents.filter((_, i) => fees[i].kind === "tax");
+  const subtotal = lineCents.reduce<number>((total, cents) => total + (cents ?? 0), 0) + feeCents.reduce<number>((total, cents, i) => total + (fees[i].kind === "discount" ? (cents ?? 0) : 0), 0);
+  const taxKnown = taxCents.length > 0 && !taxCents.some((cents) => cents === null || Number.isNaN(cents)) && !lineCents.some((cents) => cents === null || Number.isNaN(cents));
+  const receiptRate = taxKnown && subtotal > 0 ? Math.min(Math.floor((taxCents.reduce<number>((t, c) => t + (c ?? 0), 0) * 20000 + subtotal) / (2 * subtotal)), 2500) : null;
 
   const typedInput = (label: string, value: string, set: (value: string) => void) => (
     <input
@@ -178,6 +184,11 @@ export function ReceiptScan({ list, memberId, onDone, scanned, onClose }: { list
                   </li>
                 ))}
               </ul>
+              {receiptRate !== null && (
+                <p className="text-[0.8125rem] text-muted">
+                  That&apos;s {percent(receiptRate)} sales tax. Once you confirm, PayPal payments and estimates on this list use your receipts&apos; rate.
+                </p>
+              )}
             </>
           )}
           {receipt.totalCents !== null && (

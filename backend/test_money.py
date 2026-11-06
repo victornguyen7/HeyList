@@ -100,9 +100,9 @@ class SplitTest(unittest.TestCase):
         self.assertEqual(
             result["members"][0]["purchases"],
             [
-                {"itemId": "tent", "cents": 9000, "boughtTwice": False, "feesOf": None, "refundOf": None},
-                {"itemId": "food", "cents": 2500, "boughtTwice": True, "feesOf": None, "refundOf": None},
-                {"itemId": "gone", "cents": 100, "boughtTwice": True, "feesOf": None, "refundOf": None},
+                {"itemId": "tent", "cents": 9000, "boughtTwice": False, "feesOf": None, "refundOf": None, "fee": None},
+                {"itemId": "food", "cents": 2500, "boughtTwice": True, "feesOf": None, "refundOf": None, "fee": None},
+                {"itemId": "gone", "cents": 100, "boughtTwice": True, "feesOf": None, "refundOf": None, "fee": None},
             ],
         )
         self.assertEqual(result["totalCents"], 14600)
@@ -115,7 +115,7 @@ class SplitTest(unittest.TestCase):
         result = money.split(items, ["ann", "bob"], orders)
 
         self.assertEqual([m["paidCents"] for m in result["members"]], [7000, 3000])
-        self.assertEqual(result["members"][0]["purchases"][-1], {"itemId": None, "cents": -2000, "boughtTwice": False, "feesOf": None, "refundOf": "O1"})
+        self.assertEqual(result["members"][0]["purchases"][-1], {"itemId": None, "cents": -2000, "boughtTwice": False, "feesOf": None, "refundOf": "O1", "fee": None})
         self.assertEqual(result["transfers"], [{"from": "bob", "to": "ann", "amountCents": 2000}])
 
     def test_receipt_fees_are_shared_in_proportion_to_the_list_items(self):
@@ -125,12 +125,28 @@ class SplitTest(unittest.TestCase):
 
         result = money.split(items, ["ann", "bob"], receipts=[receipt | {"fees": fees}])
 
-        # 240 of fees on 900 of list items and 300 of extras: 180 is shared, 60 stays with ann.
-        self.assertEqual(result["members"][0]["purchases"][-1], {"itemId": None, "cents": 180, "boughtTwice": False, "feesOf": "R1", "refundOf": None})
+        # 240 of fees on 900 of list items and 300 of extras: 180 is shared, 60 stays with ann. Tax (100) and the
+        # other fees (140) are shared as two lines, 75 and 105.
+        fee_lines = result["members"][0]["purchases"][-2:]
+        self.assertEqual(fee_lines, [
+            {"itemId": None, "cents": 75, "boughtTwice": False, "feesOf": "R1", "refundOf": None, "fee": "tax"},
+            {"itemId": None, "cents": 105, "boughtTwice": False, "feesOf": "R1", "refundOf": None, "fee": "other"},
+        ])
         self.assertEqual(result["totalCents"], 1080)
+        self.assertEqual((result["itemsCents"], result["taxCents"], result["feesCents"], result["refundedCents"]), (900, 75, 105, 0))
         # An unconfirmed receipt, or one with no fees, adds nothing.
         for other in (receipt | {"fees": fees, "confirmed_at": None}, receipt | {"fees": []}):
             self.assertEqual(money.split(items, ["ann", "bob"], receipts=[other])["totalCents"], 900)
+
+    def test_an_orders_sales_tax_is_one_line_for_its_buyer(self):
+        items = [item("tent", price_cents=9000, bought_by="ann", order_id="O1")]
+        orders = [{"id": "O1", "member_id": "ann", "item_ids": ["tent"], "prices": {"tent": 9000}, "taxes": {"tent": 743}}]
+
+        result = money.split(items, ["ann", "bob"], orders)
+
+        self.assertEqual(result["members"][0]["purchases"][-1], {"itemId": None, "cents": 743, "boughtTwice": False, "feesOf": "O1", "refundOf": None, "fee": "tax"})
+        self.assertEqual((result["totalCents"], result["itemsCents"], result["taxCents"]), (9743, 9000, 743))
+        self.assertEqual(result["transfers"], [{"from": "bob", "to": "ann", "amountCents": 4871}])
 
     def test_no_members_is_not_a_crash(self):
         self.assertEqual(money.split([], [])["members"], [])
@@ -177,3 +193,32 @@ class FitCartTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def receipt(lines, fees, confirmed_at="now"):
+    return {"confirmed_at": confirmed_at, "lines": [{"priceCents": cents} for cents in lines], "fees": fees}
+
+
+class TaxRateTest(unittest.TestCase):
+    def test_tax_is_rounded_to_the_nearest_cent(self):
+        self.assertEqual([money.tax_of(cents, 825) for cents in (899, 1499, 0, 6)], [74, 124, 0, 0])
+        self.assertEqual(money.tax_of(200, 825), 17)  # 16.5 rounds up
+
+    def test_the_rate_is_all_receipt_tax_over_all_their_subtotals_after_discounts(self):
+        tax = lambda cents: {"kind": "tax", "amountCents": cents}
+        receipts = [
+            receipt([1000, 1000], [tax(150), {"kind": "discount", "amountCents": -500}]),  # 150 on 1500
+            receipt([2500], [tax(250)]),  # 250 on 2500
+            receipt([999], [tax(None)]),  # tax unread: left out
+            receipt([None, 500], [tax(40)]),  # a price unknown: left out
+            receipt([700], []),  # no tax line: left out
+            receipt([700], [tax(70)], confirmed_at=None),  # not confirmed: left out
+        ]
+        self.assertEqual(money.receipt_tax_rate(receipts), 1000)  # 400 on 4000
+        self.assertIsNone(money.receipt_tax_rate(receipts[2:]))
+
+    def test_receipts_come_first_then_the_typed_rate_then_none(self):
+        learned = [receipt([1000], [{"kind": "tax", "amountCents": 60}])]
+        self.assertEqual(money.tax_rate(825, learned), {"rateBp": 600, "source": "receipts"})
+        self.assertEqual(money.tax_rate(825, []), {"rateBp": 825, "source": "set"})
+        self.assertEqual(money.tax_rate(None, []), {"rateBp": 0, "source": None})

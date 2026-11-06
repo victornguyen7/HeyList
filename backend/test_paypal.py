@@ -76,6 +76,26 @@ class PayPalTest(unittest.TestCase):
         self.assertEqual([item["quantity"] for item in unit["items"]], ["2", "1"])
         self.assertEqual(body["payment_source"]["paypal"]["experience_context"]["return_url"], "http://app/?list=L1")
 
+    def test_sales_tax_is_sent_per_unit_and_as_the_orders_tax_total(self):
+        self.fake_paypal((201, {"id": "ORDER1", "links": [{"rel": "payer-action", "href": "https://pay"}]}))
+
+        items = [{"name": "Sunscreen", "priceCents": 899, "quantity": 2, "taxCents": 74}, {"name": "Map", "priceCents": 500, "quantity": 1, "taxCents": 0}]
+        paypal.create_order(items, "http://app/")
+
+        unit = json.loads(self.fake.requests[1].body)["purchase_units"][0]
+        self.assertEqual(unit["amount"]["value"], "24.46")
+        self.assertEqual({key: value["value"] for key, value in unit["amount"]["breakdown"].items()}, {"item_total": "22.98", "tax_total": "1.48"})
+        self.assertEqual([item["tax"]["value"] for item in unit["items"]], ["0.74", "0.00"])
+
+    def test_an_order_without_tax_sends_no_tax_fields(self):
+        self.fake_paypal((201, {"id": "ORDER1", "links": [{"rel": "payer-action", "href": "https://pay"}]}))
+
+        paypal.create_order([{"name": "Map", "priceCents": 500, "quantity": 1, "taxCents": 0}], "http://app/")
+
+        unit = json.loads(self.fake.requests[1].body)["purchase_units"][0]
+        self.assertNotIn("tax_total", unit["amount"]["breakdown"])
+        self.assertNotIn("tax", unit["items"][0])
+
     def test_a_payee_email_sends_the_money_to_that_account(self):
         self.fake_paypal(
             (201, {"id": "ORDER1", "links": [{"rel": "payer-action", "href": "https://pay"}]}),

@@ -12,6 +12,9 @@ create table if not exists lists (
   -- The list type History groups spending by: groceries, trip, home, party, other.
   kind text not null default 'other' check (kind in ('groceries', 'trip', 'home', 'party', 'other')),
   budget_cents integer check (budget_cents >= 0),
+  -- The sales tax rate someone typed on Money, in basis points (825 is 8.25%). The list's confirmed receipts, when
+  -- they show one, take its place (decision 80).
+  tax_rate_bp integer check (tax_rate_bp between 0 and 2500),
   created_at timestamptz not null default now(),
   -- Set when the list is finished; a finished list shows in History.
   finished_at timestamptz
@@ -65,7 +68,10 @@ create table if not exists orders (
   -- What PayPal charges for each item, all units: {"<item id>": cents}. Fixed when the order is created,
   -- so a quantity or price changed while the buyer is on PayPal doesn't change what is recorded as paid.
   prices jsonb not null default '{}',
-  -- The total the server computed and sent to PayPal.
+  -- The sales tax PayPal charges on each item, all units: {"<item id>": cents} (decision 80). Not in prices, as on
+  -- a receipt; an item with no tax is left out.
+  taxes jsonb not null default '{}',
+  -- The total the server computed and sent to PayPal, tax included.
   total_cents integer not null check (total_cents > 0),
   status text not null default 'CREATED',
   -- PayPal's capture ID, needed to refund part of it.
@@ -192,3 +198,5 @@ alter table items add column if not exists owned boolean not null default false;
 alter table orders add column if not exists products jsonb not null default '{}';
 alter table items add column if not exists price_store text;
 alter table items add column if not exists price_source text check (price_source in ('paid', 'store', 'market', 'estimate'));
+alter table lists add column if not exists tax_rate_bp integer check (tax_rate_bp between 0 and 2500);
+alter table orders add column if not exists taxes jsonb not null default '{}';

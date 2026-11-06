@@ -1,6 +1,44 @@
 """Split math (decision 10: done in code, not by AI). Rows are database rows from the items table."""
 
 
+# Sales tax rates are in basis points: 825 is 8.25% (decision 80). No US sales tax is near 25%.
+MAX_TAX_BP = 2500
+
+
+def tax_of(cents: int, rate_bp: int) -> int:
+    """The tax on cents at rate_bp, to the nearest cent (half up), in whole cents (decision 22)."""
+    return (cents * rate_bp + 5000) // 10000
+
+
+def receipt_tax_rate(receipts: list[dict]) -> int | None:
+    """The sales tax the list's confirmed receipts really charged, as a share of what they bought: all their tax over
+    all their subtotals (lines less discounts), in basis points. It is the rate where the list is shopped, and it
+    already counts what is taxed less or not at all (food in many states). A receipt counts only when its tax and
+    every line price are known. None when none counts.
+    ponytail: a receipt with no tax line doesn't count, so an all-food receipt can't pull the rate to 0%; it may
+    read high for a list of only untaxed food."""
+    tax = base = 0
+    for receipt in receipts:
+        fees = receipt.get("fees") or []
+        taxes = [fee["amountCents"] for fee in fees if fee["kind"] == "tax"]
+        prices = [line["priceCents"] for line in receipt["lines"]]
+        if not receipt["confirmed_at"] or not taxes or None in taxes or not prices or None in prices:
+            continue
+        subtotal = sum(prices) + sum(fee["amountCents"] or 0 for fee in fees if fee["kind"] == "discount")
+        if subtotal > 0:
+            tax, base = tax + sum(taxes), base + subtotal
+    return min((tax * 20000 + base) // (2 * base), MAX_TAX_BP) if base else None
+
+
+def tax_rate(set_bp: int | None, receipts: list[dict]) -> dict:
+    """The list's sales tax rate, used for PayPal orders and every estimate (decision 80): the one its receipts show,
+    else the one someone typed on Money, else none. source says which: "receipts", "set" or None."""
+    learned = receipt_tax_rate(receipts)
+    if learned is not None:
+        return {"rateBp": learned, "source": "receipts"}
+    return {"rateBp": set_bp, "source": "set"} if set_bp is not None else {"rateBp": 0, "source": None}
+
+
 def line_cents(item: dict) -> int:
     """The estimated cost of an item: its price times its quantity, 0 when it has no price."""
     return (item["est_price_cents"] or 0) * item["quantity"]
@@ -33,7 +71,9 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), rec
     orders are the list's captured PayPal orders: a charge for an item that something else checked off first
     (a receipt, a hand tick) is still money the buyer spent, so it counts too and is listed in boughtTwice.
     receipts are the list's receipts: a confirmed one's fees (tax, tip, discounts...) count in proportion to what it
-    bought for the list, and the part for its extras stays with the buyer (decision 57).
+    bought for the list, and the part for its extras stays with the buyer (decision 57). Its tax and its other fees
+    are separate lines (fee "tax" or "other"), so Money can show how the total adds up.
+    An order's taxes ({item ID: cents}) are the sales tax PayPal charged on its items (decision 80), one line per order.
     An order's refunded_cents is money given back to its buyer in PayPal's dashboard (issue 46), so it is taken
     off what they paid.
     settlements are completed settle-up payments (decision 60): money one member sent another, which moves their
@@ -42,10 +82,12 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), rec
     purchases: dict[str, list[dict]] = {member_id: [] for member_id in member_ids}
     unattributed = 0
 
-    def credit(member_id, item_id: str | None, cents: int, twice: bool = False, fees_of: str | None = None, refund_of: str | None = None):
+    def credit(member_id, item_id: str | None, cents: int, twice: bool = False, fees_of: str | None = None, refund_of: str | None = None, fee: str | None = None):
         nonlocal unattributed
         if member_id in purchases:
-            purchases[member_id].append({"itemId": item_id, "cents": cents, "boughtTwice": twice, "feesOf": fees_of, "refundOf": refund_of})
+            # feesOf is the receipt or order that charged a fee; fee says whether it is tax or another fee.
+            line = {"itemId": item_id, "cents": cents, "boughtTwice": twice, "feesOf": fees_of, "refundOf": refund_of, "fee": fee}
+            purchases[member_id].append(line)
         else:
             # A price but no buyer: nobody to pay back, so it stays out of the split.
             unattributed += cents
@@ -62,22 +104,34 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), rec
             if proof.get(item_id) != order["id"] and order["prices"].get(item_id):
                 credit(order["member_id"], item_id, order["prices"][item_id], twice=True)
                 bought_twice.append({"orderId": order["id"], "itemId": item_id, "cents": order["prices"][item_id]})
+        if tax := sum((order.get("taxes") or {}).values()):
+            credit(order["member_id"], None, tax, fees_of=order["id"], fee="tax")
         if order.get("refunded_cents"):
             credit(order["member_id"], None, -order["refunded_cents"], refund_of=order["id"])
 
     for receipt in receipts:
-        fees = sum(fee["amountCents"] for fee in receipt.get("fees") or [] if fee["amountCents"] is not None)
-        if not receipt["confirmed_at"] or not fees:
+        if not receipt["confirmed_at"]:
             continue
+        known = [fee for fee in receipt.get("fees") or [] if fee["amountCents"] is not None]
         on_list = sum(item["price_cents"] or 0 for item in items if item["receipt_id"] == receipt["id"])
         extras = sum(extra["priceCents"] or 0 for extra in receipt["extras"])
-        # ponytail: a receipt whose prices are all unknown shares no fees; ask for them if that shows up.
-        share = round(fees * on_list / (on_list + extras)) if on_list + extras else 0
-        if share:
-            credit(receipt["member_id"], None, share, fees_of=receipt["id"])
+        for kind in ("tax", "other"):
+            fees = sum(fee["amountCents"] for fee in known if (fee["kind"] == "tax") == (kind == "tax"))
+            # ponytail: a receipt whose prices are all unknown shares no fees; ask for them if that shows up.
+            share = round(fees * on_list / (on_list + extras)) if on_list + extras else 0
+            if share:
+                credit(receipt["member_id"], None, share, fees_of=receipt["id"], fee=kind)
 
     paid = {member_id: sum(line["cents"] for line in lines) for member_id, lines in purchases.items()}
     total = sum(paid.values())
+    # How the total adds up, as on a receipt: items + tax + other fees (tip, delivery, less discounts) - refunds.
+    lines = [line for member_lines in purchases.values() for line in member_lines]
+    adds_up = {
+        "itemsCents": sum(line["cents"] for line in lines if not line["fee"] and not line["refundOf"]),
+        "taxCents": sum(line["cents"] for line in lines if line["fee"] == "tax"),
+        "feesCents": sum(line["cents"] for line in lines if line["fee"] == "other"),
+        "refundedCents": -sum(line["cents"] for line in lines if line["refundOf"]),
+    }
     # Equal shares in whole cents; the leftover cents go to the first members, so the shares add up to the total.
     base, extra = divmod(total, len(member_ids)) if member_ids else (0, 0)
     share = {member_id: base + (index < extra) for index, member_id in enumerate(member_ids)}
@@ -90,6 +144,7 @@ def split(items: list[dict], member_ids: list[str], orders: list[dict] = (), rec
     balance = {member_id: paid[member_id] - share[member_id] + settled[member_id] for member_id in member_ids}
     return {
         "totalCents": total,
+        **adds_up,
         "unattributedCents": unattributed,
         "boughtTwice": bought_twice,
         "members": [

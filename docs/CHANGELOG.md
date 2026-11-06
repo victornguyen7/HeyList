@@ -1,5 +1,14 @@
 # HeyList — Changelog
 
+## 2026-11-06
+
+### Added
+
+- **Sales tax** (decision 80): every list has a sales tax rate, worked out from its confirmed receipts (what the stores really charged), or typed on Money before any receipt. PayPal and Venmo payments now charge it, shown in PayPal as Items + Tax = Total, and the pay card says how much of the amount is tax. The buyer is credited the tax in the split, so everyone's share and what they owe include it; an item refunded at capture gets its tax back.
+- **How it adds up** on Money: Items + Sales tax + Tip and fees − Refunds = Spent together, like the bottom of a receipt. "Still to buy" and the budget projection include the tax, and so does the shopping agent's budget and its cart total.
+- **Receipt review** says what sales tax rate the receipt shows. In each person's "How this was worked out", a receipt's tax and its tip and fees are now separate lines, and a PayPal payment's tax has its own line.
+- **Schema:** `lists.tax_rate_bp` and `orders.taxes`, so run `supabase/schema.sql` again before deploying the backend. 11 new tests (221 pass).
+
 ## 2026-11-05
 
 ### Changed

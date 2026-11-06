@@ -25,7 +25,7 @@ COLUMNS = {
 DEFAULTS = {
     "lists": {"kind": "other"},
     "items": {"position": 0, "quantity": 1, "price_typed": False, "owned": False},
-    "orders": {"status": "CREATED", "prices": {}, "refunds": {}, "products": {}},
+    "orders": {"status": "CREATED", "prices": {}, "taxes": {}, "refunds": {}, "products": {}},
     "settlements": {"status": "CREATED"},
     "receipts": {"lines": [], "fees": [], "extras": []},
 }
@@ -396,8 +396,11 @@ class CheckoutTest(RoutesTest):
         self.sunscreen, self.adapter, self.map = self.list["items"]
         self.refund = self.mock_paypal("refund", return_value={"refundId": "REF1", "status": "COMPLETED"})
 
-    def order(self, *items):
-        return self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": [item["id"] for item in items]})
+    def order(self, *items, **body):
+        return self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": [item["id"] for item in items], **body})
+
+    def join(self, name):
+        return self.client.post(f"/api/lists/{self.list['id']}/members", json={"name": name}).json()["id"]
 
     def test_the_order_uses_database_prices_and_quantities(self):
         create = self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
@@ -407,7 +410,7 @@ class CheckoutTest(RoutesTest):
         items, return_url = create.call_args.args
         self.assertEqual(
             items,
-            [{"name": "Sunscreen", "priceCents": 899, "quantity": 2}, {"name": "Adapter", "priceCents": 1499, "quantity": 1}],
+            [{"name": "Sunscreen", "priceCents": 899, "quantity": 2, "taxCents": 0}, {"name": "Adapter", "priceCents": 1499, "quantity": 1, "taxCents": 0}],
         )
         self.assertEqual(return_url, f"{main.APP_URL}/lists/{self.list['id']}")
         self.assertEqual(self.db.tables["orders"][0]["total_cents"], 899 * 2 + 1499)
@@ -476,6 +479,42 @@ class CheckoutTest(RoutesTest):
         # The refunded charge isn't money the buyer spent (decision 39).
         split = self.client.get(f"/api/lists/{self.list['id']}/split").json()
         self.assertEqual((split["unattributedCents"], split["boughtTwice"]), (899 * 2 + 500, []))
+
+    def test_the_lists_sales_tax_is_charged_per_unit_and_counted_in_the_split(self):
+        create = self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.assertEqual(self.client.patch(f"/api/lists/{self.list['id']}", json={"taxRateBp": 825}).json()["tax"], {"rateBp": 825, "source": "set"})
+
+        self.order(self.sunscreen, self.adapter, memberId=self.join("Ann"))
+
+        # 8.25% of 8.99 is 0.74 a unit, of 14.99 is 1.24.
+        self.assertEqual([item["taxCents"] for item in create.call_args.args[0]], [74, 124])
+        order = self.db.tables["orders"][0]
+        self.assertEqual(order["taxes"], {self.sunscreen["id"]: 148, self.adapter["id"]: 124})
+        self.assertEqual(order["total_cents"], 899 * 2 + 1499 + 148 + 124)
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
+        self.client.post("/api/orders/ORDER1/capture")
+        # The items keep their price before tax, as from a receipt; the tax is its own line in the split.
+        self.assertEqual(self.db.select("items", id=self.sunscreen["id"])[0]["price_cents"], 899 * 2)
+        split = self.client.get(f"/api/lists/{self.list['id']}/split").json()
+        self.assertEqual((split["itemsCents"], split["taxCents"], split["totalCents"]), (899 * 2 + 1499, 272, 899 * 2 + 1499 + 272))
+
+    def test_an_item_refunded_at_capture_gets_its_tax_back_too(self):
+        self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
+        self.client.patch(f"/api/lists/{self.list['id']}", json={"taxRateBp": 1000})
+        self.order(self.sunscreen, self.adapter, memberId=self.join("Ann"))
+        self.db.update("items", {"checked_at": "earlier", "receipt_id": "R1", "price_cents": 500}, id=self.adapter["id"])
+        self.mock_paypal("capture_order", return_value={"orderId": "ORDER1", "status": "COMPLETED", "captureId": "CAP1"})
+
+        self.assertEqual(self.client.post("/api/orders/ORDER1/capture").json()["refundedCents"], 1499 + 150)
+        self.refund.assert_called_once_with("CAP1", 1499 + 150, f"ORDER1-{self.adapter['id']}")
+        # Only the sunscreen's tax is still money spent.
+        self.assertEqual(self.client.get(f"/api/lists/{self.list['id']}/split").json()["taxCents"], 180)
+
+    def test_a_tax_rate_must_be_a_whole_number_of_basis_points_up_to_25_percent(self):
+        for rate in (2501, -1, 8.25, "825", True):
+            with self.subTest(rate=rate):
+                self.assertEqual(self.client.patch(f"/api/lists/{self.list['id']}", json={"taxRateBp": rate}).status_code, 400)
+        self.assertEqual(self.client.patch(f"/api/lists/{self.list['id']}", json={"taxRateBp": None}).json()["tax"], {"rateBp": 0, "source": None})
 
     def test_every_unit_of_an_item_already_checked_off_is_refunded(self):
         self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
@@ -671,7 +710,7 @@ class ProductRoutesTest(RoutesTest):
         self.assertIn("fetchedAt", item["product"])
         create = self.mock_paypal("create_order", return_value={"orderId": "ORDER1", "approveUrl": "https://pay"})
         self.client.post(f"/api/lists/{self.list['id']}/orders", json={"itemIds": [self.item["id"]]})
-        self.assertEqual(create.call_args.args[0], [{"name": "Sunscreen", "priceCents": 950, "quantity": 2}])
+        self.assertEqual(create.call_args.args[0], [{"name": "Sunscreen", "priceCents": 950, "quantity": 2, "taxCents": 0}])
 
     def chosen_long_ago(self):
         """The item has the product, chosen at 950 more than 10 minutes ago."""
@@ -693,7 +732,7 @@ class ProductRoutesTest(RoutesTest):
         self.assertEqual(self.db.tables["items"][0]["est_price_cents"], 1200)
         # Paying again charges the new price, without asking Channel3 a second time.
         self.pay()
-        self.assertEqual(create.call_args.args[0], [{"name": "Sunscreen", "priceCents": 1200, "quantity": 2}])
+        self.assertEqual(create.call_args.args[0], [{"name": "Sunscreen", "priceCents": 1200, "quantity": 2, "taxCents": 0}])
         lookup.assert_called_once_with("P1")
 
     def test_an_unchanged_store_price_goes_straight_to_paypal(self):
@@ -976,6 +1015,15 @@ class ShopTest(RoutesTest):
         self.assertEqual([l["product"]["productId"] for l in plan["cart"]], ["L1"])
         self.assertEqual(plan["skipped"], [{"itemId": self.tent["id"], "reason": "Left out to stay within the budget."}])
 
+    def test_the_budget_left_counts_the_tax_and_the_cart_fits_before_tax(self):
+        self.client.patch(f"/api/lists/{self.list['id']}", json={"budgetCents": 10000, "taxRateBp": 1000})
+        plan = self.plan(self.tent, self.lamp)
+
+        # The milk and gas still need 3400, and 340 of tax on them.
+        self.assertEqual((plan["budgetLeftCents"], plan["taxRateBp"]), (10000 - 3400 - 340, 1000))
+        # 6260 with tax leaves 5690 before tax: the lamps (2400, 2640 with tax) fit, the tent doesn't.
+        self.assertEqual([l["product"]["productId"] for l in plan["cart"]], ["L1"])
+
     def test_a_failed_search_skips_only_that_item(self):
         def search(name):
             if name == "Lamp":
@@ -1018,7 +1066,7 @@ class ShopTest(RoutesTest):
 
         self.assertEqual(response.json(), {"orderId": "ORDER1", "approveUrl": "https://pay"})
         self.assertEqual(get.call_count, 2)
-        self.assertEqual(create.call_args.args[0], [{"name": "Tent", "priceCents": 7000, "quantity": 1}, {"name": "Lamp", "priceCents": 1200, "quantity": 2}])
+        self.assertEqual(create.call_args.args[0], [{"name": "Tent", "priceCents": 7000, "quantity": 1, "taxCents": 0}, {"name": "Lamp", "priceCents": 1200, "quantity": 2, "taxCents": 0}])
         order = self.db.tables["orders"][0]
         self.assertEqual((order["member_id"], order["total_cents"]), (self.ann, 9400))
         self.assertEqual(sorted(p["productId"] for p in order["products"].values()), ["L1", "T2"])
@@ -1377,9 +1425,18 @@ class ReceiptTest(RoutesTest):
 
         # 75 cents of tax on 858 of milk for the list and 199 of gum for Ann: 61 is shared, 14 stays Ann's.
         ann = next(m for m in state["split"]["members"] if m["memberId"] == self.member)
-        self.assertEqual(ann["purchases"][-1], {"itemId": None, "cents": 61, "boughtTwice": False, "feesOf": receipt["id"], "refundOf": None})
+        self.assertEqual(ann["purchases"][-1], {"itemId": None, "cents": 61, "boughtTwice": False, "feesOf": receipt["id"], "refundOf": None, "fee": "tax"})
         self.assertEqual(state["split"]["totalCents"], 858 + 61)
         self.assertEqual([m["shareCents"] for m in state["split"]["members"] if m["memberId"] in (self.member, bob)], [460, 459])
+
+    def test_a_confirmed_receipt_sets_the_lists_tax_rate_over_a_typed_one(self):
+        self.client.patch(f"/api/lists/{self.list['id']}", json={"taxRateBp": 825})
+        receipt = self.scan(matches=[self.milk, self.milk, None]).json()
+        state = self.client.post(f"/api/receipts/{receipt['id']}/confirm", json={"itemIds": [self.milk, self.milk, None]}).json()
+
+        # 75 cents of tax on 858 + 199 of lines is 7.10%.
+        self.assertEqual(state["tax"], {"rateBp": 710, "source": "receipts"})
+        self.assertEqual(state["taxRateBp"], 825)
 
     def test_a_price_the_photo_left_blank_is_typed_in_and_marked_typed(self):
         lines = [self.LINES[0] | {"priceCents": None}, self.LINES[2]]

@@ -62,6 +62,8 @@ export type Receipt = {
 // COMPLETED is proof of purchase; PENDING means PayPal hasn't settled the payment yet (its items are held).
 export type Order = {
   id: string; memberId: string | null; itemIds: string[]; totalCents: number; status: "COMPLETED" | "PENDING";
+  // The sales tax charged on each item, all units (decision 80); totalCents includes it. Missing on older orders.
+  taxes?: Record<string, number>;
   // Charges given back because a single item had already been checked off when the payment went through (decision 39).
   refunds: Record<string, { refundId: string; cents: number; status: string }>;
   createdAt: string;
@@ -73,6 +75,11 @@ export type List = {
   title: string;
   kind: string;
   budgetCents: number | null;
+  // The sales tax rate someone typed on Money, in basis points (825 is 8.25%); null when none.
+  taxRateBp: number | null;
+  // The rate checkouts charge and estimates use (decision 80): the list's receipts' rate, else the typed one, else 0.
+  // Missing on a list saved in this browser before tax was counted.
+  tax?: { rateBp: number; source: "receipts" | "set" | null };
   createdAt: string;
   finishedAt: string | null;
   members: Member[];
@@ -84,6 +91,14 @@ export type List = {
   // Missing on a list saved in this browser before it was sent with the list.
   split?: Split;
 };
+
+// Sales tax (decision 80), in whole cents like the backend's money.tax_of: to the nearest cent, half up.
+export const taxOf = (cents: number, rateBp: number) => Math.floor((cents * rateBp + 5000) / 10000);
+// 825 -> "8.25%", 800 -> "8%".
+export const percent = (rateBp: number) => `${(rateBp / 100).toFixed(2).replace(/\.?0+$/, "")}%`;
+/** The tax a PayPal checkout charges on these items: per unit, times the quantity, as the backend sends it to PayPal. */
+export const itemsTax = (items: Pick<Item, "estPriceCents" | "quantity">[], rateBp: number) =>
+  items.reduce((sum, item) => sum + taxOf(item.estPriceCents ?? 0, rateBp) * item.quantity, 0);
 
 // List IDs this browser has opened, newest first. There are no accounts (decision 6), so this is what History shows.
 const SEEN = "heylist:lists";
