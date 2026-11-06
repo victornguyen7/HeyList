@@ -4,7 +4,6 @@
 
 | # | Issue | Notes |
 |---|---|---|
-| 14 | The AI doesn't keep starting lists within the budget | Live run: "birthday party for 10 kids, $100" came back at $125. Not trimmed in code (which items to drop is the person's call); the review screen shows the overage instead (decision 34). Price memory (decision 49) now fills in proven and store prices, so the overage is measured on real prices where there are any |
 | 18 | Split is equal shares only | Everyone on the list pays the same share; no "Ann isn't eating" or weighted shares yet (decision 35) |
 | 23 | Lines read by Ollama have no confidence score | Textract gives one per line; a vision model doesn't, so no line is flagged "hard to read". Now only matters when Textract is unavailable (outage, missing keys), since Textract works again (issue 15). The person still reviews every line before confirming |
 | 19 | `starlette.testclient` warns that `httpx` is deprecated in favour of `httpx2` | Test-only warning from the installed FastAPI/Starlette; harmless. Goes away when FastAPI's test client moves to `httpx2` |
@@ -19,6 +18,7 @@
 
 | # | Issue | Resolution |
 |---|---|---|
+| 14 | The AI doesn't keep starting lists within the budget | Closed by the owner (2026-11-06) as handled by design (decision 34): the AI is still asked to stay within the budget, and the review screen shows any overage for the person to untick items. Live run: "birthday party for 10 kids, $100" came back at $125; price memory (decision 49) and store prices make that overage measured on real prices where there are any |
 | 48 | `POST /api/lists/sample` had no caller | Removed (2026-11-06) with its template and tests. Sample lists made before stay as they are; Settle up still shows a member named "You" as just "You" |
 | 35 | Receipt photos loaded at full size | After a scan the browser sends an 800 px copy once (`PUT /api/receipts/{id}/thumbnail`, under 400 KB, saved as `receipts.thumb_path`; only the scanner, when they joined with an account). The Receipts tab loads `GET /api/receipts/{id}/image?size=thumb` and a tap opens the full photo. Photos are cached by the browser for a day. Receipts scanned before still load at full size |
 | 26 | History only knew lists opened in this browser | Decision 82. Logged in, Home and History also show every list the account joined on any device (`GET /api/me/lists`, newest join first), after this browser's lists. They aren't saved in this browser, so logging out leaves nothing behind. **Remove** hides a list in this browser (`heylist:hidden`) until its link is opened again. Guests still have only this browser's lists |
