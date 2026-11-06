@@ -8,9 +8,9 @@
 - **How it adds up** on Money: Items + Sales tax + Tip and fees − Refunds = Spent together, like the bottom of a receipt. "Still to buy" and the budget projection include the tax, and so does the shopping agent's budget and its cart total.
 - **Receipt review** says what sales tax rate the receipt shows. In each person's "How this was worked out", a receipt's tax and its tip and fees are now separate lines, and a PayPal payment's tax has its own line.
 - **Schema:** `lists.tax_rate_bp`, `orders.taxes` and `receipts.thumb_path`, so run `supabase/schema.sql` again before deploying the backend. 226 tests pass.
-- **History on every device** (issue 26): logged in, Home and History also show the lists your account joined elsewhere. **Remove** hides one in this browser until you open its link again.
+- **History on every device** (issue 26, decision 82): logged in, Home and History also show the lists your account joined elsewhere. **Remove** hides one in this browser until you open its link again.
 - **Receipt thumbnails** (issue 35): the Receipts tab loads a small copy of each new receipt photo; tap it for the full photo.
-- **Discounts come off their item** (issue 17): an instant saving or coupon printed under an item is taken off that item's price, shown as "$23.99 less $5.00 off". A discount for the whole bill stays shared over the receipt.
+- **Discounts come off their item** (issue 17, decision 81): an instant saving or coupon printed under an item is taken off that item's price, shown as "$23.99 less $5.00 off". A discount for the whole bill stays shared over the receipt.
 
 ### Changed
 

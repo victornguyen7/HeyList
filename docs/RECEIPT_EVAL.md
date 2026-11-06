@@ -144,6 +144,14 @@ A price Textract read under 90% confidence is now filled in when, with it, every
 
 ReceiptQA is unchanged (76.5% found, 8.8% wrong, 9.2% blank, 93.9% totals). Confirming by total minus fees was tried as well and dropped: it let a wrong price through.
 
+## Discounts taken off their item (2026-11-06, decision 81)
+
+A negative line is now taken off the item printed just above it, when that item's price was read surely, the line isn't hard to read or mixed from several rows, and the discount is smaller than the price. Everything else stays a shared fee, as before.
+
+On the 189 English receipts (saved Textract replies, nothing paid), 21 negative lines were read and **10 are netted**: 9 onto the item the label puts right before that discount (Costco's `TPD/…` and `CPN/…`, `$2 off (1) WC Fill` under the fillets, a 50% birthday discount under the dinner it was on), and 1 where Textract read a positive `3.09` as negative, which is just as wrong as a fee. Restaurant comps (`Comp Item -12.00` under a $6.00 beer, `BDAY CLUB -5.00` under a $2.79 drink) are bigger than the line above, so they stay fees. Two other netting targets were dropped by the guards: a line Textract was 25% sure of and one mixed from four printed rows.
+
+The labels have the printed price, so the eval scores a netted line by its price plus its discount; every number in the table above is unchanged (prices right 97.5%, perfect receipts 76.2%, adds up 78.8%).
+
 ## Re-running
 
 From `backend/`:

@@ -32,13 +32,13 @@ Sandbox buyer account for judges (log in on PayPal's page when paying):
 | **Coordinate** | Who handles it? | Share a link, join by name, and claim items, or share out the rest evenly by cost. |
 | **Shop** | Where do I buy it? | **Find in stores** pulls real products from Channel3, and the AI keeps only the true matches. **Shop this list for me** proposes products within budget for the items you tick, and you approve one PayPal payment. |
 | **Verify** | What got done? | Pay with PayPal (a `COMPLETED` capture is the proof), scan a receipt (the AI matches each line to an item and you confirm), or tick it off by hand. **Take a photo** on Progress tells a receipt from a single item. Every item shows what its status rests on: *Paid with PayPal*, *On a receipt*, *Marked bought by hand*, *Already had*, or *Payment pending*. |
-| **Settle** | Who owes whom? | Deterministic code (not AI) computes each share and the fewest payments needed. You pay a friend directly with PayPal, or send an AI-written reminder. |
+| **Settle** | Who owes whom? | Deterministic code (not AI) computes each share and the fewest payments needed, with sales tax, tips and fees counted as on a real receipt. You pay a friend directly with PayPal, or send an AI-written reminder. |
 
 Labels claim only what the evidence shows: a capture proves payment, not delivery. If an item is bought twice (a receipt and a PayPal payment at once), the PayPal charge is refunded automatically.
 
 ## PayPal integration (sandbox)
 
-- **Orders API v2** through the official **PayPal Server SDK** (Python, APIMatic-generated): create and capture orders for list items. The server sets prices from the list in integer cents and never takes them from the browser.
+- **Orders API v2** through the official **PayPal Server SDK** (Python, APIMatic-generated): create and capture orders for list items. The server sets prices from the list in integer cents and never takes them from the browser, and adds the list's sales tax as PayPal's item tax and `tax_total` (the rate comes from the list's own receipts, or one typed on Money).
 - **Pay a friend:** for settle-up, the order's payee is the person owed, so money never passes through HeyList.
 - **Payments API v2 refunds** for double purchases, with idempotency keys on every call.
 - **JS SDK v6** PayPal, Venmo and **Pay Later** buttons (each where PayPal says the buyer qualifies, with PayPal's Pay Later message), falling back to PayPal's hosted page.
@@ -92,7 +92,7 @@ cd backend && ../../.venv/bin/uvicorn main:app --port 8000 --env-file ../.env.lo
 
 Open http://localhost:3000, then apply the database schema from [`supabase/schema.sql`](supabase/schema.sql) to your Supabase project.
 
-- **Tests:** `../../.venv/bin/python -m unittest` from `backend/` (159 tests, with every external API mocked) and `npm run lint`.
+- **Tests:** `../../.venv/bin/python -m unittest` from `backend/` (226 tests, with every external API mocked) and `npm run lint`.
 - **Deploying:** set `BACKEND_URL` before `next build`, because the `/api` proxy is resolved at build time.
 - **API keys:** read [docs/RULES.md](docs/RULES.md) before using real keys. The evals make paid calls.
 

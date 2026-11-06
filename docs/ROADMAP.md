@@ -25,6 +25,8 @@ Flow, end to end:
   - [x] Live test with real receipts and Textract (issue 15: 289 receipts, [RECEIPT_EVAL.md](RECEIPT_EVAL.md))
   - [ ] Claude Haiku matching (later, owner's call)
   - [x] Discounts, tax, tip and fees (decision 57); voided lines still dropped
+  - [x] A discount printed under an item comes off that item (decision 81)
+  - [x] Sales tax on PayPal orders, estimates and the split, its rate from the list's receipts (decision 80)
   - [x] Scan a receipt from **Take a photo** on Progress (decision 72)
 - [x] Check off by PayPal Checkout: the order is the proof
   - [x] Backend: create order from item IDs, capture, report capture status and items bought
@@ -63,7 +65,7 @@ Pages (simple first versions built, at `/lists/<id>` and `/history`):
 - [x] Items
 - [x] Money
 - [x] Receipts
-- [x] History (by type, by month, buy again, price memory; loads in one request and shows the saved copy at once)
+- [x] History (by type, by month, buy again, price memory; loads in one request and shows the saved copy at once; logged in, the account's lists from any device, decision 82)
 - [x] Settle-up (who pays whom, and paying it with PayPal)
 
 Infrastructure:

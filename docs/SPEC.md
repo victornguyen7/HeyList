@@ -65,7 +65,7 @@ Three ways to work with a list (type, voice, photo) are the heart of the app; ev
    - Scan a receipt: AI matches its lines to list items ("2% MILK 1GAL" → milk) and checks off several at once, with prices attached.
    - Or buy in the app with PayPal Checkout (PayPal, Venmo, or Pay Later where PayPal offers it): the PayPal order is the proof, no scan needed.
 4. **Extras and gaps:** receipt lines that match nothing are flagged as extras ("3 items not on the list, $14.20"). Items still unchecked stay open, so you see what you forgot.
-5. **Settle up:** on shared lists, the app works out who owes whom and settles up with PayPal invoices.
+5. **Settle up:** on shared lists, the app works out who owes whom and settles up with PayPal, each payment going straight to the person owed (decision 60).
 6. **History:** the finished list joins your history.
 
 ## Pages
@@ -76,8 +76,8 @@ Three ways to work with a list (type, voice, photo) are the heart of the app; ev
 | Items | Status, price, who bought it; tap to see its receipt | Each item's status and suggested price; for checked-off items, the price and who checked it off. Proof of check-off and purchase is viewable here |
 | Money | Spent vs budget, extras, per-person totals on shared lists | A dashboard of money spent on items compared with the total budget, with each person's spending |
 | Receipts | Gallery of scans and PayPal orders for this list | Linked directly with the Items page. Stores all receipts and any proof of purchase along with item names, organised per checklist folder (trip, grocery, move-in, …) |
-| History | Spending by list type and by month (groceries vs trips vs home) | Buy again: start a new list from a past one. This is the retention hook. Price memory: "Last time you paid $4.29 for this." |
-| Settle-up | Who owes whom, how each balance was worked out (each person's purchases, share, balance), PayPal invoice status | Uses invoices to split the money between people in a group purchase |
+| History | Spending by list type and by month (groceries vs trips vs home), tax and fees included; logged in, every list the account joined on any device (decision 82) | Buy again: start a new list from a past one. This is the retention hook. Price memory: "Last time you paid $4.29 for this." |
+| Settle-up | Who owes whom, how each balance was worked out (each person's purchases, tax and fees, share, balance), paying with PayPal and reminders | Each payment is a PayPal order whose payee is the person owed (decision 60), so the money never passes through HeyList |
 
 ## Who does what
 
@@ -104,15 +104,15 @@ Every item can have a person responsible for buying it, and the list keeps who p
 - **Responsibility:** anyone on the list picks "Ann buys it" on an item (`claimed_by`). "Share out the rest evenly" gives every open, unclaimed item to someone, most expensive first to whoever carries the least estimated cost so far (`POST /api/lists/{id}/assign`).
 - **Paying and price:** when an item is bought (PayPal order, receipt, or checked off with a price), the item records who paid (`bought_by`) and what was paid for all of it (`price_cents`).
 - **Settling up:** the Money panel shows what each person paid, their equal share of what was spent, and the fewest payments that even it out ("Cat pays Ann $20.00"), from `GET /api/lists/{id}/split`. Receipt extras are personal and not split; a receipt's tax, tip and fees are split in proportion to the list items on it, and the part for its extras stays with the buyer (decision 57). Sales tax counts too (decision 80): the list's rate comes from its confirmed receipts, or is typed on Money before any; PayPal and Venmo payments charge it, and Money shows how the total adds up (items + tax + fees − refunds). An item checked off without a name is reported, not split.
-- Next: send those payments as PayPal invoices (Settle-up page).
+- Those payments are paid with PayPal on Settle up, straight to the person owed (decision 60).
 
 ### Receipt scanning (built)
 
 1. On the list, "Take a photo of the receipt" opens the phone's back camera (`<input type="file" capture="environment">`; a file picker on a computer). The photo is shrunk to 2000 px JPEG in the browser.
-2. **AWS Textract** (`AnalyzeExpense`) reads it into line items, each with its price and a confidence score, and its fees (tax, tip, service, delivery, discounts). A price under 90% confidence is left blank for the person to type rather than guessed (decision 57); a line under 90% is flagged "hard to read". While Textract is unavailable, the Ollama vision model reads the photo instead (no confidence scores; it is told to leave a price it can't read blank).
+2. **AWS Textract** (`AnalyzeExpense`) reads it into line items, each with its price and a confidence score, and its fees (tax, tip, service, delivery, discounts). A discount printed under an item is taken off that item's price when it is that item's; one for the whole bill stays a fee (decision 81). A price under 90% confidence is left blank for the person to type rather than guessed (decision 57); a line under 90% is flagged "hard to read". While Textract is unavailable, the Ollama vision model reads the photo instead (no confidence scores; it is told to leave a price it can't read blank).
 3. **The Ollama model** (one text-only call with a JSON schema; decision 38) matches each line to an open list item or to none. It sees item names and receipt text only, never IDs or prices.
 4. The person checks the proposals and corrects any line with a dropdown (decision 5), types any blank price or fee (or leaves it blank), then confirms. The screen says whether the lines and fees add up to the receipt total.
-5. Matched items are checked off with the receipt's prices (several lines can be one item) and the scanner as buyer; unmatched lines become extras. A typed price is marked typed. The photo is kept in the private `receipts` bucket as proof.
+5. Matched items are checked off with the receipt's prices (several lines can be one item) and the scanner as buyer; unmatched lines become extras. A typed price is marked typed. The photo is kept in the private `receipts` bucket as proof, with a small copy the Receipts tab shows (a tap opens the full photo). The receipt's tax rate becomes the list's sales tax rate (decision 80).
 
 ### Photo of a paper list (built)
 
