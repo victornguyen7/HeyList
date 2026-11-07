@@ -1,5 +1,5 @@
 {
- "ranAt": "2026-11-03T04:10:27+00:00",
+ "ranAt": "2026-11-07T18:20:21+00:00",
  "lowConfidence": 90,
  "textract": {
   "summary": {
@@ -12,7 +12,7 @@
    "totalAccuracy": 0.939,
    "taxAccuracy": 0.603,
    "tipAccuracy": null,
-   "addsUp": 0.53,
+   "addsUp": 0.6,
    "perfectReceipts": 0.54,
    "noWrongPriceReceipts": 0.89,
    "wrongLinesFlagged": 0.136,
@@ -31,7 +31,7 @@
     "taxChecked": 63,
     "tipOk": 0,
     "tipChecked": 0,
-    "addsUp": 53,
+    "addsUp": 60,
     "perfect": 54,
     "noWrongPrice": 89,
     "flaggedRight": 13,
@@ -286,7 +286,13 @@
        "lowConfidence": true
       }
      ],
-     "fees": [],
+     "fees": [
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 225
+      }
+     ],
      "totalCents": 174395
     },
     "score": {
@@ -303,7 +309,7 @@
      "taxChecked": false,
      "tipOk": false,
      "tipChecked": false,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -896,6 +902,11 @@
        "kind": "discount",
        "name": "Total Disc:",
        "amountCents": -4790
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 4790
       }
      ],
      "totalCents": 43110
@@ -914,7 +925,7 @@
      "taxChecked": false,
      "tipOk": false,
      "tipChecked": false,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": true,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -1353,7 +1364,13 @@
        "lowConfidence": false
       }
      ],
-     "fees": [],
+     "fees": [
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 80
+      }
+     ],
      "totalCents": 5980
     },
     "score": {
@@ -1370,7 +1387,7 @@
      "taxChecked": true,
      "tipOk": false,
      "tipChecked": false,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": false,
      "flaggedRight": 0,
@@ -2860,7 +2877,13 @@
        "lowConfidence": false
       }
      ],
-     "fees": [],
+     "fees": [
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 6750
+      }
+     ],
      "totalCents": 29050
     },
     "score": {
@@ -2877,7 +2900,7 @@
      "taxChecked": false,
      "tipOk": false,
      "tipChecked": false,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": false,
      "flaggedRight": 0,
@@ -3219,7 +3242,13 @@
        "lowConfidence": false
       }
      ],
-     "fees": [],
+     "fees": [
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 1000
+      }
+     ],
      "totalCents": 3624
     },
     "score": {
@@ -3236,7 +3265,7 @@
      "taxChecked": true,
      "tipOk": false,
      "tipChecked": false,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -3729,6 +3758,11 @@
        "kind": "discount",
        "name": "Total Disc:",
        "amountCents": -4975
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 4975
       }
      ],
      "totalCents": 14925
@@ -3747,7 +3781,7 @@
      "taxChecked": false,
      "tipOk": false,
      "tipChecked": false,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -5440,6 +5474,11 @@
        "kind": "tax",
        "name": "VAT",
        "amountCents": 53
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 158
       }
      ],
      "totalCents": 1125
@@ -5458,7 +5497,7 @@
      "taxChecked": true,
      "tipOk": false,
      "tipChecked": false,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": false,
      "flaggedRight": 2,

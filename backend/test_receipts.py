@@ -159,6 +159,33 @@ class ParseTest(unittest.TestCase):
 
         self.assertEqual(result["fees"], [{"kind": "tax", "name": "TOTAL TAX", "amountCents": None}, {"kind": "tip", "name": "Tip", "amountCents": 200}])
 
+    def test_tax_under_another_label_is_kept_when_it_adds_up(self):
+        # The UMass store receipt: "Taxable 1.62", which Textract didn't type as TAX.
+        line = [field("ITEM", "Kingston Canvas 128GB SD Ca"), field("PRICE", "26.00")]
+        summary = [field("SUBTOTAL", "$26.00", label="Sub Total"), field("OTHER", "1.62", label="Taxable"), field("TAX_PAYER_ID", "200-218-727", label="Tax Registration:")]
+
+        result = receipts.parse_expense(expense(line, total="$27.62", summary=summary))
+
+        self.assertEqual(result["fees"], [{"kind": "tax", "name": "Taxable", "amountCents": 162}])
+
+        # "Taxable" as the amount taxed doesn't add up, so it isn't taken for the tax.
+        base = receipts.parse_expense(expense(line, total="$26.00", summary=[field("OTHER", "26.00", label="Taxable")]))
+        self.assertEqual(base["fees"], [])
+
+    def test_the_rest_of_the_total_is_a_fee_when_everything_else_was_read(self):
+        line = [field("ITEM", "SD CARD"), field("PRICE", "26.00")]
+
+        result = receipts.parse_expense(expense(line, total="$27.62"))
+
+        self.assertEqual(result["fees"], [{"kind": "other", "name": "Rest of the total (tax or fees not itemized)", "amountCents": 162}])
+
+        # Not when a price is still blank, the total is less, or the gap is too big to be charges (a misread total).
+        unsure = receipts.parse_expense(expense([field("ITEM", "SD CARD"), field("PRICE", "26.00", 60.0)], total="$27.62"))
+        self.assertEqual(unsure["fees"], [])
+        for total in ("$25.00", "$26.01", "$79.62"):
+            with self.subTest(total=total):
+                self.assertEqual(receipts.parse_expense(expense(line, total=total))["fees"], [])
+
     def test_amounts_parse_without_floats(self):
         for text, cents in (
             ("$1,234.5", 123450),
@@ -241,6 +268,12 @@ class ReadTest(unittest.TestCase):
         messages, schema = chat.call_args.args
         self.assertEqual(messages[1]["images"], [b"jpg"])
         self.assertIs(schema, receipts.READ_SCHEMA)
+
+    def test_the_ollama_reader_also_counts_the_rest_of_the_total(self):
+        self.ollama(json.dumps({"lines": [{"text": "SD CARD", "priceCents": 2600}], "fees": [], "totalCents": 2762}))
+        self.stub.add_client_error("analyze_expense", "AccessDeniedException")
+
+        self.assertEqual(receipts.read_receipt(b"jpg")["fees"], [{"kind": "other", "name": "Rest of the total (tax or fees not itemized)", "amountCents": 162}])
 
     def test_when_neither_can_read_it_scanning_is_unavailable(self):
         for error, expected in ((ConnectionError(), "SCANNING_UNAVAILABLE"), (None, "UNREADABLE_IMAGE")):

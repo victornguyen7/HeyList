@@ -1,5 +1,5 @@
 {
- "ranAt": "2026-11-06T14:09:12+00:00",
+ "ranAt": "2026-11-07T18:20:21+00:00",
  "lowConfidence": 90,
  "textract": {
   "summary": {
@@ -12,7 +12,7 @@
    "totalAccuracy": 0.947,
    "taxAccuracy": 0.972,
    "tipAccuracy": 0.968,
-   "addsUp": 0.788,
+   "addsUp": 0.873,
    "perfectReceipts": 0.762,
    "noWrongPriceReceipts": 0.952,
    "wrongLinesFlagged": 0.174,
@@ -31,7 +31,7 @@
     "taxChecked": 180,
     "tipOk": 183,
     "tipChecked": 189,
-    "addsUp": 149,
+    "addsUp": 165,
     "perfect": 144,
     "noWrongPrice": 180,
     "flaggedRight": 29,
@@ -127,7 +127,7 @@
     "totalAccuracy": 0.964,
     "taxAccuracy": 0.975,
     "tipAccuracy": 0.964,
-    "addsUp": 0.818,
+    "addsUp": 0.915,
     "perfectReceipts": 0.788,
     "noWrongPriceReceipts": 0.97,
     "wrongLinesFlagged": 0.143,
@@ -146,7 +146,7 @@
      "taxChecked": 160,
      "tipOk": 159,
      "tipChecked": 165,
-     "addsUp": 135,
+     "addsUp": 151,
      "perfect": 130,
      "noWrongPrice": 160,
      "flaggedRight": 3,
@@ -712,6 +712,11 @@
        "kind": "tax",
        "name": "TAX1",
        "amountCents": 439
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 618
       }
      ],
      "totalCents": 5182
@@ -730,7 +735,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -762,6 +767,11 @@
        "kind": "tax",
        "name": "Sales Tax",
        "amountCents": 74
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 27
       }
      ],
      "totalCents": 1000
@@ -780,7 +790,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": true,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -876,6 +886,11 @@
        "kind": "tax",
        "name": "CA Sales Tax",
        "amountCents": 532
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 1185
       }
      ],
      "totalCents": 6443
@@ -894,7 +909,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -1873,6 +1888,11 @@
        "kind": "tax",
        "name": "Total Tax :",
        "amountCents": 384
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 1158
       }
      ],
      "totalCents": 5038
@@ -1891,7 +1911,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -2198,6 +2218,11 @@
        "kind": "tax",
        "name": "MPEA Tax",
        "amountCents": 15
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 4
       }
      ],
      "totalCents": 1656
@@ -2216,7 +2241,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": true,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -3465,6 +3490,11 @@
        "kind": "tax",
        "name": "Sales Tax (9.2%)",
        "amountCents": 114
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 70
       }
      ],
      "totalCents": 1353
@@ -3483,7 +3513,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": true,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -3770,6 +3800,11 @@
        "kind": "discount",
        "name": "You Saved...",
        "amountCents": -186
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 186
       }
      ],
      "totalCents": 1307
@@ -3788,7 +3823,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -4584,6 +4619,11 @@
        "kind": "tax",
        "name": "TAX:",
        "amountCents": 231
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 193
       }
      ],
      "totalCents": 4274
@@ -4602,7 +4642,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": true,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -8051,6 +8091,11 @@
        "kind": "tax",
        "name": "Tax",
        "amountCents": 106
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 13
       }
      ],
      "totalCents": 1325
@@ -8069,7 +8114,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": true,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -8171,6 +8216,11 @@
        "kind": "tip",
        "name": "Voluntary 18% Tip:",
        "amountCents": 720
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 360
       }
      ],
      "totalCents": 5080
@@ -8189,7 +8239,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": true,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -8972,6 +9022,11 @@
        "kind": "tax",
        "name": "TAX TOTAL",
        "amountCents": 73
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 75
       }
      ],
      "totalCents": 958
@@ -8990,7 +9045,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -11309,6 +11364,11 @@
        "kind": "tax",
        "name": "TAX",
        "amountCents": 976
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 2571
       }
      ],
      "totalCents": 14201
@@ -11327,7 +11387,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": false,
      "flaggedRight": 0,
@@ -11486,7 +11546,13 @@
        "lowConfidence": false
       }
      ],
-     "fees": [],
+     "fees": [
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 500
+      }
+     ],
      "totalCents": 11700
     },
     "score": {
@@ -11503,7 +11569,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -11582,6 +11648,11 @@
        "kind": "service",
        "name": "SERV.CHARGE(2%)",
        "amountCents": 61
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 70
       }
      ],
      "totalCents": 3421
@@ -11600,7 +11671,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -12075,6 +12146,11 @@
        "kind": "tax",
        "name": "Tax",
        "amountCents": 110
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 475
       }
      ],
      "totalCents": 3760
@@ -12093,7 +12169,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": false,
      "flaggedRight": 0,
@@ -13418,6 +13494,11 @@
        "kind": "tax",
        "name": "Tax 1:",
        "amountCents": 753
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 995
       }
      ],
      "totalCents": 9478
@@ -13436,7 +13517,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -14394,7 +14475,7 @@
    "totalAccuracy": 0.984,
    "taxAccuracy": 0.978,
    "tipAccuracy": 0.963,
-   "addsUp": 0.788,
+   "addsUp": 0.825,
    "perfectReceipts": 0.757,
    "noWrongPriceReceipts": 0.921,
    "wrongLinesFlagged": 0.0,
@@ -14413,7 +14494,7 @@
     "taxChecked": 180,
     "tipOk": 182,
     "tipChecked": 189,
-    "addsUp": 149,
+    "addsUp": 156,
     "perfect": 143,
     "noWrongPrice": 174,
     "flaggedRight": 0,
@@ -14471,7 +14552,7 @@
     "totalAccuracy": 1.0,
     "taxAccuracy": 1.0,
     "tipAccuracy": 1.0,
-    "addsUp": 0.571,
+    "addsUp": 0.714,
     "perfectReceipts": 0.571,
     "noWrongPriceReceipts": 0.714,
     "wrongLinesFlagged": 0.0,
@@ -14490,7 +14571,7 @@
      "taxChecked": 7,
      "tipOk": 7,
      "tipChecked": 7,
-     "addsUp": 4,
+     "addsUp": 5,
      "perfect": 4,
      "noWrongPrice": 5,
      "flaggedRight": 0,
@@ -14509,7 +14590,7 @@
     "totalAccuracy": 0.988,
     "taxAccuracy": 0.981,
     "tipAccuracy": 0.958,
-    "addsUp": 0.824,
+    "addsUp": 0.848,
     "perfectReceipts": 0.782,
     "noWrongPriceReceipts": 0.945,
     "wrongLinesFlagged": 0.0,
@@ -14528,7 +14609,7 @@
      "taxChecked": 160,
      "tipOk": 158,
      "tipChecked": 165,
-     "addsUp": 136,
+     "addsUp": 140,
      "perfect": 129,
      "noWrongPrice": 156,
      "flaggedRight": 0,
@@ -14547,7 +14628,7 @@
     "totalAccuracy": 0.929,
     "taxAccuracy": 0.917,
     "tipAccuracy": 1.0,
-    "addsUp": 0.5,
+    "addsUp": 0.643,
     "perfectReceipts": 0.571,
     "noWrongPriceReceipts": 0.714,
     "wrongLinesFlagged": 0.0,
@@ -14566,7 +14647,7 @@
      "taxChecked": 12,
      "tipOk": 14,
      "tipChecked": 14,
-     "addsUp": 7,
+     "addsUp": 9,
      "perfect": 8,
      "noWrongPrice": 10,
      "flaggedRight": 0,
@@ -16359,6 +16440,11 @@
        "kind": "tax",
        "name": "Total Tax",
        "amountCents": 384
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 859
       }
      ],
      "totalCents": 5038
@@ -16377,7 +16463,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -18312,6 +18398,11 @@
        "kind": "discount",
        "name": "You Saved...",
        "amountCents": -186
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 186
       }
      ],
      "totalCents": 1307
@@ -18330,7 +18421,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -20695,6 +20786,11 @@
        "kind": "tax",
        "name": "Tax",
        "amountCents": 294
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 1049
       }
      ],
      "totalCents": 5538
@@ -20713,7 +20809,7 @@
      "taxChecked": true,
      "tipOk": false,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": true,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -22586,6 +22682,11 @@
        "kind": "tax",
        "name": "TAX",
        "amountCents": 2228
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 60
       }
      ],
      "totalCents": 49916
@@ -22604,7 +22705,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": false,
      "flaggedRight": 0,
@@ -23977,6 +24078,11 @@
        "kind": "tax",
        "name": "TAX",
        "amountCents": 235
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 798
       }
      ],
      "totalCents": 3868
@@ -23995,7 +24101,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": false,
      "flaggedRight": 0,
@@ -25558,6 +25664,11 @@
        "kind": "tax",
        "name": "Tax",
        "amountCents": 693
+      },
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 200
       }
      ],
      "totalCents": 9358
@@ -25576,7 +25687,7 @@
      "taxChecked": true,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": false,
      "noWrongPrice": true,
      "flaggedRight": 0,
@@ -26647,7 +26758,13 @@
        "lowConfidence": false
       }
      ],
-     "fees": [],
+     "fees": [
+      {
+       "kind": "other",
+       "name": "Rest of the total (tax or fees not itemized)",
+       "amountCents": 132
+      }
+     ],
      "totalCents": 4000
     },
     "score": {
@@ -26664,7 +26781,7 @@
      "taxChecked": false,
      "tipOk": true,
      "tipChecked": true,
-     "addsUp": false,
+     "addsUp": true,
      "perfect": true,
      "noWrongPrice": true,
      "flaggedRight": 0,

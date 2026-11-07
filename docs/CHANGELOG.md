@@ -1,5 +1,11 @@
 # HeyList — Changelog
 
+## 2026-11-07
+
+### Fixed
+
+- **Receipt tax that wasn't counted** (issue 49): a receipt whose tax line isn't labelled "Tax" ("Taxable 1.62" on a UMass store receipt) lost its tax, so the buyer was credited only the items. Such a line is now taken as the tax when it makes the receipt add up to its total. And when every price and fee was read but the total is still more, the difference is added as a fee ("Rest of the total"), so the buyer is credited what the receipt says they paid (Textract and Ollama alike; not when a price is blank or the gap is over half the items, which is more likely a misread total). 229 tests pass; the receipt eval's tax and prices are unchanged.
+
 ## 2026-11-06
 
 ### Added

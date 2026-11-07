@@ -67,6 +67,8 @@ def _name(fields: dict) -> str:
 
 # Textract's summary field types for fees.
 FEE_TYPES = {"TAX": "tax", "GRATUITY": "tip", "SERVICE_CHARGE": "service", "SHIPPING_HANDLING_CHARGE": "delivery", "DISCOUNT": "discount"}
+# A summary label that says tax, for fields Textract typed as something else.
+TAX_LABEL = re.compile(r"\btax|\b(gst|hst|pst|qst|vat)\b", re.I)
 
 
 def _fees(summary: list[dict], line_fees: list[dict], lines_cents: int | None) -> tuple[list[dict], int | None]:
@@ -75,6 +77,9 @@ def _fees(summary: list[dict], line_fees: list[dict], lines_cents: int | None) -
     subtotal + fees = total. When nothing adds up: the total tax (else the different tax amounts), a tip only if
     there is one with no percentage, and an amount Textract is unsure of is left for the person to type."""
     found, totals, subtotals = {kind: [] for kind in FEE_KINDS}, [], []
+    # Tax Textract didn't type as TAX ("Taxable 1.62" came back as another type): kept only if it makes the total
+    # add up, since "Taxable" can also be the amount taxed.
+    labelled_taxes: list[dict] = []
     for field in summary:
         kind, value = field.get("Type", {}).get("Text"), field.get("ValueDetection", {})
         label = (field.get("LabelDetection") or {}).get("Text", "").strip()
@@ -93,11 +98,14 @@ def _fees(summary: list[dict], line_fees: list[dict], lines_cents: int | None) -
             # The same amount twice under one kind is the same fee printed twice.
             if all(other["amountCents"] != amount for other in found[fee_kind]):
                 found[fee_kind].append(fee)
+        elif kind not in FEE_TYPES and amount > 0 and TAX_LABEL.search(label) and "%" not in value.get("Text", ""):
+            labelled_taxes.append({"kind": "tax", "name": label[:100], "amountCents": amount, "confidence": value.get("Confidence", 0)})
 
     taxes = found["tax"]
     whole_tax = [fee for fee in taxes if re.search(r"total|txtl", fee["name"], re.I)][:1]
     # Fees first, none last: a second subtotal that already includes them would otherwise "add up" without them.
-    tax_options = [option for option in (whole_tax, taxes, *([fee] for fee in taxes)) if option] + [[]]
+    tax_options = [option for option in (whole_tax, taxes, *([fee] for fee in taxes)) if option]
+    tax_options += [[fee] for fee in labelled_taxes if not taxes] + [[]]
     tips = found["tip"]
     tip_options = [*([fee] for fee in tips), []]
     others = found["service"] + found["delivery"] + found["discount"] + line_fees
@@ -186,7 +194,30 @@ def parse_expense(response: dict) -> dict:
     prices = [line["priceCents"] for line in lines]
     lines_cents = sum(prices) if prices and None not in prices else None
     fees, total = _fees(summary, line_fees, lines_cents)
-    return {"lines": lines, "fees": fees, "totalCents": total}
+    return _cover_total({"lines": lines, "fees": fees, "totalCents": total})
+
+
+# A gap bigger than this share of the items is more likely a misread total than charges, and is left for the
+# review's "doesn't add up" note.
+MAX_GAP = 0.5
+
+
+def _cover_total(read: dict) -> dict:
+    """When every price and fee was read and the total is still more than items + fees, the receipt charged
+    something not read as a line (tax printed as "Taxable 1.62", a deposit, a bag fee). That difference is what the
+    buyer paid, so it becomes a fee: left out, the buyer would be short in the split by exactly that much. It is
+    worked out from the paper (total less what was read), not guessed; what it was for isn't known, so it is
+    "other" rather than tax, and doesn't move the list's sales tax rate."""
+    prices = [line["priceCents"] for line in read["lines"]]
+    amounts = [fee["amountCents"] for fee in read["fees"]]
+    total = read["totalCents"]
+    if not total or not prices or None in prices or None in amounts:
+        return read
+    items = sum(prices) + sum(fee["amountCents"] for fee in read["fees"] if fee["kind"] == "discount")
+    gap = total - sum(prices) - sum(amounts)
+    if 1 < gap <= items * MAX_GAP:
+        read["fees"] = read["fees"] + [{"kind": "other", "name": "Rest of the total (tax or fees not itemized)", "amountCents": gap}]
+    return read
 
 
 def _confirm_by_subtotal(lines: list[dict], unsure: list[int | None], summary: list[dict]) -> None:
@@ -299,7 +330,7 @@ def read_with_ollama(image: bytes) -> dict:
             amount = -amount
         fees.append({"kind": kind, "name": (str(fee.get("name") or "").strip() or kind.title())[:100], "amountCents": amount})
     total = reply.get("totalCents")
-    return {"lines": lines, "fees": fees, "totalCents": total if type(total) is int and 0 < total <= MAX_CENTS else None}
+    return _cover_total({"lines": lines, "fees": fees, "totalCents": total if type(total) is int and 0 < total <= MAX_CENTS else None})
 
 
 MATCH_SCHEMA = {
