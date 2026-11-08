@@ -1,105 +1,70 @@
 # HeyList
 
-**Say what you need. Share the list. PayPal proves what got done.**
+**Plan it with AI. Settle it with PayPal.**
 
-HeyList turns one sentence ("weekend camping trip for 3 friends, $150") into a shared list, lets the group split up who buys what, and records what was actually bought, by whom, for how much, and how we know. The AI's list sets what PayPal charges, and PayPal captures and AI-read receipts are what check items off.
+![HeyList](docs/media/thumbnail.png)
 
-It's a mobile-first website that needs no install and no account, built for people who give up on fiddly checklist apps.
+Group trips are fun; the money isn't. 82% of people on group trips would rather overpay than argue about money (Harris Poll for CIT Bank, May 2026). HeyList turns one sentence into a shared shopping list, buys with PayPal, reads receipts with AI, and settles everyone up to the cent. It's a mobile-first website: no install, no account.
+
+- **AI writes the list:** type or say "photo trip this weekend for 3 people" and get the items, quantities and prices from real stores.
+- **Share by link:** friends join with just a name; the list updates on every phone live.
+- **Buy with PayPal:** pay once with PayPal, Venmo or Pay in 4, or let the AI shopping assistant fill a cart within budget. An item is checked off only when PayPal's capture is `COMPLETED`.
+- **Snap a receipt:** AI matches every line to the list and checks it adds up to the receipt's total.
+- **Settle up:** code works out who owes whom, AI writes a friendly reminder, and PayPal sends the money straight to the person owed.
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) · [MIT License](LICENSE)
 
-## Try it in 2 minutes
+## Try it (judges)
 
-**Live demo:** https://heylist-web.onrender.com (PayPal **sandbox**: no real money moves)
+**Live demo:** https://heylist-web.onrender.com. PayPal **sandbox**: no real money moves.
 
-Sandbox buyer account for judges (log in on PayPal's page when paying):
+PayPal sandbox buyer (log in on PayPal's page when paying):
 
 | Email | Password |
 |---|---|
 | `sb-jl0nu53301040@personal.example.com` | `Y_362mfv` |
 
-1. On the home page, type or say one sentence, for example *"Weekend camping trip for 3 friends, $150 budget"*, and tap **Make my list**. Untick what you don't need, mark what you **Already have**, and tap **Create list**.
-2. Open the list's link in a second browser (or a private window) and join under another name, so there are two people. Changes appear on both as they happen.
-3. As the first person, claim a few items and tap **Pay for your items with PayPal**. Approve with the account above: your items are checked off, with the PayPal payment as proof. Or try **More → Shop this list for me**, which proposes real store products within the budget.
-4. As the second person, tap **Take a photo** and photograph a receipt (or tick an item off by hand and type its price).
-5. Open **Settle up** to see who owes whom. Pay with PayPal (the money goes straight to the person owed), or tap **Remind** for a friendly AI-written message with a payment link.
+1. **Make a list:** on the home page, type or say one sentence, such as *"Weekend camping trip for 3 friends, $150 budget"*, and tap **Make my list**. Mark anything you own as **Already have**, then **Create list**.
+2. **Add a second person:** open the list's link in a second browser or a private window and join under another name.
+3. **Pay with PayPal:** as the first person, claim a few items, tap **Pay for items with PayPal** and approve with the sandbox buyer. The items are checked off with the payment as proof.
+4. **Let the AI shop:** **More → Shop this list for me** on non-food items (a tent, batteries) proposes real store products within budget; approve one PayPal payment.
+5. **Scan a receipt:** as the second person, tap **Take a photo** and photograph any store receipt, then **Confirm**. (Or tick an item by hand and type its price.)
+6. **Settle up:** see who owes whom, tap **Remind** for an AI-written message, or **Pay with PayPal** to pay the person owed directly.
 
-## How it works
+The AI's list and store prices vary a little between runs. Food is priced from Kroger, so use the shopping assistant on gear.
 
-| Step | Question | What happens |
+## Tools
+
+| | Tool | What it does in HeyList |
 |---|---|---|
-| **Need** | What do we need? | Type or speak one sentence. The AI drafts a list with quantities and estimated prices that fit the budget, and you edit it before anything is saved. |
-| **Coordinate** | Who handles it? | Share a link, join by name, and claim items, or share out the rest evenly by cost. |
-| **Shop** | Where do I buy it? | **Find in stores** pulls real products from Channel3, and the AI keeps only the true matches. **Shop this list for me** proposes products within budget for the items you tick, and you approve one PayPal payment. |
-| **Verify** | What got done? | Pay with PayPal (a `COMPLETED` capture is the proof), scan a receipt (the AI matches each line to an item and you confirm), or tick it off by hand. **Take a photo** on Progress tells a receipt from a single item. Every item shows what its status rests on: *Paid with PayPal*, *On a receipt*, *Marked bought by hand*, *Already had*, or *Payment pending*. |
-| **Settle** | Who owes whom? | Deterministic code (not AI) computes each share and the fewest payments needed, with sales tax, tips and fees counted as on a real receipt. You pay a friend directly with PayPal, or send an AI-written reminder. |
+| **PayPal** | Orders API v2 | Checkout built from server-side prices with per-item tax; capture status is the proof of payment; settle-up orders pay the friend who is owed |
+| | Payments API v2 | Automatic refunds when two people buy the same item |
+| | JS SDK v6 | PayPal, Venmo and Pay Later buttons with PayPal's Pay Later messages |
+| | Webhooks | Signature-verified capture events finish pending payments |
+| | Python Server SDK (APIMatic) | Every server call to PayPal, with idempotency keys |
+| **AI** | Ollama `gemma4:31b` (vision) | Writes lists, checks store matches, matches receipt lines, tells a receipt from an item photo, drafts reminders |
+| | AWS Textract | Reads receipts (`AnalyzeExpense`) and handwritten lists (`DetectDocumentText`) |
+| | Web Speech API | Say the list instead of typing it |
+| **Sponsors** | Channel3 | Real products and prices for the shopping assistant and Find in stores |
+| | Render | Hosts the web app and API, plus a cron job that re-checks pending PayPal payments every 15 minutes |
+| | APIMatic Context Plugins | SDK guidance while building |
+| **Data** | Kroger Products API | Today's grocery prices at a real store |
+| | Supabase | Postgres, receipt storage, auth, live updates |
 
-Labels claim only what the evidence shows: a capture proves payment, not delivery. If an item is bought twice (a receipt and a PayPal payment at once), the PayPal charge is refunded automatically.
-
-## PayPal integration (sandbox)
-
-- **Orders API v2** through the official **PayPal Server SDK** (Python, APIMatic-generated): create and capture orders for list items. The server sets prices from the list in integer cents and never takes them from the browser, and adds the list's sales tax as PayPal's item tax and `tax_total` (the rate comes from the list's own receipts, or one typed on Money).
-- **Pay a friend:** for settle-up, the order's payee is the person owed, so money never passes through HeyList.
-- **Payments API v2 refunds** for double purchases, with idempotency keys on every call.
-- **JS SDK v6** PayPal, Venmo and **Pay Later** buttons (each where PayPal says the buyer qualifies, with PayPal's Pay Later message), falling back to PayPal's hosted page.
-- **Webhooks**, signature-verified with PayPal, finish pending payments, and a **Render cron job** asks PayPal again every 15 minutes about any payment still pending, in case a webhook was missed. Items are checked off on *capture* status, not order status.
-
-## AI and tools
-
-| Tool | How HeyList uses it |
-|---|---|
-| **AWS Textract** `AnalyzeExpense`, `DetectDocumentText` | Reads receipt line items and totals (primary reader); reads photos of paper lists, handwriting included |
-| **Ollama** (`gemma4:31b`, vision) | Drafts starting lists as validated JSON, matches receipt lines to items, filters store results to real matches, writes payment reminders, tells what a photo shows (an item or a receipt), and reads receipts and paper lists when Textract is unavailable |
-| **Channel3** product search | Real products and prices for "Find in stores" and "Shop this list for me". The chosen price is re-read on the server and is what PayPal charges. |
-| **Kroger** Products API | Today's grocery prices from a real Kroger store, so food items on a new list are priced at what the store charges now instead of an AI guess. The AI checks that each Kroger product is the item before its price is used. Non-food items are priced at Walmart or Target through Channel3 |
-| **Web Speech API** | Voice input in supported browsers |
-| **APIMatic** Context Plugin, **Postman** | PayPal SDK guidance and API testing during development |
-| **Render** | Blueprint (`render.yaml`): web services `heylist-api` and `heylist-web` with health checks, a shared environment group, and the `heylist-sweep` cron job that finishes pending PayPal payments every 15 minutes |
-| **Claude Code** | Coding assistant during development |
-
-**Measured, not assumed:**
-
-- **Starting lists**, 30 test cases ([`backend/eval/eval_report.json`](backend/eval/eval_report.json)): **96/98** expected items found, **12/12** quantities right, **8/8** conditions kept, **0** invented items.
-- **Receipt reading**, 100 real receipts ([docs/RECEIPT_EVAL.md](docs/RECEIPT_EVAL.md)): Textract got **94%** of totals and **89%** of prices right, which is why it reads first and Ollama is the fallback.
-
-## Architecture
-
-```
-Next.js 16 (React 19, mobile-first)  ──/api──▶  FastAPI (Python 3.14)  ──▶  PayPal · Ollama · Textract · Channel3 · Kroger
-            ▲                                          │
-            └──── Supabase Realtime ◀──── Supabase (Postgres, Storage, Auth)
-
-Render: heylist-web + heylist-api (health-checked) + heylist-sweep cron (every 15 min, finishes pending PayPal payments)
-```
-
-Accounts are optional: guests join by name, and signed-in users (Supabase email and password) keep the same identity on every device. More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Stack: Next.js 16 (React 19) → FastAPI (Python 3.14) → Supabase, deployed on Render from [`render.yaml`](render.yaml). **The AI proposes, code decides:** budgets, tax and the split are plain code, and a person confirms every AI suggestion. **Measured:** starting lists find 96/98 expected items with 0 invented (30 test cases); on 189 real English receipts, Textract shows a wrong price on 2.5% of lines ([docs/RECEIPT_EVAL.md](docs/RECEIPT_EVAL.md)).
 
 ## Run locally
 
-Requires Node.js 24 and Python 3.14. Copy the env template and fill in the keys: PayPal sandbox, Ollama and Supabase are required, while Textract, Channel3 and Kroger (grocery prices) are optional.
+Requires Node.js 24 and Python 3.14. Fill in `.env.local` (PayPal sandbox, Ollama and Supabase are required; Textract, Channel3 and Kroger are optional) and apply [`supabase/schema.sql`](supabase/schema.sql) to your Supabase project.
 
 ```bash
 cp .env.example .env.local
+npm install && npm run dev                                   # frontend, http://localhost:3000
 
-# Frontend
-npm install && npm run dev
-
-# Backend (second terminal)
-python3 -m venv ../.venv
-../.venv/bin/pip install -r backend/requirements.txt
-cd backend && ../../.venv/bin/uvicorn main:app --port 8000 --env-file ../.env.local
+python3 -m venv ../.venv && ../.venv/bin/pip install -r backend/requirements.txt
+cd backend && ../../.venv/bin/uvicorn main:app --port 8000 --env-file ../.env.local   # backend
 ```
 
-Open http://localhost:3000, then apply the database schema from [`supabase/schema.sql`](supabase/schema.sql) to your Supabase project.
+Tests: `../../.venv/bin/python -m unittest` from `backend/` (every external API mocked) and `npm run lint`.
 
-- **Tests:** `../../.venv/bin/python -m unittest` from `backend/` (226 tests, with every external API mocked) and `npm run lint`.
-- **Deploying:** set `BACKEND_URL` before `next build`, because the `/api` proxy is resolved at build time.
-- **API keys:** read [docs/RULES.md](docs/RULES.md) before using real keys. The evals make paid calls.
-
-## Status
-
-This is a working prototype deployed on Render, built from scratch during the hackathon (first commit 12 Oct 2026). Planned next: photo proof, photo recognition, and reusable lists ([docs/ROADMAP.md](docs/ROADMAP.md)).
-
-## Docs
-
-[Spec](docs/SPEC.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [PayPal](docs/PayPal.md) · [Roadmap](docs/ROADMAP.md) · [Changelog](docs/CHANGELOG.md) · [Hackathon rules](docs/HACKATHON.md) · [Submission](docs/SUBMISSION.md) · [Design (Figma)](https://www.figma.com/design/Wv3JGTqJewtLNMax2PWmSk)
+More: [Architecture](docs/ARCHITECTURE.md) · [PayPal integration](docs/PayPal.md) · [Decisions](docs/DECISIONS.md) · [Spec](docs/SPEC.md)

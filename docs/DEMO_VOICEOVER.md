@@ -1,157 +1,125 @@
 # HeyList — Demo voiceover
 
-The demo video is recorded silent, scene by scene, then narrated by an AI voice. This file has, for each scene, what to film and the exact words for the voice. The story, captions and "don't say or show" rules are the same as the [demo script in SUBMISSION.md](SUBMISSION.md#demo-video-script-target-245-hard-limit-300); this version is written for a text-to-speech voice and adds sales tax (decision 80) and discounts (decision 81). Written 2026-11-07.
+The voice script for the cut in `video-test/` (`output/demo_v4.mp4`, 2:56; with the voice: `demo_v5.mp4`). Each cue below is one audio file: generate it with the AI voice, save it as `video-test/voice/NN.mp3`, and it goes into the video at its start time. Written 2026-11-07.
 
-**Target 2:45, hard limit 3:00.** About 400 words of narration, about 2:40 at a natural AI voice speed.
+**About 280 words** over 2:56, so the picture has room to breathe. Each cue has a window (from its start to the next cue); the cue's audio should end inside it. At a natural AI voice pace (about 2.5 words a second), every cue fits with a second or more to spare.
 
-## How to make it
+## How to make the voice
 
-1. **Record silent, one clip per scene.** Phone screen recording with sound off (or muted in the editor). Hold still for about one second at the start and end of each clip, so there is room to trim. Do every step slowly: it is easier to cut a wait than to stretch a rushed tap.
-2. **Generate one audio clip per scene.** Paste each scene's text block below into the voice tool separately, so a scene can be redone or dropped (Pay Later) without regenerating the rest. Use the same voice and settings for every clip.
-3. **Lay each audio clip under its scene.** The voice leads and the video follows: cut loading waits until each action lands just as it is said. If a clip's video is shorter than its voice, hold the last frame; if it is longer, cut the middle.
-4. **Add the captions** (table below) and the closing logo card. No music, or very quiet music under the voice.
-5. **Check the total** is under 3:00. If it runs long, cut in the order under [If it runs long](#if-it-runs-long).
+1. Use one voice and the same settings for every cue. Pick a warm, confident voice, at normal speed (not slowed).
+2. Paste each cue's text on its own and download it as `01.mp3`, `02.mp3` and so on (any audio format works).
+3. Put the files in `video-test/voice/`. Then either add them on vedit's **Sound** tab (Starts at = the cue's start), or ask Claude to place them all.
+4. If a cue runs past its window, regenerate it a little faster (1.05×) or drop its last sentence; the screen already says it in the labels.
 
-### Writing for the voice
+The text is written to be read aloud: numbers are words, there are no symbols, and a full stop is a short pause.
 
-- The text blocks are plain sentences: no symbols, no abbreviations, numbers written as words. Paste them as they are.
-- A full stop is a short pause; a new paragraph is a longer one. To add a pause, end the sentence; avoid "...", which some voices read oddly.
-- Say "HeyList" as "hey list". If the voice runs it together, write it "Hey List" in that clip only.
-- Don't read out amounts that change between takes (what Cam owes, the cart total). The screen shows them; the voice says what they mean.
-- The mic step: Ann's own voice saying the request is on the recording. Either keep that bit of the original audio, quieter, under the voiceover, or type the sentence instead of speaking it; the narration covers it either way.
+## Cues
 
-## Scenes
+| # | Starts (as placed in demo_v5) | Window | On screen |
+|---|---|---|---|
+| 01 | 0:00.3 | 8.5 s | HeyList title card, then the 82% card |
+| 02 | 0:09.9 | 13 s | Typing "Photo trip this weekend", the AI writing the list |
+| 03 | 0:23.0 | 15.5 s | Marking the camera, lenses, tripod "Already have"; 5 of 10 |
+| 04 | 0:39.5 | 11 s | Shop this list for me, the AI finding products, the cart |
+| 05 | 0:52.6 | 17 s | PayPal Pay in 4, approved, 6 of 10 |
+| 06 | 1:07.4 | 19.5 s | Ben opens the link, joins by name, picks his items |
+| 07 | 1:31.6 | 11 s | Ben pays with PayPal; 8 of 10 |
+| 08 | 1:42.8 | 18.5 s | Jerry's phone: snaps the receipt, the AI reads it |
+| 09 | 1:55.3 | 14 s | Frozen close-up of the receipt check, then checked off |
+| 10 | 2:09.3 | 17.6 s | The snacks, paid with PayPal |
+| 11 | 2:27.6 | 2.3 s | 10 of 10 |
+| 12 | 2:29.4 | 11 s | Money: how it adds up, who paid what |
+| 13 | 2:41.2 | 11.5 s | The reminder for Jerry; "2 payments and everyone's even" |
+| 14 | 2:51.7 | 4.5 s | Closing card |
 
-### 1 · The problem (0:00, about 15 s)
-
-**Film:** big text "82%" over a made-up group chat (made-up names only). The three questions pop up one at a time as chat bubbles: "Who's buying what?", "Who already paid?", "Who owes whom?". End on the HeyList logo. Source in a corner the whole time: "Harris Poll for CIT Bank, May 2026 · 2,067 US adults" ([RESEARCH.md](RESEARCH.md)).
-
-```text
-Eighty-two percent of people on group trips would rather overpay than argue about money.
-
-Who's buying what? Who already paid? Who owes whom?
-
-HeyList answers all three. AI plans the list, and PayPal settles it, down to the cent.
-```
-
-### 2 · Say what you need (0:15, about 22 s)
-
-**Film:** tap the mic and say "Weekend camping trip for three friends, 150 dollar budget", then **Make my list**. On the review screen, mark the stove **Already have**; the total drops. Tap **Create list**.
+### 01 · 0:00.3
 
 ```text
-I just say what we need. In seconds, HeyList's AI writes the whole list: how many of each thing, and what it costs at real stores today, so we can see it fits our budget.
-
-We already own a stove, so I mark it, and it drops off the total.
+Group trips are fun. The money isn't. Eighty-two percent of people would rather overpay than argue about it.
 ```
 
-### 3 · Share it (0:37, about 15 s)
-
-**Film:** share the link. Ben's phone opens it and he joins by name. On Ann's phone, Ben appears without a reload. Ben claims the food; Ann claims the gear.
+### 02 · 0:09.9
 
 ```text
-I send the link. No app to download, no sign-up. Ben types his name and he's in, and the list updates on all our phones at once.
-
-Ben takes the food. I take the gear.
+Meet HeyList. I type one sentence: a photo trip this weekend. In seconds, AI writes the whole gear list, priced at real stores.
 ```
 
-### 4 · Let it shop for you (0:52, about 30 s)
-
-**Film:** as Ann on Progress, **More → Shop this list for me**, tick the gear (leave the tent). Show the product cards and the line with the sales tax and the total within budget. **Pay with PayPal**; on PayPal's page, hold for a second on the order summary showing the items and the tax, then approve. Back on the list: "Paid with PayPal · Ann" on each item.
+### 03 · 0:23.0
 
 ```text
-Shopping is the part I always put off, so I let HeyList do it. Its AI shopping assistant finds real products from real stores, and keeps within what's left of our budget, sales tax included.
-
-But I stay in charge. I check the cart, and pay once with PayPal. PayPal shows the items and the tax, just like a real checkout.
-
-Done. Every item now says paid with PayPal, with my name.
+I already own the camera, the lenses and the tripod, so I mark them, and they drop off the budget. Half the list is done before we spend a cent.
 ```
 
-### 5 · Pay Later (1:22, about 8 s, only if the button appears)
-
-**Film:** Progress with only the tent left on Ann's items: hold on the **Pay with PayPal**, **Venmo** and **Pay Later** buttons with PayPal's message under them. Tap **Pay Later** and approve in PayPal's pop-up.
+### 04 · 0:39.5
 
 ```text
-The tent's the big one, so PayPal lets me spread the cost with Pay Later, right here.
+For the rest, the AI shops for me. It finds real products from real stores and fills a cart. I check it, and pay once.
 ```
 
-### 6 · Snap the receipt (1:30, about 20 s)
-
-**Film:** as Ben on Progress, **Take a photo** of a real grocery receipt. The review opens on the same page with each line matched to an item, the tax, and "Adds up to the receipt total". If the receipt has a coupon, its line shows "less ... off". Tap **Confirm**. Items show "On a receipt · Ben".
+### 05 · 0:52.6
 
 ```text
-Ben shopped at the supermarket. He just snaps his receipt.
-
-HeyList reads every line, matches it to our list, takes each coupon off the right item, and checks it all adds up, tax included. One tap, and his items are done too.
+With PayPal Pay in 4, it splits into four interest-free payments, right at checkout. Approved, and it's checked off for everyone.
 ```
 
-If the receipt has no coupon, use this instead:
+### 06 · 1:07.4
 
 ```text
-Ben shopped at the supermarket. He just snaps his receipt.
-
-HeyList reads every line, matches it to our list, and checks it all adds up, tax included. One tap, and his items are done too.
+Then I share the link with Ben. No app, no sign-up, just his name. He picks the things he's covering.
 ```
 
-### 7 · Settle up (1:50, about 28 s)
-
-**Film:** tap **Settle up**: "Cam → Ann", "Cam → Ben" with their amounts. Tap **Remind** for Cam and show the message. On Cam's phone: open the link, pay with PayPal, approve. Back on Ann's phone: Cam's balance goes to even.
+### 07 · 1:31.6
 
 ```text
-Here's my favorite part. HeyList knows what everyone really paid, tax and all, so it works out who owes whom, to the cent.
-
-Cam couldn't come shopping, so he owes us. One tap, and it writes a friendly reminder for me. Cam pays with PayPal, and the money comes straight to me.
-
-No math, no awkward chasing.
+And pays with PayPal too. The list updates for all of us, live.
 ```
 
-### 8 · Every dollar adds up (2:18, about 15 s)
-
-**Film:** the **Money** tab: hold on **How it adds up** (Items, Sales tax, Tip and fees, Spent together). Then scroll the **Items** tab: "Paid with PayPal", "On a receipt", "Already had".
+### 08 · 1:42.8
 
 ```text
-And every dollar adds up, like the bottom of a real receipt: the items, the tax, and the fees.
-
-Every item shows how we know it's done: paid with PayPal, on a receipt, or already had. If two of us buy the same thing, PayPal refunds the second one automatically.
+Jerry shopped in a real store, so he just snaps the receipt. AI reads every line and matches it to our list. That SD card? It's our memory cards.
 ```
 
-### 9 · Close (2:33, about 10 s)
-
-**Film:** Progress at 100%, then the HeyList logo with `heylist-web.onrender.com` and "Built with PayPal + AI".
+### 09 · 1:55.3
 
 ```text
-From one sentence to everyone settled up. AI handles the planning and the busywork. PayPal makes the money simple and certain.
-
-That's HeyList.
+Every price is checked against the receipt's total, so nothing slips through. One tap, and it's checked off, with the receipt as proof.
 ```
 
-## Captions for the judges (on screen, not spoken)
+### 10 · 2:09.3
 
-Show each for 2–3 seconds in a corner, while the voice keeps going:
+```text
+I pay for the last item, the snacks, with PayPal. Same quick checkout, and every payment lands on the list by itself.
+```
 
-| Scene | Caption |
-|---|---|
-| Say what you need | "AI: Ollama (`gemma4:31b`) · prices from Kroger, Walmart and Target" |
-| Share it | "Live updates: Supabase Realtime" |
-| Let it shop for you | "Agent: Channel3 product search + AI check · PayPal Orders API with item tax · prices set on the server" |
-| Pay Later | "PayPal JS SDK v6: PayPal, Venmo, Pay Later" |
-| Snap the receipt | "AWS Textract + AI matching · every price checked against the total · the receipt's tax rate is used for the list" |
-| Settle up | "Split worked out in code, not AI · PayPal pays the person owed directly" |
-| Every dollar adds up | "Checked off only on a COMPLETED capture · webhooks + Render cron · auto refunds, tax included" |
+### 11 · 2:27.6
 
-## If it runs long
+```text
+Ten out of ten.
+```
 
-Cut in this order:
+### 12 · 2:29.4
 
-1. Scene 5, Pay Later (drop its clip and its audio).
-2. The live join in scene 3: one cut to Ben already on the list, and the voice says only "I send the link. No app to download, no sign-up. Ben's in."
-3. Cam's phone in scene 7: show the reminder, then jump to the balance at even, ending the voice at "it writes a friendly reminder for me. Cam pays with PayPal, and we're even."
-4. The last sentence of scene 8 (the refund).
+```text
+Money shows where every dollar went: the items, the fees, and exactly who paid what.
+```
 
-## Before recording
+### 13 · 2:41.2
 
-Everything in [Before recording in SUBMISSION.md](SUBMISSION.md#before-recording), and also:
+```text
+HeyList writes Jerry a friendly reminder, and works out the fewest payments. Two PayPal payments, and everyone's even, to the cent.
+```
 
-- [ ] Run `supabase/schema.sql` again on the live database: `lists.tax_rate_bp`, `orders.taxes` and `receipts.thumb_path` are new (2026-11-06).
-- [ ] On the demo list, set a sales tax rate on **Money** before scene 4 (for example 8.25), so the cart and PayPal's page show the tax. After Ben's receipt is confirmed, the list uses the receipt's rate instead; that's expected.
-- [ ] For scene 6, a receipt with a printed tax line, and if possible a coupon under one of the items.
-- [ ] Rehearse once with the voice clips laid in, to check each action lands as it is said.
+### 14 · 2:51.7
+
+```text
+HeyList. Plan it with AI. Settle it with PayPal.
+```
+
+## Notes
+
+- **Say "HeyList" as "hey list".** If the voice runs it together, write "Hey List" in that cue only.
+- **Cue 05:** if the voice reads "Pay in 4" oddly, write "Pay in four".
+- **Cue 12 doesn't mention tax,** because on this recording Money shows the receipt's $1.62 under "Tip and fees" and sales tax as $0.00. If you re-record with the tax read as tax, change it to "the items, the tax, and exactly who paid what".
+- **Music:** if you add any, keep it around 10–15% volume under the voice (Sound tab: volume 0.12, loop on, fade in 1, fade out 2).
+- **If the cut changes,** the start times move with it. `output/<name>_vN.json` lists where every scene and shot lands, and Claude can re-time the cues from it.

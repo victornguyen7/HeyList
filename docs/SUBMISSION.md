@@ -12,7 +12,7 @@ Rewritten 2026-11-05 for viewers who don't work in tech: one friendly story with
 
 The line viewers should remember: **AI handles the planning and the busywork. PayPal makes the money simple and certain.**
 
-**Recording with an AI voice:** the video is filmed silent and narrated by text-to-speech; the clip-by-clip version of this script, with the voice text ready to paste and the tax and discount beats added, is [DEMO_VOICEOVER.md](DEMO_VOICEOVER.md).
+**Recording with an AI voice:** the video is filmed silent and narrated by text-to-speech; the narrated version, retold as a photo trip (AI gear list, AI shopping with PayPal Pay in 4, friends joining, a receipt scanned on the phone, PayPal to settle up), with the voice text ready to paste, is [DEMO_VOICEOVER.md](DEMO_VOICEOVER.md).
 
 ### Scene by scene
 

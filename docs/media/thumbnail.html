@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1500px; height: 1000px; overflow: hidden; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+    background: radial-gradient(820px 640px at 76% 42%, rgba(96,112,170,.34) 0%, transparent 65%),
+                radial-gradient(640px 520px at 6% 100%, rgba(125,74,58,.16) 0%, transparent 65%),
+                radial-gradient(560px 420px at 10% 0%, rgba(96,112,170,.18) 0%, transparent 70%),
+                #e9ecf1;
+    color: #1c1f26; position: relative;
+  }
+  .left { position: absolute; left: 96px; top: 150px; width: 700px; }
+  .brand { display: flex; align-items: center; gap: 22px; }
+  .brand svg { width: 96px; height: 96px; filter: drop-shadow(0 10px 22px rgba(63,93,125,.28)); }
+  .brand h1 { font-size: 112px; font-weight: 800; letter-spacing: -3px; line-height: 1; }
+  .tag { margin-top: 56px; font-size: 64px; font-weight: 750; line-height: 1.12; letter-spacing: -1.5px; }
+  .tag .ai { background: linear-gradient(180deg, #5aa2ff 0%, #2f6fe0 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tag .pp { background: linear-gradient(180deg, #ffb21e 0%, #f58a07 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { margin-top: 30px; font-size: 29px; color: #4d5463; line-height: 1.4; max-width: 660px; }
+  .pills { margin-top: 44px; display: flex; gap: 12px; }
+  .pill { font-size: 22px; font-weight: 650; padding: 10px 18px; white-space: nowrap; border-radius: 999px; background: rgba(255,255,255,.62); border: 1px solid rgba(255,255,255,.9); color: #2f3440; box-shadow: 0 4px 14px rgba(28,31,38,.06); }
+
+  .phone { position: absolute; right: 120px; top: 90px; width: 470px; height: 820px; border-radius: 58px; background: #0b0e14;
+           padding: 16px; box-shadow: 0 40px 80px rgba(28,31,38,.30), 0 0 0 2px rgba(255,255,255,.5); transform: rotate(4deg); }
+  .screen { width: 100%; height: 100%; border-radius: 44px; overflow: hidden; position: relative;
+            background: radial-gradient(420px 360px at 70% 18%, #c9d3ea 0%, transparent 70%), #e9ecf1; color: #1c1f26; padding: 58px 28px 28px; }
+  .screen h2 { font-size: 36px; font-weight: 750; letter-spacing: -.5px; }
+  .people { margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 17px; color: #4d5463; }
+  .av { width: 30px; height: 30px; border-radius: 50%; background: #3f5d7d; color: white; display: grid; place-items: center; font-size: 15px; font-weight: 700; margin-right: -14px; border: 2px solid #e9ecf1; }
+  .row { display: flex; align-items: center; gap: 14px; margin-top: 14px; background: rgba(255,255,255,.7); border-radius: 18px; padding: 15px 18px; }
+  .check { width: 30px; height: 30px; border-radius: 50%; background: #1c1f26; display: grid; place-items: center; flex: none; }
+  .check svg { width: 17px; height: 17px; }
+  .name { font-size: 21px; font-weight: 650; text-decoration: line-through; text-decoration-color: rgba(28,31,38,.45); }
+  .how { font-size: 15px; color: #4d5463; margin-top: 2px; }
+  .price { margin-left: auto; font-size: 21px; font-weight: 650; }
+  .badge { display: inline-block; font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #e7eefb; color: #2f4f7a; }
+  .badge.r { background: #f3e8e2; color: #7d4a3a; }
+  .settle { margin-top: 22px; background: #1c1f26; color: white; border-radius: 22px; padding: 20px 22px; }
+  .settle .t { font-size: 17px; color: #aab4c4; }
+  .settle .line { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 22px; font-weight: 650; }
+  .settle .amt { margin-left: auto; color: #ffc56b; font-size: 26px; font-weight: 800; }
+  .paybtn { margin-top: 14px; background: #ffc439; color: #111; text-align: center; border-radius: 999px; padding: 12px; font-size: 20px; font-weight: 800; }
+  .ring { position: absolute; right: 26px; top: 50px; width: 92px; height: 92px; }
+  .ring b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; font-weight: 800; }
+  .chip { position: absolute; padding: 14px 20px; border-radius: 18px; background: white; color: #1c1f26; font-size: 22px; font-weight: 700;
+          box-shadow: 0 16px 36px rgba(28,31,38,.18); display: flex; align-items: center; gap: 10px; }
+  .chip i { font-style: normal; font-size: 26px; }
+  .c1 { right: 520px; top: 300px; transform: rotate(-4deg); }
+  .c2 { right: 60px; top: 780px; transform: rotate(-3deg); }
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" fill="none"><path d="M14 8h36a10 10 0 0 1 10 10v20a10 10 0 0 1-10 10H31l-11 9v-9h-6A10 10 0 0 1 4 38V18A10 10 0 0 1 14 8Z" fill="#3F5D7D"/><path d="M21 28.5l7.5 7.5L44 20.5" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h1>HeyList</h1>
+    </div>
+    <div class="tag">Plan it with <span class="ai">AI</span>.<br>Settle it with <span class="pp">PayPal</span>.</div>
+    <div class="sub">One sentence becomes a shared list. Buy, snap the receipt, and everyone's even to the cent.</div>
+    <div class="pills"><span class="pill">✨ AI shopping list</span><span class="pill">🧾 Receipt scan</span><span class="pill">💸 Split &amp; settle</span></div>
+  </div>
+
+  <div class="phone"><div class="screen">
+    <h2>Photo Trip</h2>
+    <div class="people"><span class="av">T</span><span class="av">B</span><span class="av">J</span><span style="margin-left:20px">3 people</span></div>
+    <svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#cfd5df" stroke-width="12" fill="none"/><circle cx="50" cy="50" r="40" stroke="#1c1f26" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="0" transform="rotate(-90 50 50)"/></svg>
+    <div class="ring"><b>10/10</b></div>
+
+    <div class="row" style="margin-top:30px"><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div><div class="name">Batteries</div><div class="how"><span class="badge">Paid with PayPal</span> · You</div></div><span class="price">$75.18</span></div>
+    <div class="row"><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div><div class="name">Memory Cards</div><div class="how"><span class="badge r">On a receipt</span> · Jerry</div></div><span class="price">$26.00</span></div>
+    <div class="row"><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div><div class="name">Battery Charger</div><div class="how"><span class="badge">Paid with PayPal</span> · Ben</div></div><span class="price">$27.99</span></div>
+    <div class="row"><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div><div class="name">Camera</div><div class="how">Already had</div></div><span class="price">—</span></div>
+
+    <div class="settle">
+      <div class="t">2 payments and everyone's even</div>
+      <div class="line">Jerry → You<span class="amt">$24.57</span></div>
+      <div class="line">Jerry → Ben<span class="amt">$5.39</span></div>
+      <div class="paybtn">Pay with PayPal</div>
+    </div>
+  </div></div>
+
+  <div class="chip c1"><i>🧾</i>Receipt matched · adds up ✓</div>
+</body>
+</html>
